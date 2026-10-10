@@ -1,0 +1,45 @@
+import shutil
+
+import pytest
+from typer.testing import CliRunner
+
+from jobhunter.cli import app
+from jobhunter.doctor import MINIMAL_TEX, compile_tex
+
+runner = CliRunner()
+
+
+def test_help():
+    result = runner.invoke(app, ["--help"])
+    assert result.exit_code == 0
+    assert "doctor" in result.stdout
+
+
+def test_version():
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert "jobhunter" in result.stdout
+
+
+def test_doctor_fails_on_bad_config(tmp_path):
+    bad = tmp_path / "c.yaml"
+    bad.write_text("bogus: 1\n")
+    result = runner.invoke(app, ["doctor", "--config", str(bad)])
+    assert result.exit_code == 1
+    assert "FAIL" in result.stdout
+
+
+def test_compile_tex_missing_engine(tmp_path):
+    tex = tmp_path / "a.tex"
+    tex.write_text(MINIMAL_TEX)
+    ok, detail = compile_tex(tex, "definitely-not-an-engine", 5)
+    assert not ok
+    assert "not found" in detail
+
+
+@pytest.mark.skipif(shutil.which("tectonic") is None, reason="tectonic not installed")
+def test_compile_minimal_with_tectonic(tmp_path):
+    tex = tmp_path / "a.tex"
+    tex.write_text(MINIMAL_TEX)
+    ok, detail = compile_tex(tex, "tectonic", 120)
+    assert ok, detail

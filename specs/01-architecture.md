@@ -82,6 +82,7 @@ Each stage reads/writes SQLite and is **resumable**: if stage 4 fails, stage 5 r
 ```python
 class Source(Protocol):
     name: str
+
     async def fetch(self) -> list[Job]: ...
 ```
 
