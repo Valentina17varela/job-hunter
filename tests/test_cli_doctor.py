@@ -1,10 +1,13 @@
 import shutil
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
 
 from jobhunter.cli import app
 from jobhunter.doctor import MINIMAL_TEX, compile_tex
+
+EXAMPLE_CONFIG = str(Path(__file__).resolve().parent.parent / "config" / "config.example.yaml")
 
 runner = CliRunner()
 
@@ -43,3 +46,16 @@ def test_compile_minimal_with_tectonic(tmp_path):
     tex.write_text(MINIMAL_TEX)
     ok, detail = compile_tex(tex, "tectonic", 120)
     assert ok, detail
+
+
+def test_run_dry_run_lists_sources(tmp_path):
+    result = runner.invoke(app, ["run", "--dry-run", "--config", EXAMPLE_CONFIG])
+    assert result.exit_code == 0
+    assert "Would fetch" in result.stdout
+    assert "remotive: 1" in result.stdout
+
+
+def test_run_unimplemented_stage_fails():
+    result = runner.invoke(app, ["run", "--stage", "score", "--config", EXAMPLE_CONFIG])
+    assert result.exit_code == 1
+    assert "not implemented" in result.output

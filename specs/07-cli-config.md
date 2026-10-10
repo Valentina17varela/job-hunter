@@ -13,7 +13,8 @@
 | `jobhunter explain <id>` | Why it was filtered / its score |
 | `jobhunter mark <id> applied\|replied\|rejected\|closed [--note]` | Updates status |
 | `jobhunter stats` | Funnel (fetched → passed → scored → packaged → applied → replied) and cumulative cost |
-| `jobhunter companies check` | Validates `companies.yaml` slugs |
+| `jobhunter companies check` | Validates `companies.yaml` slugs (200 vs 404) |
+| `jobhunter companies discover` | Probes names in `company_candidates.txt` and adds boards that exist to `companies.yaml` |
 | `jobhunter calibrate` | Scoring calibration (see 05) |
 | `jobhunter cv init` | One-time helper: proposes `jh:` markers and IDs for a plain LaTeX CV (output reviewed by the person) |
 | `jobhunter cv check` | Validates `master.tex` markers (unique IDs, balanced sections) and compiles it |
@@ -22,7 +23,19 @@
 
 ## 2. Full `config.yaml` (reference)
 
+The committed template is `config/config.example.yaml`; each person copies it to `config/config.yaml`, which is gitignored (as are `config/companies.yaml`, `config/cv/`, `data/` and `out/`), so the repository contains only code and examples.
+
 ```yaml
+sources:                           # see 03-sources.md
+  aggregators: [remotive, remoteok, weworkremotely, arbeitnow, jobicy]
+  wwr_categories: [remote-programming-jobs, remote-back-end-programming-jobs]
+  arbeitnow_pages: 3
+  companies_file: config/companies.yaml
+  candidates_file: config/company_candidates.txt
+  max_concurrency: 5
+  max_per_host: 2
+  stale_days: 7
+
 search: { ... }                    # see 04-filtering.md
 
 scoring:

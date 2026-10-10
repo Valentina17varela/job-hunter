@@ -32,7 +32,12 @@ job-hunter/
 │       ├── master.tex          # person's LaTeX CV + jh: markers
 │       └── letter_template.tex # cover-letter template
 ├── src/jobhunter/
-│   ├── models.py           # Job, Score, Package (pydantic)
+│   ├── models.py           # Job, JobStatus (pydantic)
+│   ├── http.py             # polite async client (UA, retries, concurrency limits)
+│   ├── text.py             # HTML cleaning, remote/salary inference
+│   ├── companies.py        # companies.yaml, check, discover
+│   ├── store.py            # upsert/dedupe, close stale, duplicates
+│   ├── doctor.py           # environment checks
 │   ├── config.py           # loads and validates YAML
 │   ├── db.py               # SQLite, simple migrations
 │   ├── sources/            # one module per source
@@ -40,7 +45,7 @@ job-hunter/
 │   │   ├── greenhouse.py
 │   │   ├── lever.py
 │   │   ├── ashby.py
-│   │   └── remote_boards.py
+│   │   └── aggregators.py  # Remotive, RemoteOK, WWR, Arbeitnow, Jobicy
 │   ├── filters.py          # hard filter
 │   ├── scoring.py          # cheap LLM
 │   ├── tailoring.py        # quality LLM
@@ -81,9 +86,10 @@ Each stage reads/writes SQLite and is **resumable**: if stage 4 fails, stage 5 r
 
 ```python
 class Source(Protocol):
-    name: str
+    name: str  # source kind, e.g. "greenhouse"
+    target: str  # instance, e.g. a company slug ("" for single-feed sources)
 
-    async def fetch(self) -> list[Job]: ...
+    async def fetch(self, http: HttpClient) -> list[Job]: ...  # raises on failure
 ```
 
 Adding a source = one new file + registration in `sources/__init__.py`. The rest of the pipeline is unchanged.

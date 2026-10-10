@@ -79,6 +79,11 @@ MIGRATIONS: list[str] = [
         created_at TEXT NOT NULL
     );
     """,
+    # v2: track when a posting was last seen, to close postings that disappear
+    """
+    ALTER TABLE jobs ADD COLUMN last_seen_at TEXT;
+    UPDATE jobs SET last_seen_at = fetched_at;
+    """,
 ]
 
 

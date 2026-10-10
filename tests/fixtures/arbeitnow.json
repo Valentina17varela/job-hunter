@@ -1,0 +1,49 @@
+{
+ "data": [
+  {
+   "slug": "working-student-germany-146481",
+   "company_name": "Develocity",
+   "title": "Working Student",
+   "description": "<h2><strong>Who We Are</strong></h2>\n<p>AI is changing how software gets built. Code production is becoming a commodity. The focus is shifting from writing code to specifying, orchestrating, verifying, and governing change, and the toolchain is the new constraint.</p>\n<p>We are at the center of this shift. We build Develocity, a toolchain observability and intelligence platform used by some of the world's leading software organizations: Netflix, Airbnb, Spotify, SAP, major global banks, and hundreds more. Develocity helps software teams achieve delivery excellence through deep observability, b",
+   "remote": false,
+   "url": "https://www.arbeitnow.com/jobs/companies/develocity/working-student-germany-146481",
+   "tags": [],
+   "job_types": [],
+   "location": "Germany",
+   "created_at": 1791589560
+  },
+  {
+   "slug": "remote-senior-data-scientist-180788",
+   "company_name": "Duck Duck Go",
+   "title": "Senior Data Scientist",
+   "description": "<h2><strong>Who We Are</strong></h2><p style=\"min-height:1.5em\">Hi, we're DuckDuckGo, the online protection company and remote-first team of 300+ on a mission to raise the standard of trust online. Founded in 2008 and profitable since 2014, annual revenue now exceeds $100m USD and millions use our browser on on <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" class=\"ProsemirrorEditor-link\" href=\"https://spreadprivacy.com/introducing-duckduckgo-for-mac/\">Mac</a>, <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" class=\"ProsemirrorEditor-link\" href=\"https://spreadprivacy.com/windows-bro",
+   "remote": true,
+   "url": "https://www.arbeitnow.com/jobs/companies/duck-duck-go/remote-senior-data-scientist-180788",
+   "tags": [
+    "Data Science"
+   ],
+   "job_types": [
+    "Full Time"
+   ],
+   "location": "Remote",
+   "created_at": 1791589202
+  },
+  {
+   "slug": "senior-technical-partnerships-manager-corporate-travel-all-genders-berlin-262635",
+   "company_name": "Distribusion Technologies",
+   "title": "(Senior) Technical Partnerships Manager  - Corporate Travel (all genders)",
+   "description": "<p><strong><span style=\"color:#2B4466\">Distribusion</span></strong><span style=\"color:#2B4466\"> is the world\u2019s leading ground transportation marketplace and gives travelers seamless access to ground transportation online, from search to ticket purchase. We have built a cutting-edge B2B technology platform that connects bus, rail, and ferry operators in 70+ countries with the biggest online retailers, including Google Maps and </span><a rel=\"noopener\" target=\"_blank\" href=\"http://Booking.com\">Booking.com</a><span style=\"color:#2B4466\">.<br>We are shaping the future of travel and building the la",
+   "remote": false,
+   "url": "https://www.arbeitnow.com/jobs/companies/distribusion-technologies/senior-technical-partnerships-manager-corporate-travel-all-genders-berlin-262635",
+   "tags": [
+    "Partnerships"
+   ],
+   "job_types": [
+    "Experienced",
+    "fulltime permanent"
+   ],
+   "location": "Berlin, Berlin, Germany",
+   "created_at": 1791588625
+  }
+ ]
+}

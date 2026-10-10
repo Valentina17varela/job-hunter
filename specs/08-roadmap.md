@@ -9,12 +9,12 @@ Each phase ends with something runnable and verifiable. We don't move to the nex
 - **Done when:** `pytest` and `ruff` pass; `jobhunter --help` and `jobhunter doctor` work.
 - **Personal data:** none.
 
-## Phase 1 — Sources
-- Base `Source`, Greenhouse, Lever, Ashby, RemoteOK, WWR, Remotive.
-- `companies.yaml` with a ~50-company seed + `companies check`.
-- Dedupe, `fetch_log`, closing absent postings.
-- **Done when:** `jobhunter run --stage fetch` fills the DB with real postings; fixture tests pass.
-- **Personal data:** optional, target company list.
+## Phase 1 — Sources ✅ implemented, pending review
+- Breadth first: aggregators (Remotive, RemoteOK, We Work Remotely, Arbeitnow, Jobicy), then per-company ATS boards (Greenhouse, Lever, Ashby).
+- `companies discover` grows `companies.yaml` from `company_candidates.txt`; `companies check` validates slugs. (Any-company coverage: see 03 §1.)
+- Dedupe, `fetch_log`, closing absent postings, cross-source duplicates.
+- **Done when:** `jobhunter run --stage fetch` fills the DB with real postings; fixture tests pass. ✅ (25,069 postings from 204 sources in ~35 s; re-run → 0 new / 0 updated; 76 tests passing.)
+- **Personal data:** none needed (extra candidate company names optional).
 
 ## Phase 2 — Filter
 - `filters.py`, `refilter`, `explain`.

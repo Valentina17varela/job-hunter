@@ -1,0 +1,60 @@
+# Default configuration. Personal values (search criteria, salary, tone) are filled in
+# during the phases that need them; see specs/04-filtering.md and specs/07-cli-config.md.
+sources:
+  aggregators: [remotive, remoteok, weworkremotely, arbeitnow, jobicy]
+  wwr_categories:
+    - remote-programming-jobs
+    - remote-back-end-programming-jobs
+    - remote-full-stack-programming-jobs
+    - remote-devops-sysadmin-jobs
+  arbeitnow_pages: 3
+  companies_file: config/companies.yaml
+  candidates_file: config/company_candidates.txt
+  max_concurrency: 5
+  max_per_host: 2
+  stale_days: 7
+
+search:
+  titles_include: []
+  titles_exclude: ["intern", "junior", "manager", "director"]
+  keywords_include: []
+  keywords_exclude: []
+  seniority: []
+  work_mode: ["remote"]
+  locations_allowed: []
+  salary:
+    min_usd: 0
+    on_missing: pass
+  max_age_days: 30
+
+scoring:
+  model: claude-haiku-5-5
+  score_threshold: 75
+  max_description_tokens: 1500
+  use_batch: false
+
+tailoring:
+  model: claude-sonnet-5-5
+  mode: select
+  max_packages_per_day: 10
+  languages: ["en", "es"]
+  tone: ""
+  max_cv_pages: 1
+
+latex:
+  engine: tectonic
+  timeout_seconds: 60
+
+budget:
+  daily_budget_usd: 1.00
+
+fx_rates_to_usd:
+  EUR: 1.08
+  COP: 0.00025
+  GBP: 1.27
+
+paths:
+  cv_master: config/cv/master.tex
+  letter_template: config/cv/letter_template.tex
+  db: data/jobhunter.db
+  out: out/

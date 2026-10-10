@@ -62,7 +62,33 @@ class PathsConfig(_Strict):
     out: Path = Path("out")
 
 
+AggregatorName = Literal["remotive", "remoteok", "weworkremotely", "arbeitnow", "jobicy"]
+
+
+class SourcesConfig(_Strict):
+    aggregators: list[AggregatorName] = [
+        "remotive",
+        "remoteok",
+        "weworkremotely",
+        "arbeitnow",
+        "jobicy",
+    ]
+    wwr_categories: list[str] = [
+        "remote-programming-jobs",
+        "remote-back-end-programming-jobs",
+        "remote-full-stack-programming-jobs",
+        "remote-devops-sysadmin-jobs",
+    ]
+    arbeitnow_pages: int = 3
+    companies_file: Path = Path("config/companies.yaml")
+    candidates_file: Path = Path("config/company_candidates.txt")
+    max_concurrency: int = 5
+    max_per_host: int = 2
+    stale_days: int = 7
+
+
 class Config(_Strict):
+    sources: SourcesConfig = SourcesConfig()
     search: SearchConfig = SearchConfig()
     scoring: ScoringConfig = ScoringConfig()
     tailoring: TailoringConfig = TailoringConfig()
@@ -79,7 +105,10 @@ class ConfigError(Exception):
 def load_config(path: Path) -> Config:
     """Load and validate a YAML config file, raising ConfigError with the offending field."""
     if not path.exists():
-        raise ConfigError(f"Config file not found: {path}")
+        hint = ""
+        if path.name == "config.yaml":
+            hint = f". Create it with: cp {path.with_name('config.example.yaml')} {path}"
+        raise ConfigError(f"Config file not found: {path}{hint}")
     try:
         raw = yaml.safe_load(path.read_text()) or {}
     except yaml.YAMLError as exc:

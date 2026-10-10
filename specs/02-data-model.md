@@ -14,7 +14,7 @@ Every source normalizes to this.
 | `remote` | `"remote" \| "hybrid" \| "onsite" \| "unknown"` | Inferred |
 | `description` | str | Plain text (HTML cleaned) |
 | `url` | str | Apply link |
-| `salary_min` / `salary_max` | int \| None | Annual, normalized to USD when a currency is known |
+| `salary_min` / `salary_max` | int \| None | Annual amount in `salary_currency` (hourly/monthly annualized); converted to USD only in the filter, using the configured FX table |
 | `salary_currency` | str \| None | Original |
 | `posted_at` | datetime \| None | |
 | `fetched_at` | datetime | |
@@ -41,7 +41,7 @@ jobs(
   source TEXT, external_id TEXT, company TEXT, title TEXT,
   location TEXT, remote TEXT, description TEXT, url TEXT,
   salary_min INT, salary_max INT, salary_currency TEXT,
-  posted_at TEXT, fetched_at TEXT, content_hash TEXT,
+  posted_at TEXT, fetched_at TEXT, last_seen_at TEXT, content_hash TEXT,
   status TEXT, filter_reason TEXT,
   UNIQUE(source, external_id)
 );

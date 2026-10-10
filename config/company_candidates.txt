@@ -1,0 +1,335 @@
+# Candidate company names probed by `jobhunter companies discover`.
+# One per line. Names that expose a public Greenhouse/Lever/Ashby board are added to
+# companies.yaml; the rest are ignored. Add any company you like — it is only a discovery aid.
+Stripe
+Linear
+Notion
+Figma
+Airbnb
+Dropbox
+Coinbase
+Reddit
+Pinterest
+Discord
+Duolingo
+Datadog
+Cloudflare
+GitLab
+HashiCorp
+MongoDB
+Elastic
+Twilio
+Okta
+Asana
+Airtable
+Webflow
+Vercel
+Netlify
+Supabase
+PlanetScale
+Retool
+Ramp
+Brex
+Mercury
+Plaid
+Robinhood
+Chime
+Affirm
+Klarna
+Wise
+Revolut
+Monzo
+Checkout.com
+Adyen
+Gusto
+Rippling
+Deel
+Remote
+Oyster
+Papaya Global
+Toggl
+Zapier
+Automattic
+Buffer
+Doist
+Hotjar
+Canonical
+Mozilla
+Wikimedia Foundation
+DuckDuckGo
+Proton
+1Password
+Bitwarden
+Snyk
+Sentry
+PagerDuty
+LaunchDarkly
+Honeycomb
+Grafana Labs
+Temporal
+Confluent
+Databricks
+Snowflake
+dbt Labs
+Fivetran
+Airbyte
+Hex
+Mode
+Amplitude
+Mixpanel
+PostHog
+Segment
+Intercom
+Zendesk
+HubSpot
+Calendly
+Loom
+Miro
+Canva
+Lucid
+Coda
+ClickUp
+Monday.com
+Atlassian
+Shopify
+BigCommerce
+Squarespace
+Wix
+Instacart
+DoorDash
+Uber
+Lyft
+Faire
+Flexport
+Samsara
+Toast
+Block
+Square
+Spotify
+SoundCloud
+Twitch
+Roblox
+Unity
+Epic Games
+Riot Games
+Valve
+Niantic
+Anthropic
+OpenAI
+Cohere
+Hugging Face
+Scale AI
+Weights & Biases
+Perplexity
+Mistral AI
+Runway
+Stability AI
+Replit
+Cursor
+Anysphere
+Glean
+Harvey
+Sourcegraph
+JetBrains
+Postman
+Docker
+Kong
+Fly.io
+Render
+Railway
+DigitalOcean
+Linode
+Fastly
+Akamai
+Netflix
+Palantir
+Anduril
+SpaceX
+Rivian
+Lucid Motors
+Nuro
+Waymo
+Cruise
+Aurora
+Zoox
+Peloton
+Strava
+Whoop
+Oura
+Headspace
+Calm
+Noom
+Hims & Hers
+Oscar Health
+Zocdoc
+Doximity
+Ro
+Carta
+Pave
+Lattice
+Culture Amp
+Greenhouse
+Lever
+Ashby
+Gem
+Handshake
+Coursera
+Udemy
+Khan Academy
+Chegg
+Quizlet
+Nerdwallet
+Credit Karma
+SoFi
+Upstart
+Marqeta
+Bill.com
+Expensify
+Navan
+TripActions
+Hopper
+Vacasa
+Opendoor
+Zillow
+Redfin
+Compass
+Procore
+Toast Inc
+Squarespace Inc
+Mercado Libre
+Rappi
+Nubank
+Kavak
+Clip
+Platzi
+Truora
+Bold
+Addi
+Treinta
+Frubana
+Merqueo
+Instaleap
+Globant
+Endava
+EPAM Systems
+Thoughtworks
+Toptal
+Turing
+Andela
+Crossover
+Lemon.io
+Gitcoin
+Chainlink Labs
+Consensys
+Kraken
+Gemini
+Binance
+Ripple
+Alchemy
+Uniswap Labs
+Ledger
+Fireblocks
+Anchorage Digital
+Circle
+Paxos
+Bitso
+Ualá
+Clara
+Konfio
+Kueski
+Stori
+Jüsto
+Cabify
+Glovo
+Typeform
+Personio
+Celonis
+N26
+Trade Republic
+Contentful
+Mambu
+Scalable Capital
+HelloFresh
+Delivery Hero
+Zalando
+GetYourGuide
+Booking.com
+Skyscanner
+Wayfair
+Etsy
+eBay
+Squarespace Domains
+Zoom
+Slack
+Dropbox Sign
+DocuSign
+Box
+Veeva
+Epic Systems
+Cerner
+Flatiron Health
+Tempus
+Benchling
+Ginkgo Bioworks
+Recursion
+Color
+Zipline
+Cerebras
+Groq
+SambaNova
+Lambda
+CoreWeave
+Modal
+Baseten
+Replicate
+Together AI
+Fireworks AI
+Pinecone
+Weaviate
+Chroma
+LangChain
+LlamaIndex
+Vercel Labs
+Clerk
+Auth0
+Stytch
+WorkOS
+Resend
+Postmark
+SendGrid
+Mailchimp
+Klaviyo
+Braze
+Iterable
+Customer.io
+Attentive
+Ordergroove
+Recharge
+Gorgias
+Yotpo
+Bolt
+Stord
+ShipBob
+Shippo
+EasyPost
+Project44
+FourKites
+Convoy
+Uber Freight
+Tailscale
+Cloudsmith
+Sonatype
+Chainguard
+Wiz
+Lacework
+Orca Security
+CrowdStrike
+SentinelOne
+Tanium
+Cloudflare Zero
+Abnormal Security
+Material Security
+Vanta
+Drata
+Secureframe
+Tines
