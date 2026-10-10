@@ -17,6 +17,7 @@
 | `jobhunter calibrate` | Scoring calibration (see 05) |
 | `jobhunter cv init` | One-time helper: proposes `jh:` markers and IDs for a plain LaTeX CV (output reviewed by the person) |
 | `jobhunter cv check` | Validates `master.tex` markers (unique IDs, balanced sections) and compiles it |
+| `jobhunter cv translate --lang <code>` | One-time translation of the master CV items/labels into `config/cv/translations/<code>.json` for the person to review |
 | `jobhunter doctor` | Checks the LaTeX toolchain, config and environment |
 
 ## 2. Full `config.yaml` (reference)
@@ -34,7 +35,7 @@ tailoring:
   model: claude-sonnet-5-5
   mode: select                     # select | rewrite
   max_packages_per_day: 10
-  languages: ["es", "en"]          # package language = posting language if it is in the list
+  languages: ["en", "es"]          # package language = posting language if it is in the list, else "en"
   tone: ""                         # ← defined by the person
   max_cv_pages: 1
 

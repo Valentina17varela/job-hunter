@@ -29,6 +29,7 @@ Each phase ends with something runnable and verifiable. We don't move to the nex
 - **Personal data:** LaTeX CV (`master.tex`), `ANTHROPIC_API_KEY`.
 
 ## Phase 4 — Tailoring
+- `cv translate` (one-time, reviewed translations per language) and posting-language detection.
 - `tailoring.py`, LaTeX assembly (select mode), letter template, PDF compilation, verification (IDs, verbatim, compile, page limit), export to `out/`.
 - **Done when:** the criteria in 06 pass; the person reviews 3 real packages (`.tex` + `.pdf`) and approves them.
 - **Personal data:** cover-letter template (or approval to derive one from the CV style), letter tone, languages, max CV pages.
@@ -45,11 +46,11 @@ Each phase ends with something runnable and verifiable. We don't move to the nex
 - Daily notification (own email/Slack) with the summary.
 - Preference learning from `mark` and `calibrate`.
 
-## Open questions for the review
+## Decisions (from review)
 
-1. Default `tailoring.mode`: `select` (cheaper and safer) or `rewrite`?
-2. Package language: the posting's or fixed?
-3. Do an initial threshold of 75 and 10 packages/day seem reasonable?
-4. Is a USD 1 daily budget adequate?
-5. Do you want a daily notification (phase 6) or prefer running `review` manually?
-6. Is there any source you want to add or exclude in v1?
+1. `tailoring.mode` default: **`select`**.
+2. Package language: **the posting's** language for the CV, cover letter and recruiter message. The master CV is English-only, so the CV is translated **once per language** and reviewed by the person (see 06 §4.0). Allowed languages in `tailoring.languages`; unsupported languages fall back to English.
+3. Score threshold **75**, **10 packages/day**.
+4. Daily budget **USD 1**.
+5. No daily notification; the person runs `jobhunter review` manually.
+6. No sources added or excluded in v1.

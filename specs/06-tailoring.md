@@ -49,9 +49,21 @@ Folder `out/YYYY-MM-DD/{company}-{role}/`:
 
 ## 4. Generation
 
+### 4.0 Language adaptation (CV is written in English only)
+
+The master CV is English-only, but every package must match the **posting's language** (`tailoring.languages`, default `["en", "es"]`; unsupported languages fall back to English).
+
+- **Translate once, reuse forever.** `jobhunter cv translate --lang es` translates every `jh:` item, entry title/role text and section label from `master.tex` **once** (Sonnet) into `config/cv/translations/es.json`, keyed by item ID. The person **reviews and edits** this file once. Cost is a one-time ~USD 0.05 per language, not per posting.
+- Translations are checked deterministically: same figures (`\d+%`, `\$\d+`, `\d+x`), same technology/proper-noun tokens (kept untranslated), same LaTeX commands, valid escaping. Failures are listed for the person to fix.
+- Assembling a CV in language `L` copies the master's LaTeX structure and substitutes each kept item's text with its reviewed translation (select mode still means **no new wording per posting**).
+- Section headings and fixed labels (`Experience`, `Education`, `Skills`) are marked `% jh:label` in `master.tex` and translated the same way.
+- If a posting's language has no reviewed translation file, the package falls back to English and `notes.md` says so.
+- Language detection of the posting is deterministic (`langdetect`/`lingua`-style library, no LLM); ambiguous → English.
+- The cover letter and recruiter message are generated directly in the posting's language by the same call that produces them.
+
 ### 4.1 Mode `select` (default)
 1. The LLM receives plain-text items with IDs and returns **JSON**: for each section, the ordered list of IDs to keep, plus the ordered skills list. No free text.
-2. Code assembles `cv.tex` from `master.tex`, copying each kept item's **original LaTeX verbatim**. Nothing is reworded, so no new facts and no LaTeX escaping issues are possible.
+2. Code assembles `cv.tex` from `master.tex`, copying each kept item's **original LaTeX verbatim** (or its reviewed translation, see 4.0). Nothing is reworded per posting, so no new facts and no LaTeX escaping issues are possible.
 
 ### 4.2 Mode `rewrite` (optional)
 The LLM may reword bullets to mirror the posting's terminology (only if true). Each rewritten bullet keeps its source ID. Output text is passed through a LaTeX **escaper** (`& % $ # _ { } ~ ^ \`) and an allow-list of commands (`\textbf`, `\emph`, `\href`); anything else is rejected.
@@ -71,7 +83,7 @@ The LLM may reword bullets to mirror the posting's terminology (only if true). E
 Deterministic checks first, then a cheap LLM check:
 
 1. **IDs:** every ID returned exists in `master.tex`; no duplicates; required entries (marked `required` in `master.tex`, e.g. current job) are present.
-2. **Verbatim (select mode):** every kept item's LaTeX equals the master's, byte for byte.
+2. **Verbatim (select mode):** every kept item's LaTeX equals the master's (English) or the reviewed translation's (other languages), byte for byte.
 3. **Figures/tech (rewrite mode and letter):** every figure (`\d+%`, `\$\d+`, `\d+x`) and technology mentioned appears in the source items / skills list.
 4. **Compile:** `cv.tex` and `cover_letter.tex` compile without errors (see §6). A compile failure is a verification failure.
 5. **Length:** page count ≤ `tailoring.max_cv_pages` (default 1). If exceeded, drop the lowest-ranked items until it fits (deterministic, no extra LLM call).
