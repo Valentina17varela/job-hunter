@@ -12,19 +12,19 @@ Local Python pipeline that finds job postings on public job boards, filters and 
 | Phase | What | State |
 |---|---|---|
 | 0 | Skeleton: config, SQLite, `doctor` (LaTeX toolchain check) | ✅ Done |
-| 1 | Sources: aggregators + ATS boards, dedupe, company discovery | ✅ Done (pending review) |
-| 2 | Hard filter on your criteria (`refilter`, `explain`) | ⏳ Next |
+| 1 | Sources: aggregators + ATS boards, dedupe, company discovery | ✅ Done |
+| 2 | Hard filter on your criteria (`refilter`, `explain`) | ✅ Done (pending review) |
 | 3 | LLM scoring (Haiku), LaTeX CV parser, `calibrate` | ⏳ Planned |
 | 4 | Tailoring: LaTeX CV/letter packages + PDF, translations, verification | ⏳ Planned |
 | 5 | Daily operation: `review`, `mark`, `stats`, scheduling | ⏳ Planned |
 
-What works **today**: downloading postings from many sources into a local database, growing the list of company boards, and checking your environment. Filtering, scoring and package generation are not implemented yet, so right now the tool collects postings but does not yet pick the best ones for you.
+What works **today**: downloading postings from many sources into a local database, **filtering them against your criteria** (no LLM, no cost), explaining why any posting was kept or dropped, growing the list of company boards, and checking your environment. LLM scoring and package generation are not implemented yet, so the tool narrows thousands of postings to the ones that match your criteria, but does not yet rank them or write your application.
 
 ## How it works (the core loop)
 
 ```
    fetch ──▶ filter ──▶ score ──▶ tailor ──▶ YOU review and apply
-   (done)    (Phase 2)  (Phase 3) (Phase 4)
+   (done)    (done)     (Phase 3) (Phase 4)
 ```
 
 | Stage | What it does | Costs tokens? | Needs from you |
@@ -71,33 +71,47 @@ uv run jobhunter companies discover   # probes config/company_candidates.txt, wr
 
 Add any company you like to `config/company_candidates.txt` and re-run it any time.
 
-**3. Set your preferences** — edit the `search:` section of `config/config.yaml` (titles, seniority, remote/location, **annual USD** salary, keywords). See [Setting your preferences](#setting-your-preferences-search). Takes effect once the filter exists (Phase 2).
+**3. Set your preferences** — edit the `search:` section of `config/config.yaml` (titles, seniority, remote/location, **annual USD** salary, keywords). See [Setting your preferences](#setting-your-preferences-search). Apply changes with `uv run jobhunter refilter`.
 
 **4. Add your CV and API key** *(needed from Phase 3)* — put your LaTeX CV at `config/cv/master.tex` and `export ANTHROPIC_API_KEY=...` in your shell.
 
 ### B. Your routine (the core use)
 
-**Today (Phase 1):** collect postings.
+**Today (Phases 1–2):** collect postings and keep the ones that match your criteria.
 
 ```bash
 uv run jobhunter run --dry-run   # optional: see which sources would be fetched
-uv run jobhunter run             # download postings into data/jobhunter.db
+uv run jobhunter run             # fetch postings, then filter them (writes data/jobhunter.db)
 ```
 
-Run it at most once a day. Look at what was collected:
+Run it at most once a day. The summary tells you how many postings pass and which rule rejected the rest:
 
-```bash
-sqlite3 data/jobhunter.db "select company, title, location, url from jobs where status='new' limit 20;"
+```
+filtered 24956 postings · passed 50 · rejected 24906 · status changes 24956
+  rejected by titles_include: 14426
+  rejected by titles_exclude: 6756
+  rejected by work_mode: 2017
+  ...
+50 postings currently pass your criteria
 ```
 
-**When the phases land, the routine becomes:**
+Look at the matches, and understand any decision:
 
 ```bash
-uv run jobhunter run          # fetch → filter → score → tailor, in one command
-uv run jobhunter review       # list today's best matches and their packages   (Phase 5)
+sqlite3 data/jobhunter.db "select id, company, title, location, url from jobs where status='passed' order by company;"
+uv run jobhunter explain 123     # why posting #123 passed or was rejected, with the matching text
+```
+
+**Tuning your criteria:** edit `search:` in `config/config.yaml`, then `uv run jobhunter refilter` (re-evaluates everything already downloaded, no network). Too few matches? Look at which rule rejects the most in the summary and loosen it. Too many? Add `keywords_include` or tighten `titles_include`.
+
+**When the next phases land, the routine becomes:**
+
+```bash
+uv run jobhunter run          # fetch → filter → score → tailor, in one command   (Phases 3–4)
+uv run jobhunter review       # list today's best matches and their packages      (Phase 5)
 # open out/<date>/<company>-<role>/ : read cv.pdf and cover_letter.pdf, apply yourself
-uv run jobhunter mark <id> applied   # keep track of what you did               (Phase 5)
-uv run jobhunter stats               # funnel and LLM cost                      (Phase 5)
+uv run jobhunter mark <id> applied   # keep track of what you did                 (Phase 5)
+uv run jobhunter stats               # funnel and LLM cost                        (Phase 5)
 ```
 
 Each phase updates this section when it ships, so what is written under "today" always works.
@@ -113,9 +127,12 @@ All commands accept `--config/-c PATH` (default `config/config.yaml`) except whe
 | `jobhunter --help` / `--version` | Usage and version |
 | `jobhunter doctor` | Checks Python ≥ 3.12, config validity, `ANTHROPIC_API_KEY`, the LaTeX engine (compiles a minimal document) and `master.tex` if present. Exits non-zero only on **required** failures (warnings do not fail) |
 | `jobhunter run --stage fetch` | Fetches every configured source concurrently, stores new/changed postings, closes postings that disappeared, marks cross-source duplicates. Prints a one-line summary |
-| `jobhunter run --dry-run` | Prints how many sources of each kind would be fetched, without any network call |
-| `jobhunter run` (no `--stage`) | Runs all implemented stages (currently just `fetch`) |
-| `jobhunter run --stage filter\|score\|tailor` | Exits with "not implemented yet" |
+| `jobhunter run --stage filter` | Applies your `search` criteria to postings with status `new` (no network, no tokens). Prints passed/rejected counts and how many each rule rejected |
+| `jobhunter run` (no `--stage`) | Runs all implemented stages (currently `fetch` then `filter`) |
+| `jobhunter run --dry-run` | Prints the stages and how many sources of each kind would be fetched, without any network call |
+| `jobhunter run --stage score\|tailor` | Exits with "not implemented yet" |
+| `jobhunter refilter` | Re-applies the filter to **all** stored postings (except ones you applied to, closed or duplicates) after you change `search`. Postings that still pass keep their later-stage status |
+| `jobhunter explain <id>` | Shows a posting (title, company, location, mode, salary, URL), its stored status/reason, and whether it passes the **current** criteria, with the rule and matching text if rejected |
 | `jobhunter companies check` | Probes every board in `companies.yaml` (200 vs 404). Lists broken ones and exits 1 if any |
 | `jobhunter companies discover` | Reads `config/company_candidates.txt`, probes each unknown name against Greenhouse, Lever and Ashby (slug variants like `huggingface` / `hugging-face`), and adds boards that exist **and** have at least one posting to `config/companies.yaml` |
 
@@ -129,7 +146,7 @@ A second run immediately after reports `new 0 · updated 0` (idempotent).
 
 ### Planned (see [`specs/07-cli-config.md`](specs/07-cli-config.md))
 
-`refilter`, `explain <id>`, `show <id>`, `review`, `mark <id> applied|replied|rejected|closed`, `stats`, `calibrate`, `cv init`, `cv check`, `cv translate --lang <code>`, and `run --stage filter|score|tailor`.
+`show <id>`, `review`, `mark <id> applied|replied|rejected|closed`, `stats`, `calibrate`, `cv init`, `cv check`, `cv translate --lang <code>`, and `run --stage score|tailor`.
 
 ## What it fetches
 
@@ -175,19 +192,33 @@ Your settings live in `config/config.yaml` (create it with `cp config/config.exa
 ```yaml
 search:
   titles_include: ["backend", "software engineer"]   # at least one must match the title
-  titles_exclude: ["intern", "junior", "manager"]
-  keywords_include: ["python"]                        # at least one in the description (optional)
-  keywords_exclude: ["security clearance"]
-  seniority: ["mid", "senior"]
+  titles_exclude: ["intern", "junior", "manager"]    # any match rejects (whole words: "intern" ≠ "Internal")
+  keywords_include: ["python"]                        # at least one in title/description (optional)
+  keywords_exclude: ["security clearance"]            # any match rejects
+  seniority: ["mid", "senior"]                        # junior | mid | senior | lead (from the title)
   work_mode: ["remote"]                               # remote | hybrid | onsite
   locations_allowed: ["Colombia", "LATAM", "Worldwide", "Anywhere"]
   salary:
-    min_usd: 48000          # ANNUAL, in USD. Monthly × 12 (e.g. USD 4,000/month = 48000)
+    min_usd: 48000          # ANNUAL, in USD. Monthly × 12 (e.g. USD 4,000/month = 48000). 0 = off
     on_missing: pass        # pass = keep postings without a salary; reject = drop them
-  max_age_days: 30
+  max_age_days: 30          # aggregator postings only (they publish fresh dates)
+  max_age_days_ats: null    # company-board postings; null = no limit (listed = open)
 ```
 
-Salary notes: `min_usd` is **annual USD**. Postings that publish hourly or monthly pay are annualized automatically; other currencies are converted with `fx_rates_to_usd`. These values take effect once the filter exists (Phase 2).
+How each rule behaves (empty list = rule off; full details in [`specs/04-filtering.md`](specs/04-filtering.md)):
+
+| Rule | Behaviour |
+|---|---|
+| Titles / keywords | Case-insensitive **whole-word** match. `titles_*` look at the title only; `keywords_*` at title + description |
+| `seniority` | Inferred from the title: `staff/principal/lead/head of/architect` → lead, `senior/sr` → senior, `junior/jr/graduate/intern/trainee` → junior, no marker → mid |
+| `work_mode` | Mode unknown → kept, flagged `unknown_mode` |
+| `locations_allowed` | A named place ("Remote - US", "Seattle") must contain an allowed term (`LATAM` also matches "Latin America"; `US`/`UK` also match "U.S."/"United Kingdom"; short all-caps tokens like `US` are case-sensitive, so "contact us" never counts as a country). Generic ones ("Remote", "Worldwide") pass unless the description restricts it ("US only", "must be located in the United States", "EU time zones") |
+| `salary` | Compared on the **top of the range**, in annual USD. Hourly/monthly pay is annualized; other currencies use `fx_rates_to_usd`; unknown currency → kept, flagged |
+| Age | Unknown posting date → kept |
+
+Postings kept with a doubt are flagged (`unknown_mode`, `unknown_location`, `no_salary`, `unknown_currency`); the flags are stored in the database for the scoring stage.
+
+Salary: `min_usd` is **annual USD**. After editing, run `uv run jobhunter refilter`.
 
 ### Company lists
 
@@ -230,15 +261,16 @@ Privacy design (Phase 3+): only the plain text of CV items you mark and the post
 config/                 config.example.yaml, company_candidates.txt (committed); config.yaml, companies.yaml, cv/ (yours, gitignored)
 specs/                  design specs (00–08), source of truth
 src/jobhunter/
-  cli.py                typer CLI (doctor, run, companies check/discover)
+  cli.py                typer CLI (doctor, run, refilter, explain, companies check/discover)
   config.py             YAML config loading + validation (pydantic)
   models.py             Job model and JobStatus
   db.py                 SQLite connection + versioned migrations
   http.py               polite async HTTP client (UA, retries, concurrency limits)
   text.py               HTML→text, remote-mode and salary inference
+  filters.py            hard filter (JobFilter): titles, seniority, mode, location, keywords, salary, age
   store.py              upsert/dedupe, close stale, duplicate marking, fetch log
   companies.py          companies.yaml, check, discover
-  pipeline.py           fetch stage orchestration
+  pipeline.py           fetch and filter stage orchestration
   doctor.py             environment checks
   sources/              greenhouse, lever, ashby, aggregators (+ base, registry)
 tests/                  pytest suite with real (trimmed) fixtures; no network
@@ -247,7 +279,7 @@ tests/                  pytest suite with real (trimmed) fixtures; no network
 ## Development
 
 ```bash
-uv run pytest                 # 77 tests, no network, ~1 s
+uv run pytest                 # 144 tests, no network, ~1 s
 uv run ruff check .           # lint
 uv run ruff format .          # format
 ```
@@ -264,4 +296,5 @@ Conventions (English everywhere, spec-driven, phase-by-phase) are in [`CLAUDE.md
 | `Config file not found: config/config.yaml` | `cp config/config.example.yaml config/config.yaml` |
 | `error: Invalid config ...: search.work_mode...` | Fix the named field in `config/config.yaml` |
 | A source shows as failed in the fetch summary | See `fetch_log` (query above); a dead company slug shows up in `companies check` |
+| Too few postings pass the filter | Read the "rejected by <rule>: N" lines after `run`/`refilter`; loosen the rule with the highest count (often `titles_include` or `work_mode`) |
 | Want to start over | Delete `data/jobhunter.db`; it is recreated on the next run |

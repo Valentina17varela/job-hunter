@@ -25,7 +25,8 @@ search:
   salary:
     min_usd: 0
     on_missing: pass
-  max_age_days: 30
+  max_age_days: 30          # aggregators only (they publish fresh dates)
+  max_age_days_ats: null    # company boards: a listed posting is open; set e.g. 120 to skip evergreen ones
 
 scoring:
   model: claude-haiku-5-5

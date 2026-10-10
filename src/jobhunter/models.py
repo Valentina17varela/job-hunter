@@ -11,6 +11,9 @@ from pydantic import BaseModel, Field, computed_field
 
 RemoteMode = Literal["remote", "hybrid", "onsite", "unknown"]
 
+# Company job boards: a posting still listed there is open, however old its publish date.
+ATS_SOURCES = frozenset({"greenhouse", "lever", "ashby"})
+
 
 class JobStatus(StrEnum):
     NEW = "new"

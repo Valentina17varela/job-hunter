@@ -7,7 +7,7 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from jobhunter.models import Job, JobStatus
+from jobhunter.models import ATS_SOURCES, Job, JobStatus
 
 # Statuses set by a human decision; fetching never overrides them.
 HUMAN_STATUSES = {
@@ -17,7 +17,7 @@ HUMAN_STATUSES = {
 }
 TERMINAL = HUMAN_STATUSES | {JobStatus.CLOSED.value}
 # Direct ATS postings win over aggregator copies of the same job.
-SOURCE_PRIORITY = {"greenhouse": 0, "lever": 0, "ashby": 0}
+SOURCE_PRIORITY = dict.fromkeys(ATS_SOURCES, 0)
 
 
 @dataclass
@@ -52,7 +52,7 @@ def upsert_jobs(
     with conn:
         for job in jobs:
             row = conn.execute(
-                "SELECT id, content_hash, status, filter_reason FROM jobs "
+                "SELECT id, content_hash, status, filter_reason, filter_flags FROM jobs "
                 "WHERE source = ? AND external_id = ?",
                 (job.source, job.external_id),
             ).fetchone()
@@ -91,10 +91,11 @@ def upsert_jobs(
             conn.execute(
                 """UPDATE jobs SET company=?, title=?, location=?, remote=?, description=?, url=?,
                        salary_min=?, salary_max=?, salary_currency=?, posted_at=?,
-                       content_hash=?, last_seen_at=?, status=?, filter_reason=?
+                       content_hash=?, last_seen_at=?, status=?, filter_reason=?, filter_flags=?
                    WHERE id=?""",
                 (*fields, job.content_hash, seen, new_status,
-                 None if new_status != status else row["filter_reason"], job_id),
+                 None if new_status != status else row["filter_reason"],
+                 None if new_status != status else row["filter_flags"], job_id),
             )  # fmt: skip
             if new_status != status:
                 _event(conn, job_id, status, new_status, note)

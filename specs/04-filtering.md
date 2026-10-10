@@ -16,17 +16,18 @@ search:
   salary:
     min_usd: 0                           # ← filled in with the person
     on_missing: "pass"                   # pass | reject
-  max_age_days: 30
+  max_age_days: 30                       # aggregators only (dated feeds)
+  max_age_days_ats: null                 # company boards; null = no limit
 ```
 
 ## 2. Evaluation order
 
 Evaluated in order, stopping at the first failure and storing `filter_reason`:
 
-1. `max_age_days`
+1. Age: `max_age_days` for aggregator postings, `max_age_days_ats` for Greenhouse/Lever/Ashby ones (default: none — a posting still listed on a company board is open however old its first-publish date; on real data 65% of ATS postings were older than 30 days). Unknown posting date passes
 2. `titles_exclude`
 3. `titles_include`
-4. `seniority` (inferred from the title: `senior`, `staff`, `lead`, `jr`, etc.)
+4. `seniority` — one of `junior`, `mid`, `senior`, `lead`, inferred from the title: `staff|principal|lead|head of|architect` → lead (checked first), `senior|sr` → senior, `junior|jr|entry level|graduate|intern|trainee` → junior, no marker → mid
 5. `work_mode`
 6. `locations_allowed` (for remote: looks for restrictions like "US only", "EU only" in location and description)
 7. `keywords_exclude`
@@ -39,6 +40,16 @@ Evaluated in order, stopping at the first failure and storing `filter_reason`:
 - **Geographic restriction:** regex over common patterns (`US only`, `must be located in`, `EU timezone`) → `reject` if it doesn't match `locations_allowed`.
 - **Currency:** conversion to USD with a fixed rate table in `config.yaml` (manual updates), enough for filtering.
 
+### Implementation notes (Phase 2)
+
+- Terms match on **word boundaries**, case-insensitive: `intern` does not match "Internal".
+- A non-generic location ("Remote - US", "Seattle") must contain an allowed term (`latam` also matches "latin america"). Generic ones ("Remote", "Worldwide", "Anywhere in the World") pass unless the description restricts the location ("US only", "must be located in the United States", "EU time zones") **and** no allowed place is mentioned next to the restriction. Acronyms (`US`, `EU`) are case-sensitive so "contact us only…" is not a restriction; "US-based startup" is not a restriction either.
+- Place tokens: `latam`↔`latin america`, `us`→`u.s.`, `usa`→`united states`, `uk`→`united kingdom` are aliases. Short all-caps tokens (`US`, `UK`) match case-sensitively.
+- Salary is compared on the **upper bound** of the range (`salary_max`, else `salary_min`) in USD. Unknown currency → pass with flag `unknown_currency`.
+- Non-blocking observations are stored in `jobs.filter_flags` for the scoring stage: `unknown_mode`, `unknown_location`, `no_salary`, `unknown_currency`.
+- Statuses: `new` → `filtered` | `passed`. `refilter` also re-evaluates `filtered`, `passed`, `score_failed`, `below_threshold`, `scored` and `selected`; a posting that still passes keeps its later-stage status (a package is never discarded by a re-filter). `applied`/`replied`/`rejected`/`closed`/`duplicate` are never touched. `run --stage filter` only evaluates `new` postings.
+- Rejection reasons look like `rule: detail`, so a run summary can show how many postings each rule rejected — the quickest way to tune criteria.
+
 ## 4. Explainability
 
 `jobhunter explain <job_id>` prints which rule dropped a posting and what text it matched. This lets the filter be tuned without guessing.
@@ -50,7 +61,7 @@ Evaluated in order, stopping at the first failure and storing `filter_reason`:
 
 ## 6. Acceptance criteria
 
-- [ ] 100% deterministic: same input → same result.
-- [ ] Every `filtered` posting has a non-empty `filter_reason`.
-- [ ] Changing criteria and running `jobhunter refilter` re-evaluates without re-downloading.
-- [ ] The filter processes 5,000 postings in < 2 s.
+- [x] 100% deterministic: same input → same result.
+- [x] Every `filtered` posting has a non-empty `filter_reason`.
+- [x] Changing criteria and running `jobhunter refilter` re-evaluates without re-downloading.
+- [x] The filter processes 5,000 postings in < 2 s.

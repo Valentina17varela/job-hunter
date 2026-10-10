@@ -1,13 +1,15 @@
-"""Pipeline orchestration. Phase 1 implements the fetch stage only."""
+"""Pipeline orchestration: fetch (Phase 1) and filter (Phase 2) stages."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
 import sqlite3
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
+from jobhunter.filters import JobFilter, job_from_row
 from jobhunter.http import HttpClient
 from jobhunter.models import Job
 from jobhunter.sources.base import Source
@@ -71,4 +73,69 @@ async def fetch_stage(
 
     summary.closed = close_stale(conn, set(ok_by_kind), stale_days)
     summary.duplicates = mark_duplicates(conn)
+    return summary
+
+
+# Statuses whose filter verdict can change when criteria change. Later stages keep their
+# status when a posting still passes, so a package is never discarded by a re-filter.
+REFILTER_STATUSES = (
+    "new",
+    "filtered",
+    "passed",
+    "score_failed",
+    "below_threshold",
+    "scored",
+    "selected",
+)
+
+
+@dataclass
+class FilterSummary:
+    evaluated: int = 0
+    passed: int = 0
+    filtered: int = 0
+    changed: int = 0
+    reasons: Counter[str] = field(default_factory=Counter)  # rejections grouped by rule
+    flags: Counter[str] = field(default_factory=Counter)
+
+
+def filter_stage(
+    conn: sqlite3.Connection,
+    job_filter: JobFilter,
+    statuses: tuple[str, ...] = ("new",),
+    now: datetime | None = None,
+) -> FilterSummary:
+    """Evaluate postings with the hard filter and record the verdict (0 tokens)."""
+    now = now or datetime.now(UTC)
+    marks = ",".join("?" for _ in statuses)
+    summary = FilterSummary()
+    updates: list[tuple[str | None, str | None, str, int]] = []
+    events: list[tuple[int, str, str, str]] = []
+    for row in conn.execute(f"SELECT * FROM jobs WHERE status IN ({marks})", statuses):
+        result = job_filter.evaluate(job_from_row(row), now)
+        summary.evaluated += 1
+        summary.flags.update(result.flags)
+        current = row["status"]
+        if result.passed:
+            summary.passed += 1
+            new_status = "passed" if current in ("new", "filtered") else current
+        else:
+            summary.filtered += 1
+            summary.reasons[(result.reason or "").split(":")[0]] += 1
+            new_status = "filtered"
+        flags = ",".join(result.flags) or None
+        updates.append((result.reason, flags, new_status, row["id"]))
+        if new_status != current:
+            summary.changed += 1
+            events.append((row["id"], current, new_status, result.reason or "passed filter"))
+    stamp = now.isoformat()
+    with conn:
+        conn.executemany(
+            "UPDATE jobs SET filter_reason = ?, filter_flags = ?, status = ? WHERE id = ?", updates
+        )
+        conn.executemany(
+            "INSERT INTO events(job_id, from_status, to_status, note, created_at) "
+            "VALUES (?,?,?,?,?)",
+            [(jid, old, new, note, stamp) for jid, old, new, note in events],
+        )
     return summary

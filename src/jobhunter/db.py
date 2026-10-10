@@ -84,6 +84,10 @@ MIGRATIONS: list[str] = [
     ALTER TABLE jobs ADD COLUMN last_seen_at TEXT;
     UPDATE jobs SET last_seen_at = fetched_at;
     """,
+    # v3: non-blocking observations from the filter (e.g. unknown_mode) for later stages
+    """
+    ALTER TABLE jobs ADD COLUMN filter_flags TEXT;
+    """,
 ]
 
 

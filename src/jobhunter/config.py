@@ -23,11 +23,12 @@ class SearchConfig(_Strict):
     titles_exclude: list[str] = []
     keywords_include: list[str] = []
     keywords_exclude: list[str] = []
-    seniority: list[str] = []
+    seniority: list[Literal["junior", "mid", "senior", "lead"]] = []
     work_mode: list[Literal["remote", "hybrid", "onsite"]] = ["remote"]
     locations_allowed: list[str] = []
     salary: SalaryConfig = SalaryConfig()
-    max_age_days: int = 30
+    max_age_days: int = 30  # aggregators (dated feeds)
+    max_age_days_ats: int | None = None  # company boards; None = no limit (still listed = open)
 
 
 class ScoringConfig(_Strict):

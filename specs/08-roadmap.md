@@ -16,10 +16,10 @@ Each phase ends with something runnable and verifiable. We don't move to the nex
 - **Done when:** `jobhunter run --stage fetch` fills the DB with real postings; fixture tests pass. ✅ (25,069 postings from 204 sources in ~35 s; re-run → 0 new / 0 updated; 76 tests passing.)
 - **Personal data:** none needed (extra candidate company names optional).
 
-## Phase 2 — Filter
-- `filters.py`, `refilter`, `explain`.
-- **Done when:** the acceptance criteria in 04 pass on real data.
-- **Personal data:** roles, seniority, work mode, location, salary range, keywords.
+## Phase 2 — Filter ✅ implemented, pending review
+- `filters.py`, `refilter`, `explain`, `run --stage filter`.
+- **Done when:** the acceptance criteria in 04 pass on real data. ✅ (25k postings evaluated in < 1 s; 132 tests passing.)
+- **Personal data:** roles, seniority, work mode, location, salary range, keywords — *to be filled in `config/config.yaml`; the filter works with any values.*
 
 ## Phase 3 — Scoring
 - `latex.py` master parser (sections/entries/items with IDs), `cv init` and `cv check`.

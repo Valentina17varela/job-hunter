@@ -7,7 +7,7 @@
 | `jobhunter run` | Full pipeline (fetch → filter → score → tailor → export) |
 | `jobhunter run --stage fetch\|filter\|score\|tailor` | A single stage |
 | `jobhunter run --dry-run` | Shows what it would do and the estimated cost, without calling the LLM |
-| `jobhunter refilter` | Re-applies filters to already-downloaded postings |
+| `jobhunter refilter` | Re-applies filters to already-downloaded postings; prints how many each rule rejected |
 | `jobhunter review` | Lists packages pending review (score, company, link) |
 | `jobhunter show <id>` | Posting detail + score + package path |
 | `jobhunter explain <id>` | Why it was filtered / its score |
