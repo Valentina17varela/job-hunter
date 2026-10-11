@@ -63,33 +63,60 @@ The master CV is English-only, but every package must match the **posting's lang
 - The cover letter and recruiter message are generated directly in the posting's language by the same call that produces them.
 
 ### 4.1 Mode `select` (default)
-1. The LLM receives plain-text items with IDs and returns **JSON**: for each section, the ordered list of IDs to keep, plus the ordered skills list. No free text.
-2. Code assembles `cv.tex` from `master.tex`, copying each kept item's **original LaTeX verbatim** (or its reviewed translation, see 4.0). Nothing is reworded per posting, so no new facts and no LaTeX escaping issues are possible.
 
-### 4.2 Mode `rewrite` (optional)
+One LLM call per posting returns **JSON only** (no prose), given the plain-text CV items with ids, the posting, and the scoring result (`must_have_match`, `gaps`):
+
+```json
+{
+  "entries":  {"experience": ["exp-instaleap-2", "exp-instaleap-1", "exp-heru"], "certifications": ["cert-1", "cert-2"]},
+  "items":    {"exp-instaleap-2": ["exp-instaleap-2-2", "exp-instaleap-2-1", "exp-instaleap-2-3"]},
+  "emphasis": ["event-driven systems", "AWS"]
+}
+```
+
+- `entries` = which entries/items of each section to keep (children of a section) and in what order; `items` = for each entry, its bullets ordered **most relevant first**. Anything omitted is dropped (except `required` entries, which code re-adds).
+- Code assembles `cv.tex` from `master.tex`, copying each kept item's **original LaTeX verbatim** (or its reviewed translation, see 4.0). Nothing is reworded per posting, so no new facts and no LaTeX escaping issues are possible.
+- **Page fit (deterministic, no extra LLM call):** if the compiled PDF exceeds `tailoring.max_cv_pages`, code drops content in this order until it fits: certification items (last first), optional (non-`required`) entries from the end, then the last-ranked bullet of entries that still have more than 2. If it still does not fit, the package is flagged **REVIEW**.
+- Chronological order of experience is never changed (entries keep their original order; only bullets within an entry are re-ranked), because reordering jobs looks wrong on a CV.
+
+### 4.2 Mode `rewrite` (optional, not in v1)
 The LLM may reword bullets to mirror the posting's terminology (only if true). Each rewritten bullet keeps its source ID. Output text is passed through a LaTeX **escaper** (`& % $ # _ { } ~ ^ \`) and an allow-list of commands (`\textbf`, `\emph`, `\href`); anything else is rejected.
 
 ### 4.3 Cover letter
-- One call (together with the recruiter message and notes) with structured output: `{letter_body, recruiter_message, notes}`.
-- `letter_body` is plain text paragraphs, escaped and inserted into `letter_template.tex` placeholders (`%%COMPANY%%`, `%%ROLE%%`, `%%BODY%%`). Header/contact details come from the template, never from the LLM.
-- Rules: specific to the company/role, no clichés ("passionate", "dynamic"), one concrete idea of how to contribute, tone defined by the person (`tailoring.tone`).
 
-### 4.4 Prompt rules
+Generated in the **same call** as the recruiter message and notes (structured output): `{letter: {paragraphs[], subject}, recruiter_message, notes}`, in the posting's language.
+
+**Template** (`config/cv/letter_template.tex`, the person's own, gitignored; a generic `config/letter_template.example.tex` is committed): one A4 page, same typographic family as the CV, formal but warm:
+
+- Header: name and role title, thin accent rule, contact line (location, email, links). This lives in the template and **never** goes through the LLM.
+- Right-aligned date; recipient block ("Hiring Team", company); bold subject line (`Application — <role>`).
+- Body (3–4 short paragraphs, 190–260 words in total): (1) a hook that ties one concrete, quantified achievement to the company's problem or product; (2) two or three requirements from the posting each mapped to a proven result from the CV; (3) why this company, from specifics of the posting; (4) a short close with a clear call to action and availability, including the remote/time-zone context from `scoring.candidate_context` when it helps.
+- Greeting/closing/date strings per language from a small built-in table (`en`, `es`): "Dear Hiring Team," / "Sincerely," / "Estimado equipo de selección," / "Atentamente,".
+- Placeholders replaced by code after escaping: `%%DATE%%`, `%%COMPANY%%`, `%%ROLE%%`, `%%SUBJECT%%`, `%%GREETING%%`, `%%BODY%%`, `%%CLOSING%%`. The LLM never writes LaTeX; paragraphs are plain text, escaped by `latex.escape`.
+
+**Letter rules (prompt):** only facts and numbers present in the CV items; use metrics verbatim; no clichés ("passionate", "dynamic", "team player", "fast-paced"); no flattery; no claim about skills the CV lacks (a gap goes in `notes`, never in the letter); mirror the posting's own vocabulary; tone from `tailoring.tone`.
+
+### 4.4 Recruiter message and notes
+- `recruiter_message.md`: ≤ 80 words, plain text for copy-paste, same language as the posting.
+- `notes.md` (English): posting summary, why it fits (score reasons), gaps and how to address them in the interview, red flags to verify (e.g. residency), apply link, and any verification warnings.
+
+### 4.5 Prompt rules
 1. Use **only** facts present in the provided items. Do not invent companies, dates, metrics, technologies or titles.
-2. Allowed: choosing which items to include, ordering them, (rewrite mode) rewording to reflect the posting's terminology if true.
+2. Allowed: choosing which items to include, ordering them, and (letter) connecting them to the posting.
 3. If the posting asks for something the profile lacks → do not claim it; list it in `notes` as a gap.
+
+**Manual packaging.** `run --stage tailor --job <id>` (and the "Build package" button in the UI) builds a package for exactly the given postings whatever their status (filtered, below threshold, ...). The posting becomes `packaged` unless the person already recorded a status (`applied`, `replied`, `rejected`, `ignored`) or it is closed/duplicate. Without scoring data the prompt simply has no matches/gaps.
 
 ## 5. Verification (post-generation)
 
-Deterministic checks first, then a cheap LLM check:
+Deterministic checks (no LLM):
 
-1. **IDs:** every ID returned exists in `master.tex`; no duplicates; required entries (marked `required` in `master.tex`, e.g. current job) are present.
-2. **Verbatim (select mode):** every kept item's LaTeX equals the master's (English) or the reviewed translation's (other languages), byte for byte.
-3. **Figures/tech (rewrite mode and letter):** every figure (`\d+%`, `\$\d+`, `\d+x`) and technology mentioned appears in the source items / skills list.
-4. **Compile:** `cv.tex` and `cover_letter.tex` compile without errors (see §6). A compile failure is a verification failure.
-5. **Length:** page count ≤ `tailoring.max_cv_pages` (default 1). If exceeded, drop the lowest-ranked items until it fits (deterministic, no extra LLM call).
-6. **LLM (Haiku), optional:** a yes/no question about the letter: "does it claim anything not supported by the provided items?".
-7. On failure: one retry with the error list; if it persists, `verified=0` and the package is flagged **REVIEW** in `notes.md`.
+1. **IDs:** every id returned exists in `master.tex`; no duplicates; `required` entries present.
+2. **Verbatim:** every kept item's LaTeX equals the master's (English) or the reviewed translation's (other languages), byte for byte.
+3. **Letter facts:** every number/percentage in the letter appears in the CV text; every technology from a built-in vocabulary mentioned in the letter also appears in the CV; no banned cliché; 150–280 words.
+4. **Compile:** `cv.tex` and `cover_letter.tex` compile; a failure is a verification failure.
+5. **Length:** CV pages ≤ `tailoring.max_cv_pages`; letter exactly 1 page.
+6. On failure: one retry of the LLM call with the error list; if it persists, `verified=0` and `notes.md` starts with a **REVIEW** banner listing the failed checks. The files are still written so the person can fix them by hand.
 
 ## 6. LaTeX toolchain
 
@@ -115,9 +142,9 @@ Deterministic checks first, then a cheap LLM check:
 
 ## 9. Acceptance criteria
 
-- [ ] 0 packages with `verified=1` containing facts not in `master.tex` (in adversarial tests).
-- [ ] `cv.tex` for every package compiles to PDF with page count within the limit.
-- [ ] Preamble/header content (name, contact) is never present in any LLM request (asserted in tests).
+- [x] 0 packages with `verified=1` containing facts not in `master.tex` (in adversarial tests).
+- [x] `cv.tex` for every package compiles to PDF with page count within the limit.
+- [x] Preamble/header content (name, contact) is never present in any LLM request (asserted in tests).
 - [ ] Average cost per package < USD 0.05.
-- [ ] Re-running does not regenerate existing packages (unless `--force`).
+- [x] Re-running does not regenerate existing packages (unless `--force`).
 - [ ] The person can review a full package in < 5 min.

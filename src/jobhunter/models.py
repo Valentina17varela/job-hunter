@@ -29,6 +29,7 @@ class JobStatus(StrEnum):
     REJECTED = "rejected"
     CLOSED = "closed"
     DUPLICATE = "duplicate"
+    IGNORED = "ignored"
 
 
 def _utcnow() -> datetime:

@@ -18,6 +18,7 @@
 | Lint/format | `ruff` | Single tool |
 | LaTeX | `tectonic` (preferred) or `latexmk` | Compile CV/letter to PDF; external binary, checked by `jobhunter doctor` |
 | PDF inspection | `pypdf` | Page count check |
+| Web UI | `fastapi` + `uvicorn` + `jinja2`, vanilla JS (no CDN, no build step) | Local dashboard; server-rendered pages, bound to 127.0.0.1 (see 09) |
 
 ## 2. Repo layout
 
@@ -38,6 +39,9 @@ job-hunter/
 │   ├── companies.py        # companies.yaml, check, discover
 │   ├── store.py            # upsert/dedupe, close stale, duplicates
 │   ├── doctor.py           # environment checks
+│   ├── language.py         # posting language detection
+│   ├── applications.py     # application stages, interviews, stats
+│   └── web/                # local UI (app.py, runner.py, templates/, static/)
 │   ├── config.py           # loads and validates YAML
 │   ├── db.py               # SQLite, simple migrations
 │   ├── sources/            # one module per source

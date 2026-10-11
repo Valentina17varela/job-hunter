@@ -14,6 +14,7 @@ HUMAN_STATUSES = {
     JobStatus.APPLIED.value,
     JobStatus.REPLIED.value,
     JobStatus.REJECTED.value,
+    JobStatus.IGNORED.value,
 }
 TERMINAL = HUMAN_STATUSES | {JobStatus.CLOSED.value}
 # Direct ATS postings win over aggregator copies of the same job.

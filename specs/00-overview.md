@@ -33,13 +33,14 @@ A local Python pipeline that, every day:
 - Configurable hard filter.
 - LLM scoring (Haiku) and tailoring (Sonnet) for the top-N.
 - CLI (`jobhunter run`, `review`, `mark`, `stats`).
-- Per-posting status tracker.
+- Per-posting status tracker and application/interview tracking.
+- A **local web UI** (`jobhunter ui`, bound to `127.0.0.1`) to see the funnel, browse postings, run stages manually, follow applications through interview stages, open generated PDFs and inspect settings. See `09-web-ui.md`.
 
 **Out of scope (v1 non-goals):**
 - LinkedIn, Indeed, and any site that requires scraping against its terms or a login.
 - Automatic sending of applications or recruiter messages.
 - Browser/headless/computer-use navigation.
-- Web UI. Interface = CLI + Markdown files.
+- A hosted or multi-user web app (the UI is local only, no accounts).
 - Multi-user.
 
 ## 5. Success criteria

@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import os
-import shutil
-import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 from jobhunter.config import Config, ConfigError, load_config
+from jobhunter.latex import compile_pdf
 from jobhunter.llm import claude_login_status
 
 MINIMAL_TEX = r"""\documentclass{article}
@@ -29,28 +28,9 @@ class Check:
 
 
 def compile_tex(tex_path: Path, engine: str, timeout: int) -> tuple[bool, str]:
-    """Compile a .tex file in a temp copy of its directory; shell escape stays disabled."""
-    binary = shutil.which(engine)
-    if binary is None:
-        return False, f"'{engine}' not found in PATH"
-    with tempfile.TemporaryDirectory() as tmp:
-        work = Path(tmp)
-        src = work / "doc.tex"
-        src.write_text(tex_path.read_text())
-        if engine == "tectonic":
-            cmd = [binary, "-X", "compile", "--untrusted", str(src)]
-        else:
-            cmd = [binary, "-pdf", "-no-shell-escape", "-interaction=nonstopmode", str(src)]
-        try:
-            proc = subprocess.run(
-                cmd, cwd=work, capture_output=True, text=True, timeout=timeout, check=False
-            )
-        except subprocess.TimeoutExpired:
-            return False, f"compilation timed out after {timeout}s"
-        if proc.returncode != 0 or not (work / "doc.pdf").exists():
-            tail = (proc.stderr or proc.stdout).strip().splitlines()[-5:]
-            return False, "compilation failed: " + " | ".join(tail)
-    return True, "compiled OK"
+    """Compile a .tex file; returns (ok, detail). Shell escape stays disabled."""
+    result = compile_pdf(tex_path.read_text(), engine, timeout)
+    return result.ok, result.detail
 
 
 def run_checks(config_path: Path) -> list[Check]:

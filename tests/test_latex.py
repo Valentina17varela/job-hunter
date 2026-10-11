@@ -137,3 +137,12 @@ def test_blank_line_ends_an_item():
 
 def test_to_plain_drops_line_break_spacing_arguments():
     assert to_plain(r"\textbf{Databases: } Postgres \\[2pt]") == "Databases: Postgres"
+
+
+def test_escape_makes_plain_text_safe_and_handles_typographic_dashes():
+    assert latex.escape("R&D 50% $5 #1 a_b {x} ~ ^ \\") == (
+        r"R\&D 50\% \$5 \#1 a\_b \{x\} \textasciitilde{} \textasciicircum{} \textbackslash{}"
+    )
+    assert latex.escape("Application — Senior “API” engineer – remote…") == (
+        "Application --- Senior ``API'' engineer -- remote\\ldots{}"
+    )

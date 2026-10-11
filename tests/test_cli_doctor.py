@@ -61,7 +61,7 @@ def test_run_score_stage_without_a_cv_explains_what_is_missing():
     assert "master.tex not found" in result.output
 
 
-def test_run_tailor_stage_is_not_implemented_yet():
+def test_run_tailor_stage_without_cv_or_template_explains_what_is_missing():
     result = runner.invoke(app, ["run", "--stage", "tailor", "--config", EXAMPLE_CONFIG])
     assert result.exit_code == 1
-    assert "not implemented" in result.output
+    assert "not found" in result.output and "letter init" in result.output

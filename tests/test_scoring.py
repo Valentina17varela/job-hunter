@@ -263,3 +263,17 @@ def test_rubric_only_flags_explicit_blockers():
 
     assert "ONLY when the posting explicitly states" in RUBRIC
     assert "Do NOT infer a blocker from the location alone" in RUBRIC
+
+
+def test_cv_translate_refuses_to_overwrite_reviewed_edits(tmp_path):
+    cv_dir = tmp_path / "cv"
+    cv_dir.mkdir()
+    (cv_dir / "master.tex").write_text(CV)
+    existing = cv_dir / "translations" / "es.json"
+    existing.parent.mkdir()
+    existing.write_text('{"units": {}}')
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text(f"paths:\n  db: {tmp_path}/t.db\n  cv_master: {cv_dir / 'master.tex'}\n")
+    result = runner.invoke(app, ["cv", "translate", "--lang", "es", "--config", str(cfg)])
+    assert result.exit_code == 1 and "already exists" in result.output
+    assert existing.read_text() == '{"units": {}}'

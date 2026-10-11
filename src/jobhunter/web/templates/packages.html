@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Packages{% endblock %}
+{% block content %}
+<header class="page-head"><div><h1>Packages</h1>
+  <p class="muted">CV and cover letter (LaTeX → PDF) ready for you to review. Open the PDFs, then apply yourself.</p></div></header>
+{% for it in items %}
+<section class="card">
+  <div class="row between">
+    <div><a class="strong big-link" href="/jobs/{{ it.row.id }}">{{ it.row.title }}</a>
+      <div class="muted">{{ it.row.company }} · built {{ it.row.created_at|dt }}</div></div>
+    <div>
+      {% if it.row.score is not none %}<span class="score s{{ (it.row.score // 25) }}">{{ it.row.score }}</span>{% endif %}
+      {% if it.row.verified %}<span class="badge good">Checks passed</span>{% else %}<span class="badge bad">Needs review</span>{% endif %}
+      <span class="badge st-{{ it.row.status }}">{{ STATUS_LABELS.get(it.row.status, it.row.status) }}</span>
+    </div>
+  </div>
+  {% if it.pkg %}
+  {% if it.pkg.meta.get('problems') %}<ul class="flags">{% for p in it.pkg.meta.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+  <div class="chips">{% for file in it.pkg.files %}<a class="chip link" href="{{ file.url }}" target="_blank">{{ file.name }}</a>{% endfor %}</div>
+  {% else %}<p class="muted">The files for this package are no longer on disk.</p>{% endif %}
+</section>
+{% else %}
+<div class="card"><p class="muted">No packages yet. Run the <a href="/run">tailor stage</a> once you have selected postings.</p></div>
+{% endfor %}
+{% endblock %}

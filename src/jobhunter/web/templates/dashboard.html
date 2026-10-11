@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+{% set f = stats.funnel %}
+<header class="page-head">
+  <div><h1>Dashboard</h1><p class="muted">From fetched postings to offers.</p></div>
+  <div class="actions">
+    <a class="btn" href="/run">Run a stage</a>
+    <a class="btn primary" href="/jobs?status=selected">Best matches</a>
+  </div>
+</header>
+
+{% if running %}<div class="notice">A run is in progress: <b>{{ running.spec_id }}</b>. <a href="/run">View log</a></div>{% endif %}
+
+<section class="card">
+  <h2>Funnel</h2>
+  {% set steps = [
+    ('Fetched', f.fetched), ('Passed filter', f.passed_filter), ('Scored', f.scored),
+    ('Selected', f.selected), ('Packaged', f.packaged), ('Applied', f.applied),
+    ('Interviewing', f.interviewing), ('Offers', f.offer)] %}
+  {% for label, n in steps %}
+  <div class="funnel-row">
+    <span class="funnel-label">{{ label }}</span>
+    <span class="bar"><span style="width: {{ (100 * n / f.fetched) if f.fetched else 0 }}%"></span></span>
+    <span class="funnel-n">{{ "{:,}".format(n) }}</span>
+  </div>
+  {% endfor %}
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Why postings were filtered out</h2>
+    {% if stats.rejected_by_rule %}
+    {% set top = stats.rejected_by_rule.values()|max %}
+    {% for rule, n in stats.rejected_by_rule.items() %}
+    <div class="funnel-row">
+      <span class="funnel-label">{{ rule }}</span>
+      <span class="bar warn"><span style="width: {{ 100 * n / top }}%"></span></span>
+      <span class="funnel-n">{{ "{:,}".format(n) }}</span>
+    </div>
+    {% endfor %}
+    {% else %}<p class="muted">No postings filtered yet. Run fetch and filter.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Applications</h2>
+    {% if stats.stages %}
+    <div class="chips">
+      {% for stage, n in stats.stages.items() %}
+      <a class="chip stage-{{ stage }}" href="/pipeline">{{ STAGE_LABELS[stage] }} <b>{{ n }}</b></a>
+      {% endfor %}
+    </div>
+    {% else %}<p class="muted">No applications yet. Mark a posting as applied from its page.</p>{% endif %}
+    <h2 class="mt">LLM usage</h2>
+    <p>Today: <b>{{ stats.llm_today.calls }}</b> calls, {{ "{:,}".format(stats.llm_today.tin + stats.llm_today.tout) }} tokens.
+       All time: {{ stats.llm_total.calls }} calls.</p>
+    <p class="muted">Backend <code>{{ backend }}</code> · cap {{ max_calls }} calls per run.</p>
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Last fetch</h2>
+    {% if stats.last_fetch %}
+    <table class="compact"><thead><tr><th>Source</th><th>Postings</th><th>Errors</th><th>When</th></tr></thead><tbody>
+    {% for r in stats.last_fetch %}
+    <tr><td>{{ r.source }}</td><td>{{ "{:,}".format(r.jobs or 0) }}</td>
+        <td>{% if r.errors %}<span class="badge bad">{{ r.errors }}</span>{% else %}0{% endif %}</td>
+        <td class="muted">{{ r.at|dt }}</td></tr>
+    {% endfor %}</tbody></table>
+    {% else %}<p class="muted">Nothing fetched yet.</p>{% endif %}
+  </section>
+  <section class="card">
+    <h2>Health</h2>
+    <ul id="health" class="health"><li class="muted">Checking…</li></ul>
+  </section>
+</div>
+{% endblock %}

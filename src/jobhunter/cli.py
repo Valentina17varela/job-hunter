@@ -26,6 +26,7 @@ from jobhunter.llm import LlmAuthError, LlmClient, LlmError, build_backend
 from jobhunter.pipeline import REFILTER_STATUSES, FilterSummary, fetch_stage, filter_stage
 from jobhunter.scoring import ScoreSummary, score_stage
 from jobhunter.sources import build_sources
+from jobhunter.tailoring import tailor_stage
 
 app = typer.Typer(help="Find job postings, score them and prepare application packages.")
 companies_app = typer.Typer(help="Manage the list of companies with public ATS boards.")
@@ -70,7 +71,7 @@ class Stage(StrEnum):
     TAILOR = "tailor"
 
 
-IMPLEMENTED_STAGES = {Stage.FETCH, Stage.FILTER, Stage.SCORE}
+IMPLEMENTED_STAGES = {Stage.FETCH, Stage.FILTER, Stage.SCORE, Stage.TAILOR}
 
 
 def _load(config_path: Path):  # noqa: ANN202
@@ -91,9 +92,14 @@ def _http(config) -> HttpClient:  # noqa: ANN001
 def run(
     stage: Annotated[Stage, typer.Option(help="Run a single stage (default: all).")] = Stage.ALL,
     dry_run: Annotated[bool, typer.Option(help="Show the plan without fetching.")] = False,
+    job: Annotated[
+        list[int] | None, typer.Option("--job", help="Tailor only these posting ids (repeatable).")
+    ] = None,
+    force: Annotated[bool, typer.Option(help="Tailor again postings already packaged.")] = False,
+    limit: Annotated[int | None, typer.Option(help="Tailor at most this many postings.")] = None,
     config: ConfigOption = Path("config/config.yaml"),
 ) -> None:
-    """Run the pipeline: fetch, then filter (scoring and tailoring come in later phases)."""
+    """Run the pipeline: fetch → filter → score → tailor (each stage can be run alone)."""
     cfg = _load(config)
     if stage not in (Stage.ALL, *IMPLEMENTED_STAGES):
         typer.echo(f"error: stage '{stage}' is not implemented yet.", err=True)
@@ -103,9 +109,17 @@ def run(
     do_fetch = stage in (Stage.ALL, Stage.FETCH)
     do_filter = stage in (Stage.ALL, Stage.FILTER)
     do_score = stage in (Stage.ALL, Stage.SCORE)
+    do_tailor = stage in (Stage.ALL, Stage.TAILOR)
     if dry_run:
         planned = [
-            n for n, on in (("fetch", do_fetch), ("filter", do_filter), ("score", do_score)) if on
+            n
+            for n, on in (
+                ("fetch", do_fetch),
+                ("filter", do_filter),
+                ("score", do_score),
+                ("tailor", do_tailor),
+            )
+            if on
         ]
         typer.echo(f"Stages: {', '.join(planned)}")
         if do_fetch:
@@ -125,6 +139,8 @@ def run(
         _print_filter_summary(summary, conn)
     if do_score:
         _score(cfg, conn, explicit=stage == Stage.SCORE)
+    if do_tailor:
+        _tailor(cfg, conn, explicit=stage == Stage.TAILOR, job_ids=job, force=force, limit=limit)
 
 
 async def _fetch(cfg, conn, sources) -> None:  # noqa: ANN001
@@ -155,15 +171,7 @@ def _score(cfg, conn, *, explicit: bool) -> None:  # noqa: ANN001
     except latex.CvError as exc:
         typer.echo(f"error: {master}: {exc}", err=True)
         raise typer.Exit(code=1) from exc
-    client = LlmClient(
-        conn,
-        build_backend(cfg),
-        max_calls=cfg.budget.max_llm_calls_per_run,
-        daily_budget_usd=cfg.budget.daily_budget_usd
-        if cfg.llm.backend == "anthropic_api"
-        else None,
-        max_attempts=cfg.llm.max_attempts,
-    )
+    client = _make_client(cfg, conn)
     try:
         summary = score_stage(conn, client, cfg, doc)
     except LlmAuthError as exc:
@@ -173,6 +181,58 @@ def _score(cfg, conn, *, explicit: bool) -> None:  # noqa: ANN001
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     _print_score_summary(summary)
+
+
+def _make_client(cfg, conn) -> LlmClient:  # noqa: ANN001
+    return LlmClient(
+        conn,
+        build_backend(cfg),
+        max_calls=cfg.budget.max_llm_calls_per_run,
+        daily_budget_usd=cfg.budget.daily_budget_usd
+        if cfg.llm.backend == "anthropic_api"
+        else None,
+        max_attempts=cfg.llm.max_attempts,
+    )
+
+
+def _tailor(cfg, conn, *, explicit: bool, job_ids, force: bool, limit) -> None:  # noqa: ANN001
+    """Build application packages for `selected` postings."""
+    master, template_path = cfg.paths.cv_master, cfg.paths.letter_template
+    missing = [str(p) for p in (master, template_path) if not p.exists()]
+    if missing:
+        message = f"{', '.join(missing)} not found (see `jobhunter letter init`)."
+        if explicit:
+            typer.echo(f"error: {message}", err=True)
+            raise typer.Exit(code=1)
+        typer.echo(f"tailor skipped: {message}")
+        return
+    try:
+        doc = latex.parse(master.read_text())
+    except latex.CvError as exc:
+        typer.echo(f"error: {master}: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    try:
+        summary = tailor_stage(
+            conn, _make_client(cfg, conn), cfg, doc, cv_dir=master.parent,
+            template=template_path.read_text(), out_root=cfg.paths.out,
+            force=force, limit=limit, job_ids=job_ids,
+        )  # fmt: skip
+    except LlmError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(
+        f"packaged {summary.packaged} of {summary.candidates} selected postings in "
+        f"{summary.calls} LLM calls · needs review {summary.needs_review}"
+    )
+    for result in summary.results:
+        flag = "ok " if result.verified else "REVIEW"
+        typer.echo(f"  [{flag}] #{result.job_id} ({result.language}) {result.path}")
+        for problem in result.problems:
+            typer.echo(f"      - {problem}")
+    for error in summary.errors:
+        typer.echo(f"  failed: {error}", err=True)
+    if summary.stopped:
+        typer.echo(f"  stopped early: {summary.stopped} (re-run later to continue)")
 
 
 def _print_score_summary(s: ScoreSummary) -> None:
@@ -368,3 +428,167 @@ def calibrate(
     ).fetchone()
     if total:
         typer.echo(f"\nagreement on 'apply' verdicts so far: {agree}/{total} ({agree / total:.0%})")
+
+
+@cv_app.command("translate")
+def cv_translate(
+    lang: Annotated[str, typer.Option("--lang", help="Target language code, e.g. es.")],
+    force: Annotated[
+        bool, typer.Option(help="Overwrite an existing reviewed translation.")
+    ] = False,
+    config: ConfigOption = Path("config/config.yaml"),
+) -> None:
+    """Translate the master CV once into another language, for you to review and edit."""
+    from jobhunter.translate import save_translation, translate_cv
+
+    cfg = _load(config)
+    master = cfg.paths.cv_master
+    if not master.exists():
+        typer.echo(f"error: {master} not found", err=True)
+        raise typer.Exit(code=1)
+    doc = latex.parse(master.read_text())
+    from jobhunter.translate import translation_path
+
+    existing = translation_path(master.parent, lang)
+    if existing.exists() and not force:
+        typer.echo(
+            f"error: {existing} already exists (it may hold your reviewed edits). "
+            "Use --force to overwrite it.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    conn = connect(cfg.paths.db)
+    try:
+        units, problems = translate_cv(_make_client(cfg, conn), cfg, doc, lang)
+    except LlmError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    path = save_translation(master.parent, lang, units, problems, doc.source_hash)
+    typer.echo(f"translated {len(units)} units into {path}")
+    if problems:
+        typer.echo(f"{len(problems)} units need attention (numbers or LaTeX changed); fix them:")
+        for uid, found in problems.items():
+            typer.echo(f"  {uid}: {', '.join(found)}")
+    typer.echo("Review the file; the language must also be listed in tailoring.languages.")
+
+
+letter_app = typer.Typer(help="Cover letter template.")
+app.add_typer(letter_app, name="letter")
+
+
+@letter_app.command("init")
+def letter_init(config: ConfigOption = Path("config/config.yaml")) -> None:
+    """Create config/cv/letter_template.tex from the example; you edit the header lines."""
+    import shutil
+
+    cfg = _load(config)
+    target = cfg.paths.letter_template
+    example = Path(__file__).resolve().parents[2] / "config" / "letter_template.example.tex"
+    if target.exists():
+        typer.echo(f"{target} already exists; not overwriting.")
+        return
+    if not example.exists():
+        typer.echo(f"error: example template not found at {example}", err=True)
+        raise typer.Exit(code=1)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(example, target)
+    typer.echo(
+        f"wrote {target}. Edit the header (name, role, contact); keep the %%...%% placeholders."
+    )
+
+
+@app.command()
+def review(config: ConfigOption = Path("config/config.yaml")) -> None:
+    """List generated packages that are waiting for you to review and apply."""
+    cfg = _load(config)
+    conn = connect(cfg.paths.db)
+    rows = conn.execute(
+        "SELECT j.id, j.company, j.title, p.path, p.verified, "
+        "(SELECT score FROM scores WHERE job_id = j.id ORDER BY created_at DESC LIMIT 1) AS score "
+        "FROM jobs j JOIN packages p ON p.job_id = j.id "
+        "AND p.created_at = (SELECT MAX(created_at) FROM packages WHERE job_id = j.id) "
+        "WHERE j.status = 'packaged' ORDER BY score DESC"
+    ).fetchall()
+    if not rows:
+        typer.echo("no packages waiting. Run `jobhunter run --stage tailor` first.")
+        return
+    for row in rows:
+        flag = "ok" if row["verified"] else "REVIEW"
+        typer.echo(
+            f"#{row['id']} [{flag}] score {row['score']} · {row['title']} — {row['company']}"
+        )
+        typer.echo(f"    {row['path']}")
+
+
+STAGE_HELP = (
+    "applied | screening | interviewing | offer | accepted | rejected | withdrawn | ghosted"
+)
+
+
+@app.command()
+def mark(
+    job_id: Annotated[int, typer.Argument(help="Posting id.")],
+    stage: Annotated[str, typer.Argument(help=STAGE_HELP)],
+    note: Annotated[str | None, typer.Option(help="Optional note to keep with the change.")] = None,
+    config: ConfigOption = Path("config/config.yaml"),
+) -> None:
+    """Record where an application stands (you apply yourself; this only keeps track)."""
+    from jobhunter import applications
+
+    cfg = _load(config)
+    conn = connect(cfg.paths.db)
+    try:
+        applications.set_stage(conn, job_id, stage, note)
+    except applications.TrackingError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"#{job_id} is now '{stage}'")
+
+
+@app.command()
+def stats(config: ConfigOption = Path("config/config.yaml")) -> None:
+    """Funnel from fetched postings to offers, rejections by rule and LLM usage."""
+    from jobhunter import applications
+
+    cfg = _load(config)
+    data = applications.stats(connect(cfg.paths.db))
+    f = data["funnel"]
+    typer.echo(
+        f"fetched {f['fetched']} → passed filter {f['passed_filter']} → scored {f['scored']} → "
+        f"selected {f['selected']} → packaged {f['packaged']} → applied {f['applied']} → "
+        f"interviewing {f['interviewing']} → offers {f['offer']}"
+    )
+    for rule, count in data["rejected_by_rule"].items():
+        typer.echo(f"  filtered by {rule}: {count}")
+    for stage, count in data["stages"].items():
+        typer.echo(f"  applications {stage}: {count}")
+    today, total = data["llm_today"], data["llm_total"]
+    typer.echo(
+        f"LLM today: {today['calls']} calls, {today['tin'] + today['tout']} tokens · "
+        f"all time: {total['calls']} calls (API-equivalent ${total['cost']:.2f})"
+    )
+
+
+@app.command()
+def ui(
+    port: Annotated[int, typer.Option(help="Port on 127.0.0.1.")] = 8765,
+    open_browser: Annotated[bool, typer.Option("--open", help="Open the browser.")] = False,
+    config: ConfigOption = Path("config/config.yaml"),
+) -> None:
+    """Start the local web UI (dashboard, postings, pipeline, manual runs) on 127.0.0.1."""
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    from jobhunter.web.app import create_app
+    from jobhunter.web.runner import RunManager
+
+    cfg = _load(config)
+    manager = RunManager(config.resolve(), Path.cwd(), log_dir=cfg.paths.db.parent / "runs")
+    web_app = create_app(config, port=port, runner=manager)
+    url = f"http://127.0.0.1:{port}"
+    typer.echo(f"Job Hunter UI on {url}  (Ctrl+C to stop; only reachable from this machine)")
+    if open_browser:
+        threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+    uvicorn.run(web_app, host="127.0.0.1", port=port, log_level="warning")

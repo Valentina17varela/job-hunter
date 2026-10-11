@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Run{% endblock %}
+{% block content %}
+<header class="page-head"><div><h1>Run</h1>
+  <p class="muted">Start any stage by hand. These are the same commands as the CLI; output appears below. One run at a time.</p></div></header>
+
+<div class="grid-3">
+{% for s in specs %}
+<section class="card runcard" data-spec="{{ s.id }}">
+  <h2>{{ s.label }} {% if s.llm %}<span class="badge warn">uses LLM</span>{% endif %}</h2>
+  <p class="muted">{{ s.description }}</p>
+  <div class="opts">
+    {% if s.supports_dry_run %}<label><input type="checkbox" data-opt="dry_run"> Dry run</label>{% endif %}
+    {% if s.supports_jobs %}
+      <label>Posting ids <input type="text" data-opt="jobs" size="10" placeholder="e.g. 1163, 9478"></label>
+      <label>Limit <input type="number" data-opt="limit" min="1" style="width:4.5em"></label>
+      <label><input type="checkbox" data-opt="force"> Rebuild existing</label>
+    {% endif %}
+  </div>
+  <button class="btn primary" data-run="{{ s.id }}">Run</button>
+  {% if s.llm %}<p class="muted small">{{ backend }} backend · max {{ max_calls }} calls per run</p>{% endif %}
+</section>
+{% endfor %}
+</div>
+
+<section class="card">
+  <div class="row between"><h2>Output</h2><span id="run-status" class="badge">idle</span></div>
+  <pre id="log" class="log">Nothing running.</pre>
+</section>
+
+<section class="card">
+  <h2>Recent runs</h2>
+  <table class="compact"><thead><tr><th>Command</th><th>Status</th><th>Started</th></tr></thead><tbody>
+  {% for r in history %}
+    <tr><td>{{ r.spec_id }}</td><td><span class="badge {{ 'good' if r.status == 'ok' else ('bad' if r.status == 'failed' else '') }}">{{ r.status }}</span></td>
+        <td class="muted">{{ r.started_at|int }}</td></tr>
+  {% else %}<tr><td colspan="3" class="muted">No runs since the UI started.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endblock %}

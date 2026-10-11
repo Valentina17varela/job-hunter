@@ -100,6 +100,25 @@ MIGRATIONS: list[str] = [
         created_at TEXT NOT NULL
     );
     """,
+    # v5: application tracking (stages) and interviews
+    """
+    CREATE TABLE applications (
+        job_id INTEGER PRIMARY KEY REFERENCES jobs(id),
+        stage TEXT NOT NULL,
+        applied_at TEXT,
+        updated_at TEXT NOT NULL,
+        notes TEXT
+    );
+    CREATE TABLE interviews (
+        id INTEGER PRIMARY KEY,
+        job_id INTEGER NOT NULL REFERENCES jobs(id),
+        kind TEXT NOT NULL,
+        scheduled_at TEXT,
+        notes TEXT,
+        outcome TEXT NOT NULL DEFAULT 'pending'
+    );
+    CREATE INDEX idx_interviews_job ON interviews(job_id);
+    """,
 ]
 
 

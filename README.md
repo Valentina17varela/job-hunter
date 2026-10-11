@@ -14,17 +14,17 @@ Local Python pipeline that finds job postings on public job boards, filters and 
 | 0 | Skeleton: config, SQLite, `doctor` (LaTeX toolchain check) | ✅ Done |
 | 1 | Sources: aggregators + ATS boards, dedupe, company discovery | ✅ Done |
 | 2 | Hard filter on your criteria (`refilter`, `explain`) | ✅ Done |
-| 3 | LLM scoring (Haiku via your Claude subscription), LaTeX CV parser, `calibrate` | ✅ Done (pending review) |
-| 4 | Tailoring: LaTeX CV/letter packages + PDF, translations, verification | ⏳ Planned |
-| 5 | Daily operation: `review`, `mark`, `stats`, scheduling | ⏳ Planned |
+| 3 | LLM scoring (Haiku via your Claude subscription), LaTeX CV parser, `calibrate` | ✅ Done |
+| 4 | Tailoring: LaTeX CV + cover letter packages (PDF), CV translation, verification | ✅ Done (pending review) |
+| 5 | Application tracking (`mark`, `stats`, `review`) and the **local web UI** (`jobhunter ui`) | ✅ Done (pending review); scheduling with `launchd` still to do |
 
-What works **today**: downloading postings from many sources into a local database, **filtering them against your criteria** (no LLM, no cost), explaining why any posting was kept or dropped, growing the list of company boards, and checking your environment. LLM scoring and package generation are not implemented yet, so the tool narrows thousands of postings to the ones that match your criteria, but does not yet rank them or write your application.
+What works **today**, end to end: download postings from many sources, filter them against your criteria (no LLM), score the survivors with an LLM against your LaTeX CV, build a **tailored LaTeX CV + cover letter (PDF)** for the best matches, track your applications and interviews, and do all of it from a **local web UI** (`uv run jobhunter ui`) or the CLI. The tool never applies for you.
 
 ## How it works (the core loop)
 
 ```
    fetch ──▶ filter ──▶ score ──▶ tailor ──▶ YOU review and apply
-   (done)    (done)     (done)    (Phase 4)
+   (done)    (done)     (done)    (done)
 ```
 
 | Stage | What it does | Costs tokens? | Needs from you |
@@ -32,7 +32,7 @@ What works **today**: downloading postings from many sources into a local databa
 | **fetch** | Downloads postings from public job boards | No | Nothing |
 | **filter** | Drops postings that don't match your criteria (title, seniority, remote, location, salary, keywords) | No | Your preferences in `config/config.yaml` |
 | **score** | LLM rates the remaining postings 0–100 against your CV and flags explicit blockers (country restrictions, work authorization, required time zone) | Yes (your Claude plan usage, or API cents) | Your marked LaTeX CV + `claude auth login` (or an API key) |
-| **tailor** | For the best ones, builds a LaTeX CV + cover letter (PDF) | Yes | Your cover-letter template |
+| **tailor** | For the best ones: picks and orders your CV bullets, writes a one-page cover letter and a short recruiter message, compiles both PDFs, and checks them (ids, numbers, technologies, clichés, page limits) | Yes (one call per posting) | `config/cv/letter_template.tex` (see `letter init`) |
 | **you** | Read the package, apply, mark the result | — | — |
 
 ## Step by step
@@ -120,15 +120,42 @@ uv run jobhunter calibrate           # tell the tool where you disagree with it
 
 Postings end as `selected` (best matches, up to 10 a day), `scored` (good but no slot today), or `below_threshold`. `red_flags` in the score shows explicit blockers it found.
 
-**When the next phase lands, the routine becomes:**
+**Build the application packages** (for the `selected` postings):
 
 ```bash
-uv run jobhunter run          # fetch → filter → score (→ tailor in Phase 4), in one command
-uv run jobhunter review       # list today's best matches and their packages      (Phase 5)
-# open out/<date>/<company>-<role>/ : read cv.pdf and cover_letter.pdf, apply yourself
-uv run jobhunter mark <id> applied   # keep track of what you did                 (Phase 5)
-uv run jobhunter stats               # funnel and LLM cost                        (Phase 5)
+uv run jobhunter run --stage tailor              # one LLM call per posting, ~15 s each
+uv run jobhunter run --stage tailor --job 1163   # build it by hand for ANY posting, whatever its score or filter verdict (--force rebuilds)
+uv run jobhunter review                          # list packages waiting for you
 ```
+
+Each package is a folder `out/<date>/<company>-<role>-<id>/` with `cv.pdf`/`cv.tex`, `cover_letter.pdf`/`.tex`, `recruiter_message.md`, `notes.md` (why it fits, gaps, what to verify) and `meta.json`. If an automatic check fails, `notes.md` starts with a **REVIEW** banner listing what to fix; the files are still written. Open the PDFs, check the "verify before applying" notes, and apply yourself.
+
+**Keep track of what happened** (or use the web UI below):
+
+```bash
+uv run jobhunter mark 1163 applied --note "via careers page"
+uv run jobhunter mark 1163 interviewing          # screening | interviewing | offer | accepted | rejected | withdrawn | ghosted
+uv run jobhunter stats                           # funnel, filter reasons, LLM usage
+```
+
+**Or do everything in one command:** `uv run jobhunter run` (fetch → filter → score → tailor).
+
+## Web UI (local dashboard)
+
+```bash
+uv run jobhunter ui --open      # http://127.0.0.1:8765  (--port to change)
+```
+
+| Page | What you can do |
+|---|---|
+| **Dashboard** | Funnel from fetched postings to offers, why postings were filtered out, applications per stage, LLM usage, last fetch per source, live health checks |
+| **Postings** | Browse and filter (status, source, mode, min score, text search, sort); open any posting for its score, matches, gaps, red flags, the live filter verdict, history, the package and your application. **Any posting has a "Build package for this posting" button**, so you can package ones you like that the score left out |
+| **Pipeline** | Kanban of your applications: *Ready to apply → Applied → Screening → Interviewing → Offer → Accepted / Rejected / Withdrawn / No response*. Move cards, keep notes, schedule interviews (type, date, outcome) |
+| **Packages** | Every generated package with its PDFs, checks result and the recruiter message (copy button) |
+| **Run** | Start any stage by hand (fetch, filter, re-filter, score, tailor with `--job/--limit/--force`, company discovery, CV check, doctor), with dry-run, a live log and run history |
+| **Settings** | The effective configuration, your CV structure (ids), and the health checks. Editing stays in `config/config.yaml` |
+
+The UI listens only on `127.0.0.1`, rejects requests from other hosts/origins, only accepts JSON for changes, runs a whitelist of commands as subprocesses of the CLI, and serves files only from `out/`. It shows personal data, so do not expose it through a tunnel or proxy.
 
 Each phase updates this section when it ships, so what is written under "today" always works.
 
@@ -166,7 +193,13 @@ All commands accept `--config/-c PATH` (default `config/config.yaml`) except whe
 | `jobhunter run` (no `--stage`) | Runs all implemented stages (currently `fetch` then `filter`) |
 | `jobhunter run --dry-run` | Prints the stages and how many sources of each kind would be fetched, without any network call |
 | `jobhunter run --stage score` | Scores `passed` postings with the LLM in batches of `scoring.batch_size`, stores score, verdict, matches, gaps and red flags, then marks postings `selected` (top `max_packages_per_day` at or above `score_threshold`), `scored` (above threshold, no slot left) or `below_threshold`. Already-scored postings are never re-scored unless your CV, `candidate_context`, criteria or the prompt change. Stops cleanly at `budget.max_llm_calls_per_run` and resumes next run |
-| `jobhunter run --stage tailor` | Exits with "not implemented yet" |
+| `jobhunter run --stage tailor [--job ID]... [--limit N] [--force]` | For `selected` postings, or **exactly the given ids whatever their status** (use it for postings you like that the score or filter left out; it never overrides a status you recorded, such as applied): one LLM call returns which CV entries/bullets to keep and in what order, a 190–260 word cover letter and a recruiter message in the **posting's language**; code assembles `cv.tex` by copying your original LaTeX, trims it deterministically to `tailoring.max_cv_pages`, fills the letter template, compiles both PDFs and verifies them. Postings become `packaged` |
+| `jobhunter review` | Lists packages waiting for you with their score, check result and folder |
+| `jobhunter mark <id> <stage> [--note]` | Records your application stage: `applied`, `screening`, `interviewing`, `offer`, `accepted`, `rejected`, `withdrawn`, `ghosted` (updates the posting status and its history) |
+| `jobhunter stats` | Funnel (fetched → … → applied → interviewing → offers), filter rejections by rule, applications by stage, LLM usage |
+| `jobhunter ui [--port N] [--open]` | Starts the local web UI on `127.0.0.1` |
+| `jobhunter cv translate --lang es` | Translates every marked part of your English CV **once** into `config/cv/translations/es.json` (numbers, LaTeX and technology names are checked); you review the file. Spanish postings then get the reviewed Spanish CV |
+| `jobhunter letter init` | Copies `config/letter_template.example.tex` to `config/cv/letter_template.tex`; edit its three header lines |
 | `jobhunter cv check` | Validates the `% jh:` markers of `master.tex` (unique ids, balanced blocks, contact details inside marked text) and compiles it |
 | `jobhunter cv init <plain.tex>` | Proposes markers for an unmarked LaTeX CV (sections and `\item` bullets) into `<plain>.marked.tex`; you review and finish it by hand |
 | `jobhunter calibrate` | Shows scored postings and asks y/n whether you agree, to measure how well the verdicts match your judgement |
@@ -185,7 +218,7 @@ A second run immediately after reports `new 0 · updated 0` (idempotent).
 
 ### Planned (see [`specs/07-cli-config.md`](specs/07-cli-config.md))
 
-`show <id>`, `review`, `mark <id> applied|replied|rejected|closed`, `stats`, `cv translate --lang <code>`, and `run --stage tailor`.
+`show <id>`, a `launchd` scheduler for the daily run, and the `rewrite` tailoring mode.
 
 ## What it fetches
 
@@ -221,7 +254,7 @@ Your settings live in `config/config.yaml` (create it with `cp config/config.exa
 | `search` | **Your criteria**: `titles_include/exclude`, `keywords_include/exclude`, `seniority`, `work_mode`, `locations_allowed`, `salary`, `max_age_days` | Phase 2 |
 | `llm` | `backend` (`claude_cli` = your subscription, default; `anthropic_api`), `claude_path`, `timeout_seconds`, `max_attempts`, `effort`, `max_thinking_tokens` | Phase 3 |
 | `scoring` | `model` (alias `haiku`), `score_threshold` (75), `batch_size` (8), description/profile limits, `candidate_context` | Phase 3 |
-| `tailoring` | Model (default `claude-sonnet-5-5`), `mode: select`, `max_packages_per_day` (10), `languages`, `tone`, `max_cv_pages` | Phase 4 |
+| `tailoring` | `model` (alias `sonnet`), `mode: select`, `max_packages_per_day` (10), `languages` (`en`, `es`: the letter and CV follow the posting's language, else English), `tone`, `max_cv_pages` (1) | Phase 4 |
 | `latex` | `engine` (`tectonic` or `latexmk`), `timeout_seconds` | Phase 0 |
 | `budget` | `max_llm_calls_per_run` (60, subscription backend) and `daily_budget_usd` (API backend) | Phase 3 |
 | `fx_rates_to_usd` | Manual FX table used to compare salaries | Phase 2 |
@@ -237,7 +270,7 @@ search:
   keywords_exclude: ["security clearance"]            # any match rejects
   seniority: ["mid", "senior"]                        # junior | mid | senior | lead (from the title)
   work_mode: ["remote"]                               # remote | hybrid | onsite
-  locations_allowed: ["Colombia", "LATAM", "Worldwide", "Anywhere"]
+  locations_allowed: ["Colombia", "LATAM", "Americas", "Worldwide", "Anywhere", "Global"]
   salary:
     min_usd: 48000          # ANNUAL, in USD. Monthly × 12 (e.g. USD 4,000/month = 48000). 0 = off
     on_missing: pass        # pass = keep postings without a salary; reject = drop them
@@ -276,7 +309,7 @@ Salary: `min_usd` is **annual USD**. After editing, run `uv run jobhunter refilt
 | Path | Content | Committed? |
 |---|---|---|
 | `data/jobhunter.db` | SQLite: postings, scores, packages, LLM calls, fetch log, status events | No |
-| `out/` | Generated application packages (Phase 4) | No |
+| `out/` | Generated packages: CV and cover letter (`.tex` + `.pdf`), recruiter message, notes | No |
 | `config/cv/` | Your LaTeX CV (`master.tex`) and letter template | No |
 | `config/config.yaml` | Your local settings and search preferences (copy of `config.example.yaml`) | No |
 | `config/companies.yaml` | Company boards, generated by `companies discover` | No |
@@ -299,9 +332,9 @@ Privacy design (Phase 3+): only the plain text of CV items you mark and the post
 
 ```
 config/                 config.example.yaml, company_candidates.txt (committed); config.yaml, companies.yaml, cv/ (yours, gitignored)
-specs/                  design specs (00–08), source of truth
+specs/                  design specs (00–09), source of truth
 src/jobhunter/
-  cli.py                typer CLI (doctor, run, refilter, explain, companies check/discover)
+  cli.py                typer CLI (doctor, run, refilter, explain, review, mark, stats, ui, cv, letter, companies)
   config.py             YAML config loading + validation (pydantic)
   models.py             Job model and JobStatus
   db.py                 SQLite connection + versioned migrations
@@ -309,6 +342,11 @@ src/jobhunter/
   text.py               HTML→text, remote-mode and salary inference
   llm.py                LLM backends (claude -p / Anthropic API), budget, retries, call log
   latex.py              master CV parser/assembler, plain-text digest, `cv init` markers
+  tailoring.py          CV item selection, page-fit trimming, cover letter, verification, packages
+  translate.py          one-time reviewed CV translation
+  language.py           posting language detection (stopword voting)
+  applications.py      application stages, interviews, funnel stats
+  web/                  local UI: app.py (FastAPI), runner.py (whitelisted CLI runs), templates/, static/
   scoring.py            batch scoring, truncation, selection (selected/scored/below_threshold)
   filters.py            hard filter (JobFilter): titles, seniority, mode, location, keywords, salary, age
   store.py              upsert/dedupe, close stale, duplicate marking, fetch log
@@ -322,7 +360,7 @@ tests/                  pytest suite with real (trimmed) fixtures; no network
 ## Development
 
 ```bash
-uv run pytest                 # 194 tests, no network, no LLM, ~3 s (tests run in an empty temp dir and never touch your data)
+uv run pytest                 # 265 tests, no network, no LLM, ~3 s (tests run in an empty temp dir and never touch your data)
 uv run ruff check .           # lint
 uv run ruff format .          # format
 ```

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Job Hunter{% endblock %} · Job Hunter</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/"><span class="logo">JH</span> Job Hunter</a>
+    <nav>
+      {% for key, label, href in [
+        ('dashboard', 'Dashboard', '/'), ('jobs', 'Postings', '/jobs'),
+        ('pipeline', 'Pipeline', '/pipeline'), ('packages', 'Packages', '/packages'),
+        ('run', 'Run', '/run'), ('settings', 'Settings', '/settings')] %}
+      <a href="{{ href }}" class="{{ 'on' if active == key else '' }}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <p class="side-note">Local only · <code>127.0.0.1</code><br>Nothing is sent anywhere: you review and apply.</p>
+  </aside>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <div id="toast" class="toast" hidden></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

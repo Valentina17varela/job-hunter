@@ -53,7 +53,7 @@ tailoring:
   mode: select
   max_packages_per_day: 10
   languages: ["en", "es"]
-  tone: ""
+  tone: "formal but warm, concrete and confident"
   max_cv_pages: 1
 
 latex:

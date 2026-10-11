@@ -76,6 +76,23 @@ events(                              -- status-change history
 );
 ```
 
+### Application tracking (Phase 5, web UI)
+
+```sql
+applications(                        -- one row per posting the person applied to
+  job_id INTEGER PRIMARY KEY REFERENCES jobs(id),
+  stage TEXT NOT NULL,               -- applied | screening | interviewing | offer | accepted | rejected | withdrawn | ghosted
+  applied_at TEXT, updated_at TEXT, notes TEXT
+);
+interviews(
+  id INTEGER PRIMARY KEY, job_id INTEGER REFERENCES jobs(id),
+  kind TEXT,                         -- recruiter | technical | system_design | hiring_manager | onsite | other
+  scheduled_at TEXT, notes TEXT, outcome TEXT   -- pending | passed | failed
+);
+```
+
+`applications.stage` maps to `jobs.status`: `applied` → `applied`; `screening`/`interviewing`/`offer`/`accepted` → `replied`; `rejected`/`withdrawn`/`ghosted` → `rejected`. Every change is also written to `events`.
+
 ## 4. Dedupe rules
 
 1. Same `(source, external_id)` → same posting; if `content_hash` changes, the description is updated and the **score is invalidated** (back to `passed`).

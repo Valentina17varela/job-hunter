@@ -16,6 +16,8 @@
 | `jobhunter companies check` | Validates `companies.yaml` slugs (200 vs 404) |
 | `jobhunter companies discover` | Probes names in `company_candidates.txt` and adds boards that exist to `companies.yaml` |
 | `jobhunter calibrate` | Scoring calibration (see 05) |
+| `jobhunter letter init` | Copies `config/letter_template.example.tex` to `config/cv/letter_template.tex`; the person edits the three header lines |
+| `jobhunter ui [--port 8765] [--open]` | Starts the local web UI on `127.0.0.1` (see 09) |
 | `jobhunter cv init` | One-time helper: proposes `jh:` markers and IDs for a plain LaTeX CV (output reviewed by the person) |
 | `jobhunter cv check` | Validates `master.tex` markers (unique IDs, balanced sections) and compiles it |
 | `jobhunter cv translate --lang <code>` | One-time translation of the master CV items/labels into `config/cv/translations/<code>.json` for the person to review |

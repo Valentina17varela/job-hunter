@@ -201,6 +201,10 @@ def parse(text: str) -> Document:
     if raw:
         nodes.append(raw)
     doc = Document(nodes, hashlib.sha256(text.encode()).hexdigest())
+    names = [s.name for s in doc.sections]
+    repeated = sorted({n for n in names if names.count(n) > 1})
+    if repeated:
+        raise CvError(f"duplicate section names: {', '.join(repeated)}")
     ids = doc.ids()
     dupes = sorted({x for x in ids if ids.count(x) > 1})
     if dupes:
@@ -307,9 +311,34 @@ def _pick[T: (Entry, Item)](children: list[T], wanted: list[str] | None) -> list
     return [by_id[w] for w in dict.fromkeys(wanted)]
 
 
-def assemble(doc: Document, selection: Selection | None = None) -> str:
-    """Rebuild the LaTeX with only the selected entries/items, copying original text verbatim."""
+def translation_units(doc: Document) -> dict[str, list[str]]:
+    """Translatable text of the CV keyed by id: items, entry heads and section heads."""
+    units: dict[str, list[str]] = {}
+    for section in doc.sections:
+        if any(ln.strip() for ln in section.head):
+            units[f"section:{section.name}"] = list(section.head)
+        for child in section.children:
+            if isinstance(child, Entry):
+                units[child.id] = list(child.head)
+                for item in child.items:
+                    units[item.id] = list(item.lines)
+            else:
+                units[child.id] = list(child.lines)
+    return units
+
+
+def assemble(
+    doc: Document,
+    selection: Selection | None = None,
+    translation: dict[str, list[str]] | None = None,
+) -> str:
+    """Rebuild the LaTeX with only the selected entries/items, copying original text verbatim.
+
+    ``translation`` (unit id -> lines, see ``translation_units``) replaces the text of the units
+    it contains; structure, markers' content and everything unmarked stay untouched.
+    """
     selection = selection or Selection()
+    tr = translation or {}
     out: list[str] = []
     for node in doc.nodes:
         if not isinstance(node, Section):
@@ -320,17 +349,19 @@ def assemble(doc: Document, selection: Selection | None = None) -> str:
         missing = [r for r in required if r not in {c.id for c in chosen}]
         if missing:
             raise CvError(f"selection drops required entries: {', '.join(missing)}")
-        out.extend(node.head)
+        if node.children and not chosen:
+            continue  # nothing left in the section: omit its heading too (avoids empty lists)
+        out.extend(tr.get(f"section:{node.name}", node.head))
         for child in chosen:
             if isinstance(child, Entry):
-                out.extend(child.head)
+                out.extend(tr.get(child.id, child.head))
                 for item in _pick(child.items, selection.items.get(child.id)):
-                    out.extend(item.lines)
+                    out.extend(tr.get(item.id, item.lines))
                     out.extend(item.tail)
                 out.extend(child.suffix)
                 out.extend(child.tail)
             else:
-                out.extend(child.lines)
+                out.extend(tr.get(child.id, child.lines))
                 out.extend(child.tail)
         out.extend(node.suffix)
     return "\n".join(out) + "\n"
@@ -376,3 +407,60 @@ def propose_markers(text: str) -> str:
         out.append(line)
     close()
     return "\n".join(out) + "\n"
+
+
+# --- escaping and compiling -------------------------------------------------------------------
+
+_ESCAPES = {
+    "\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#", "_": r"\_",
+    "{": r"\{", "}": r"\}", "~": r"\textasciitilde{}", "^": r"\textasciicircum{}",
+    "—": "---", "–": "--", "“": "``", "”": "''", "‘": "`", "’": "'", "…": r"\ldots{}",
+    "\u00a0": "~",
+}  # fmt: skip
+
+
+def escape(text: str) -> str:
+    """Escape plain text so it is safe inside LaTeX (used for everything an LLM writes)."""
+    return "".join(_ESCAPES.get(ch, ch) for ch in text)
+
+
+@dataclass
+class CompileResult:
+    ok: bool
+    detail: str
+    pdf: bytes | None = None
+    pages: int = 0
+
+
+def compile_pdf(tex: str, engine: str, timeout: int) -> CompileResult:
+    """Compile LaTeX source in a temp dir (shell escape off) and return the PDF and page count."""
+    import shutil
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    binary = shutil.which(engine)
+    if binary is None:
+        return CompileResult(False, f"'{engine}' not found in PATH")
+    with tempfile.TemporaryDirectory() as tmp:
+        work = Path(tmp)
+        (work / "doc.tex").write_text(tex)
+        if engine == "tectonic":
+            cmd = [binary, "-X", "compile", "--untrusted", "doc.tex"]
+        else:
+            cmd = [binary, "-pdf", "-no-shell-escape", "-interaction=nonstopmode", "doc.tex"]
+        try:
+            proc = subprocess.run(
+                cmd, cwd=work, capture_output=True, text=True, timeout=timeout, check=False
+            )
+        except subprocess.TimeoutExpired:
+            return CompileResult(False, f"compilation timed out after {timeout}s")
+        pdf_path = work / "doc.pdf"
+        if proc.returncode != 0 or not pdf_path.exists():
+            tail = (proc.stderr or proc.stdout).strip().splitlines()[-5:]
+            return CompileResult(False, "compilation failed: " + " | ".join(tail))
+        from pypdf import PdfReader
+
+        data = pdf_path.read_bytes()
+        pages = len(PdfReader(str(pdf_path)).pages)
+    return CompileResult(True, "compiled OK", data, pages)

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Pipeline{% endblock %}
+{% block content %}
+<header class="page-head"><div><h1>Pipeline</h1>
+  <p class="muted">Your applications and where each one stands. Change a stage with the selector on a card.</p></div></header>
+<div class="board">
+  <section class="column">
+    <h2>Ready to apply <span class="count">{{ ready|length }}</span></h2>
+    {% for r in ready %}
+    <article class="kcard">
+      <a class="strong" href="/jobs/{{ r.id }}">{{ r.title }}</a>
+      <div class="muted">{{ r.company }}</div>
+      <div class="row">
+        {% if r.score is not none %}<span class="score s{{ (r.score // 25) }}">{{ r.score }}</span>{% endif %}
+        <span class="badge st-{{ r.status }}">{{ STATUS_LABELS[r.status] }}</span>
+      </div>
+      <button class="btn small primary" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>I applied</button>
+    </article>
+    {% else %}<p class="muted">Nothing waiting.</p>{% endfor %}
+  </section>
+  {% for stage in columns %}
+  {% set col = cards|selectattr('stage', 'equalto', stage)|list %}
+  <section class="column stage-{{ stage }}">
+    <h2>{{ STAGE_LABELS[stage] }} <span class="count">{{ col|length }}</span></h2>
+    {% for c in col %}
+    <article class="kcard">
+      <a class="strong" href="/jobs/{{ c.job_id }}">{{ c.title }}</a>
+      <div class="muted">{{ c.company }}</div>
+      {% if c.interviews %}
+        {% set nxt = c.interviews|selectattr('outcome', 'equalto', 'pending')|list|first %}
+        {% if nxt %}<div class="chip warn">Next: {{ nxt.kind.replace('_', ' ') }}{% if nxt.scheduled_at %} · {{ nxt.scheduled_at.replace('T', ' ') }}{% endif %}</div>{% endif %}
+        <div class="muted">{{ c.interviews|length }} interview(s)</div>
+      {% endif %}
+      <div class="muted">updated {{ c.updated_at|dt }}</div>
+      <select data-stage-job="{{ c.job_id }}">
+        {% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if c.stage == s }}>{{ STAGE_LABELS[s] }}</option>{% endfor %}
+      </select>
+    </article>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

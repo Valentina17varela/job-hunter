@@ -27,15 +27,18 @@ Each phase ends with something runnable and verifiable. We don't move to the nex
 - **Done when:** `master.tex` parses and compiles ✅; scoring runs on the real postings ✅ (≈ 11 s per batch of 8 after disabling extended thinking); calibration ≥ 80% hit rate *(needs the person to run `jobhunter calibrate`)*.
 - **Personal data:** LaTeX CV (`master.tex`) ✅, `scoring.candidate_context` ✅, `claude auth login` ✅.
 
-## Phase 4 — Tailoring
-- `cv translate` (one-time, reviewed translations per language) and posting-language detection.
-- `tailoring.py`, LaTeX assembly (select mode), letter template, PDF compilation, verification (IDs, verbatim, compile, page limit), export to `out/`.
+## Phase 4 — Tailoring (in progress)
+- `cv translate` (one-time, reviewed translations per language), posting-language detection.
+- `tailoring.py`: LLM selection of CV items (select mode), page-fit trimming, cover letter + recruiter message + notes in the posting's language, verification (ids, verbatim, letter facts, compile, pages), export to `out/`.
+- LaTeX letter template (formal, one page) + generic example; `letter init`; `run --stage tailor`; `review`.
 - **Done when:** the criteria in 06 pass; the person reviews 3 real packages (`.tex` + `.pdf`) and approves them.
-- **Personal data:** cover-letter template (or approval to derive one from the CV style), letter tone, languages, max CV pages.
+- **Personal data:** letter template/tone ✅ (formal, warm, one page), languages ✅ (en/es), max CV pages ✅ (1).
 
-## Phase 5 — Daily operation
-- `review`, `mark`, `stats`, `launchd` scheduling, README.
-- **Done when:** an automatic daily run for 1 week with no intervention and no budget overrun.
+## Phase 5 — Operation and web UI (in progress)
+- `applications.py`: `mark`, `stats`, application stages and interviews; `review`.
+- Local web UI (`jobhunter ui`, see 09): dashboard, postings, pipeline/interviews, packages, manual runs, settings.
+- Scheduling with `launchd`, README.
+- **Done when:** the person can run the whole flow and track applications and interviews from the UI; a daily automatic run works for 1 week within budget.
 
 ## Phase 6 — Improvements (backlog, not committed)
 - `rewrite` tailoring mode (LLM rewording with LaTeX escaper and command allow-list).

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Postings{% endblock %}
+{% block content %}
+<header class="page-head"><div><h1>Postings</h1>
+  <p class="muted">{{ "{:,}".format(total) }} match your filters.</p></div></header>
+
+<form class="filters card" method="get" action="/jobs">
+  <input type="search" name="q" value="{{ f.q }}" placeholder="Search title or company">
+  <select name="status">
+    <option value="active" {{ 'selected' if f.status == 'active' }}>Active (passed filter)</option>
+    <option value="all" {{ 'selected' if f.status == 'all' }}>All</option>
+    {% for s, label in STATUS_LABELS.items() %}
+    <option value="{{ s }}" {{ 'selected' if f.status == s }}>{{ label }} ({{ counts.get(s, 0) }})</option>
+    {% endfor %}
+  </select>
+  <select name="source"><option value="">Any source</option>
+    {% for s in sources %}<option value="{{ s }}" {{ 'selected' if f.source == s }}>{{ s }}</option>{% endfor %}</select>
+  <select name="mode"><option value="">Any mode</option>
+    {% for m in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ m }}" {{ 'selected' if f.mode == m }}>{{ m }}</option>{% endfor %}</select>
+  <input type="number" name="min_score" min="0" max="100" value="{{ f.min_score if f.min_score is not none else '' }}" placeholder="Min score">
+  <select name="sort">
+    {% for k, label in [('score', 'Best score'), ('recent', 'Most recent'), ('company', 'Company')] %}
+    <option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select>
+  <button class="btn primary" type="submit">Apply</button>
+</form>
+
+<div class="card flush">
+<table>
+  <thead><tr><th>Score</th><th>Posting</th><th>Where</th><th>Pay</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td>{% if r.score is not none %}<span class="score s{{ (r.score // 25) }}">{{ r.score }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td><a class="strong" href="/jobs/{{ r.id }}">{{ r.title }}</a><div class="muted">{{ r.company }} · {{ r.source }}</div></td>
+    <td>{{ r.location or '—' }}<div class="muted">{{ r.remote }}</div></td>
+    <td class="nowrap">{{ r.salary_max|money(r.salary_currency) }}</td>
+    <td><span class="badge st-{{ r.status }}">{{ STATUS_LABELS.get(r.status, r.status) }}</span>
+        {% if r.verdict %}<div class="muted">{{ r.verdict }}</div>{% endif %}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5" class="muted empty">Nothing matches. Try another status or run the pipeline.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if pages > 1 %}
+<nav class="pager">
+  {% if page > 1 %}<a class="btn" href="/jobs?{{ qs }}&amp;page={{ page - 1 }}">← Prev</a>{% endif %}
+  <span class="muted">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a class="btn" href="/jobs?{{ qs }}&amp;page={{ page + 1 }}">Next →</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

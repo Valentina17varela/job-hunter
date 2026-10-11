@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<header class="page-head"><div><h1>Settings</h1>
+  <p class="muted">What the tool is using right now. To change anything, edit <code>{{ config_path }}</code> and re-run (the page reads it live).</p></div></header>
+
+<section class="card">
+  <h2>Health</h2>
+  <ul id="health" class="health"><li class="muted">Checking…</li></ul>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Search criteria</h2>
+    <dl class="kv">
+    {% for k, v in config.search.items() %}
+      <dt>{{ k }}</dt><dd>{% if v is mapping %}{% for kk, vv in v.items() %}{{ kk }}: <b>{{ vv }}</b> {% endfor %}{% elif v is iterable and v is not string %}{{ v|join(', ') or '—' }}{% else %}{{ v if v is not none else '—' }}{% endif %}</dd>
+    {% endfor %}
+    </dl>
+    <p class="muted">Apply changes with <code>refilter</code> on the Run page.</p>
+  </section>
+  <section class="card">
+    <h2>Scoring &amp; tailoring</h2>
+    <dl class="kv">
+    {% for section in ['llm', 'scoring', 'tailoring', 'budget'] %}
+      {% for k, v in config[section].items() %}
+        {% if k != 'api_prices' and k != 'candidate_context' %}<dt>{{ section }}.{{ k }}</dt><dd>{{ v if v is not none else '—' }}</dd>{% endif %}
+      {% endfor %}
+    {% endfor %}
+      <dt>candidate_context</dt><dd>{{ config.scoring.candidate_context or '—' }}</dd>
+    </dl>
+  </section>
+</div>
+
+<section class="card">
+  <h2>My CV (<code>{{ config.paths.cv_master }}</code>)</h2>
+  {% if cv is none %}<p class="muted">No master CV found.</p>
+  {% elif cv is string %}<p><span class="badge bad">Invalid markers</span> {{ cv }}</p>
+  {% else %}
+    <p class="muted">Only these marked parts are sent to the LLM; your header and contact details never are.</p>
+    {% for section in cv.sections %}
+      <h3>{{ section.name }}</h3>
+      <ul class="tree">
+      {% for child in section.children %}
+        <li><code>{{ child.id }}</code>{% if child.required is defined and child.required %} <span class="badge">required</span>{% endif %}
+          {% if child.items is defined %}<ul>{% for it in child.items %}<li><code>{{ it.id }}</code></li>{% endfor %}</ul>{% endif %}</li>
+      {% endfor %}
+      </ul>
+    {% endfor %}
+  {% endif %}
+</section>
+{% endblock %}

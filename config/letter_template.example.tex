@@ -1,0 +1,46 @@
+% Cover letter template (one A4 page). Copy to config/cv/letter_template.tex and edit the three
+% header lines marked EDIT. Placeholders (%%...%%) are filled by jobhunter; do not remove them.
+\documentclass[a4paper,10.5pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[top=0.75in,bottom=0.7in,left=1in,right=1in]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\definecolor{accent}{HTML}{1F3A5F}
+\definecolor{muted}{HTML}{555555}
+\hypersetup{colorlinks=true,urlcolor=accent}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.75em}
+\linespread{1.08}
+
+\begin{document}
+
+% --- Header (EDIT: name, role title, contact line) ---
+{\fontsize{19}{22}\selectfont\bfseries\color{accent} YOUR NAME}\par
+\vspace{-0.2em}
+{\small\color{muted}\textsc{Your Role Title}}\par
+\vspace{-0.45em}
+{\color{accent}\rule{\linewidth}{0.9pt}}\par
+\vspace{-0.5em}
+{\small\color{muted} City, Country $\cdot$ \href{mailto:you@example.com}{you@example.com} $\cdot$ \href{https://www.linkedin.com/in/you}{LinkedIn} $\cdot$ \href{https://github.com/you}{GitHub}}\par
+
+\vspace{1.3em}
+\hfill %%DATE%%\par
+\vspace{0.3em}
+{\bfseries %%RECIPIENT_LABEL%%}\\
+%%COMPANY%%\par
+\vspace{0.5em}
+{\bfseries\color{accent} %%SUBJECT%%}\par
+\vspace{0.1em}
+%%GREETING%%
+
+%%BODY%%
+
+\vspace{0.2em}
+%%CLOSING%%\\[0.4em]
+{\bfseries YOUR NAME}
+
+\end{document}
