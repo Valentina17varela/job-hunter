@@ -12,7 +12,7 @@ The person wants **any posting that matches their criteria, regardless of compan
 | 2. Per-company ATS boards | Greenhouse, Lever, Ashby | Depth: thousands of companies publish here, often not mirrored on aggregators |
 | 3. Self-growing company list | `jobhunter companies discover` | Replaces a hand-maintained company list |
 
-Later (needs a personal free API key, added only when the person provides one): Adzuna, Jooble, The Muse. Also later: Himalayas, GetOnBoard, Torre, HN "Who is hiring", Workable, Recruitee, SmartRecruiters.
+Later: The Muse (works without a key), Adzuna and Jooble (need a personal free key) — see [14-new-sources-api-keys.md](14-new-sources-api-keys.md). Also later: Himalayas, GetOnBoard, Torre, HN "Who is hiring", Workable, Recruitee, SmartRecruiters.
 
 ## 2. Aggregators (`config.yaml → sources.aggregators`)
 

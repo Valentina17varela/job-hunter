@@ -44,9 +44,29 @@ Each phase ends with something runnable and verifiable. We don't move to the nex
 ## Phase 6 — Improvements (backlog, not committed)
 - `rewrite` tailoring mode (LLM rewording with LaTeX escaper and command allow-list).
 - Multiple CV variants (e.g. backend vs. platform) selectable per posting.
-- More ATS (Workable, Recruitee, SmartRecruiters) and sources (Himalayas, GetOnBoard, Torre, HN).
+- More ATS (Workable, Recruitee, SmartRecruiters) and sources (Himalayas, GetOnBoard, Torre, HN). Keyed sources are in spec 14.
 - Pre-ranking with local embeddings.
 - Preference learning from `mark` and `calibrate`.
+
+## Phase 7 — Planned features (specs written, nothing implemented yet)
+
+Each feature has its own spec with a task list, so it can be built task by task. Suggested order (small and independent first, the ones that gain from more data last):
+
+| # | Feature | Spec | Why this position |
+|---|---|---|---|
+| 1 | Favorites and company block list | [11](11-favorites-and-blocklist.md) | Small, no new dependencies, immediately useful; adds the multi-rule evaluation hook (`evaluate_all`) that insights need |
+| 2 | Add a posting by hand | [10](10-manual-postings.md) | Closes the biggest coverage gap (referrals, LinkedIn, newsletters); needs the safe URL fetcher |
+| 3 | New sources with API keys, **The Muse first** | [14](14-new-sources-api-keys.md) | More data for everything after; The Muse needs no key to start; defines the shared key/redaction rules for Adzuna and Jooble |
+| 4 | Market insights (analytics) | [13](13-market-insights.md) | Most valuable with several sources and some weeks of history; deterministic, no LLM |
+| 5 | Interview preparation kit | [12](12-interview-prep.md) | **Only on demand and only once a company answers** (`screening`/`interviewing`); built last because it is needed last |
+
+Decisions recorded for this phase:
+
+- The interview kit is never generated for postings that were merely applied to; the person asks for it per interview.
+- The Muse is the first keyed/keyless extra source (works without a key, 500 requests/hour); Adzuna and Jooble wait until the person has keys and the design is proven.
+- Insights are computed locally from the collected postings (skills vocabulary + cohorts); the LLM "market brief" is optional and off by default.
+- The block list lives in `config.yaml` (`search.companies_exclude`), favorites in the database.
+- Everything stays manual: none of these features adds a scheduler, background job or notification.
 
 ## Decisions (from review)
 
