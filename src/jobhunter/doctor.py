@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from jobhunter.config import Config, ConfigError, load_config
+from jobhunter.llm import claude_login_status
 
 MINIMAL_TEX = r"""\documentclass{article}
 \begin{document}
@@ -65,14 +66,14 @@ def run_checks(config_path: Path) -> list[Check]:
     except ConfigError as exc:
         checks.append(Check("config", False, str(exc)))
 
-    checks.append(
-        Check(
-            "ANTHROPIC_API_KEY",
-            bool(os.environ.get("ANTHROPIC_API_KEY")),
-            "set" if os.environ.get("ANTHROPIC_API_KEY") else "not set (needed from Phase 3)",
-            required=False,
-        )
-    )
+    backend = config.llm.backend if config else "claude_cli"
+    if backend == "claude_cli":
+        ok, detail = claude_login_status(config.llm) if config else (False, "config invalid")
+        checks.append(Check("llm (claude_cli)", ok, detail, required=False))
+    else:
+        has_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
+        detail = "ANTHROPIC_API_KEY set" if has_key else "ANTHROPIC_API_KEY not set"
+        checks.append(Check("llm (anthropic_api)", has_key, detail, required=False))
 
     engine = config.latex.engine if config else "tectonic"
     timeout = config.latex.timeout_seconds if config else 60

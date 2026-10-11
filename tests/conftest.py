@@ -20,3 +20,13 @@ def fixture_text():
         return (FIXTURES / name).read_text()
 
     return load
+
+
+@pytest.fixture(autouse=True)
+def isolated_cwd(tmp_path, monkeypatch):
+    """Run every test inside an empty temp directory.
+
+    Relative paths in configs (data/jobhunter.db, config/cv/master.tex, ...) then resolve
+    there, so a test can never read or modify the person's real database, CV or output.
+    """
+    monkeypatch.chdir(tmp_path)

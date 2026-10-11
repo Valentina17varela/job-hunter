@@ -88,6 +88,18 @@ MIGRATIONS: list[str] = [
     """
     ALTER TABLE jobs ADD COLUMN filter_flags TEXT;
     """,
+    # v4: scores remember which posting content they were computed for; human calibration
+    """
+    ALTER TABLE scores ADD COLUMN content_hash TEXT;
+    CREATE INDEX idx_scores_cache ON scores(job_id, content_hash, profile_hash, prompt_version);
+    CREATE TABLE calibration (
+        job_id INTEGER NOT NULL REFERENCES jobs(id),
+        llm_score INTEGER NOT NULL,
+        verdict TEXT NOT NULL,
+        agrees INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+    );
+    """,
 ]
 
 

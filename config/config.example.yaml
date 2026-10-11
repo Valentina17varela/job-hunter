@@ -28,14 +28,28 @@ search:
   max_age_days: 30          # aggregators only (they publish fresh dates)
   max_age_days_ats: null    # company boards: a listed posting is open; set e.g. 120 to skip evergreen ones
 
+llm:
+  backend: claude_cli          # claude_cli = your Claude subscription (run `claude auth login` once)
+                               # anthropic_api = API key in ANTHROPIC_API_KEY
+  claude_path: claude
+  timeout_seconds: 180
+  max_attempts: 3
+  effort: low                  # keeps scoring fast and terse (claude --effort)
+
 scoring:
-  model: claude-haiku-5-5
+  model: haiku                 # alias for claude_cli; e.g. claude-haiku-5-5 for the API
   score_threshold: 75
+  batch_size: 8                # postings per LLM call
   max_description_tokens: 1500
+  max_profile_tokens: 3000
+  # Tell the scorer where you live and how you can work, e.g.:
+  # "Based in Colombia. Can work from Colombia, or for companies in English-speaking countries
+  #  only as an independent contractor (no work visa)."
+  candidate_context: ""
   use_batch: false
 
 tailoring:
-  model: claude-sonnet-5-5
+  model: sonnet                # alias for claude_cli; e.g. claude-sonnet-5-5 for the API
   mode: select
   max_packages_per_day: 10
   languages: ["en", "es"]
@@ -47,7 +61,8 @@ latex:
   timeout_seconds: 60
 
 budget:
-  daily_budget_usd: 1.00
+  max_llm_calls_per_run: 60    # claude_cli backend: cap on LLM calls per run
+  daily_budget_usd: 1.00       # anthropic_api backend
 
 fx_rates_to_usd:
   EUR: 1.08

@@ -13,7 +13,7 @@
 | Storage | SQLite (`sqlite3` stdlib) | Local, no server |
 | CLI | `typer` | Simple, typed |
 | Config | YAML (`PyYAML`) + pydantic | Readable and validated |
-| LLM | `anthropic` SDK | Caching, Batch API |
+| LLM | `claude -p` (subscription, default) or `anthropic` SDK (API key) behind one interface in `llm.py` | No API key required; see 05 §1 |
 | Tests | `pytest`, `respx` (HTTP mocking) | Fetchers without network |
 | Lint/format | `ruff` | Single tool |
 | LaTeX | `tectonic` (preferred) or `latexmk` | Compile CV/letter to PDF; external binary, checked by `jobhunter doctor` |
@@ -102,14 +102,14 @@ Adding a source = one new file + registration in `sources/__init__.py`. The rest
 
 ## 6. Cost control
 
-- `llm.py` is the only place that calls the LLM. Per call it records: model, tokens in/out/cache, estimated cost → `llm_calls` table.
-- Before each call, `daily_budget_usd` is checked. If exceeded, the pipeline ends cleanly and reports how many postings remain pending.
+- `llm.py` is the only place that calls the LLM (backend `claude_cli` or `anthropic_api`). Per call it records: model, tokens in/out/cache and cost when the backend reports them → `llm_calls` table.
+- Before each call, the budget is checked: `max_llm_calls_per_run` (subscription backend) or `daily_budget_usd` (API backend). If exceeded, the pipeline ends cleanly and reports how many postings remain pending.
 - Prompt caching on the stable prefix (instructions + plain-text CV items).
 - Result cache keyed by `(job.content_hash, profile_hash, prompt_version)`.
 
 ## 7. Security and privacy
 
-- `ANTHROPIC_API_KEY` only via environment variable, never in files.
+- `ANTHROPIC_API_KEY` (API backend only) via environment variable, never in files. The subscription backend uses the person's own `claude` login and strips inherited credentials from the subprocess environment.
 - `config/cv/`, `data/`, `out/` in `.gitignore`.
 - Only the plain text of marked CV items and the posting text are sent to the LLM. The LaTeX preamble and header (name, phone, address, links) are never sent (see 06, 07).
 - LaTeX compilation runs with shell escape disabled, in a temp directory, with a timeout.

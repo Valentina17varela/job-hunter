@@ -9,7 +9,7 @@ from typing import Annotated
 
 import typer
 
-from jobhunter import __version__
+from jobhunter import __version__, latex
 from jobhunter.companies import (
     check_companies,
     discover,
@@ -22,7 +22,9 @@ from jobhunter.db import connect
 from jobhunter.doctor import run_checks
 from jobhunter.filters import JobFilter, job_from_row
 from jobhunter.http import HttpClient
+from jobhunter.llm import LlmAuthError, LlmClient, LlmError, build_backend
 from jobhunter.pipeline import REFILTER_STATUSES, FilterSummary, fetch_stage, filter_stage
+from jobhunter.scoring import ScoreSummary, score_stage
 from jobhunter.sources import build_sources
 
 app = typer.Typer(help="Find job postings, score them and prepare application packages.")
@@ -68,7 +70,7 @@ class Stage(StrEnum):
     TAILOR = "tailor"
 
 
-IMPLEMENTED_STAGES = {Stage.FETCH, Stage.FILTER}
+IMPLEMENTED_STAGES = {Stage.FETCH, Stage.FILTER, Stage.SCORE}
 
 
 def _load(config_path: Path):  # noqa: ANN202
@@ -100,8 +102,11 @@ def run(
     sources = build_sources(cfg, companies)
     do_fetch = stage in (Stage.ALL, Stage.FETCH)
     do_filter = stage in (Stage.ALL, Stage.FILTER)
+    do_score = stage in (Stage.ALL, Stage.SCORE)
     if dry_run:
-        planned = [n for n, on in (("fetch", do_fetch), ("filter", do_filter)) if on]
+        planned = [
+            n for n, on in (("fetch", do_fetch), ("filter", do_filter), ("score", do_score)) if on
+        ]
         typer.echo(f"Stages: {', '.join(planned)}")
         if do_fetch:
             typer.echo(f"Would fetch {len(sources)} sources ({len(companies)} company boards):")
@@ -118,6 +123,8 @@ def run(
     if do_filter:
         summary = filter_stage(conn, JobFilter(cfg.search, cfg.fx_rates_to_usd))
         _print_filter_summary(summary, conn)
+    if do_score:
+        _score(cfg, conn, explicit=stage == Stage.SCORE)
 
 
 async def _fetch(cfg, conn, sources) -> None:  # noqa: ANN001
@@ -131,6 +138,50 @@ async def _fetch(cfg, conn, sources) -> None:  # noqa: ANN001
     )
     for failure in summary.failures[:10]:
         typer.echo(f"  failed: {failure}", err=True)
+
+
+def _score(cfg, conn, *, explicit: bool) -> None:  # noqa: ANN001
+    """Run the scoring stage. In a full run it is skipped (with a note) when no CV exists yet."""
+    master = cfg.paths.cv_master
+    if not master.exists():
+        message = f"{master} not found; add your LaTeX CV to enable scoring."
+        if explicit:
+            typer.echo(f"error: {message}", err=True)
+            raise typer.Exit(code=1)
+        typer.echo(f"score skipped: {message}")
+        return
+    try:
+        doc = latex.parse(master.read_text())
+    except latex.CvError as exc:
+        typer.echo(f"error: {master}: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    client = LlmClient(
+        conn,
+        build_backend(cfg),
+        max_calls=cfg.budget.max_llm_calls_per_run,
+        daily_budget_usd=cfg.budget.daily_budget_usd
+        if cfg.llm.backend == "anthropic_api"
+        else None,
+        max_attempts=cfg.llm.max_attempts,
+    )
+    try:
+        summary = score_stage(conn, client, cfg, doc)
+    except LlmAuthError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except LlmError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    _print_score_summary(summary)
+
+
+def _print_score_summary(s: ScoreSummary) -> None:
+    typer.echo(
+        f"scored {s.scored} postings in {s.calls} LLM calls · reused {s.cached} cached · "
+        f"failed {s.failed} · selected {s.selected} · below threshold {s.below_threshold}"
+    )
+    if s.stopped:
+        typer.echo(f"  stopped early: {s.stopped} (re-run later to continue)")
 
 
 def _print_filter_summary(summary: FilterSummary, conn) -> None:  # noqa: ANN001
@@ -217,3 +268,103 @@ def companies_discover(config: ConfigOption = Path("config/config.yaml")) -> Non
         )
 
     asyncio.run(_discover())
+
+
+cv_app = typer.Typer(help="Work with your LaTeX master CV.")
+app.add_typer(cv_app, name="cv")
+
+
+@cv_app.command("check")
+def cv_check(config: ConfigOption = Path("config/config.yaml")) -> None:
+    """Validate the `% jh:` markers of master.tex (unique ids, balanced blocks) and compile it."""
+    from jobhunter.doctor import compile_tex
+
+    cfg = _load(config)
+    path = cfg.paths.cv_master
+    if not path.exists():
+        typer.echo(f"error: {path} not found", err=True)
+        raise typer.Exit(code=1)
+    try:
+        doc = latex.parse(path.read_text())
+    except latex.CvError as exc:
+        typer.echo(f"error: {path}: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    entries = sum(isinstance(c, latex.Entry) for sec in doc.sections for c in sec.children)
+    typer.echo(f"{len(doc.sections)} sections · {entries} entries · {len(doc.ids())} ids in total")
+    if not doc.sections:
+        typer.echo("warning: no `% jh:section` markers found; run `jobhunter cv init` first.")
+    for warning in latex.sensitive_warnings(doc):
+        typer.echo(f"warning: {warning} (marked text is sent to the LLM)")
+    ok, detail = compile_tex(path, cfg.latex.engine, cfg.latex.timeout_seconds)
+    typer.echo(f"compile: {detail}")
+    if not ok:
+        raise typer.Exit(code=1)
+
+
+@cv_app.command("init")
+def cv_init(
+    source: Annotated[Path, typer.Argument(help="Your plain LaTeX CV.")],
+    output: Annotated[
+        Path | None, typer.Option(help="Where to write (default: <source>.marked.tex).")
+    ] = None,
+) -> None:
+    """Propose `% jh:` markers for a plain LaTeX CV. Review the result before using it."""
+    if not source.exists():
+        typer.echo(f"error: {source} not found", err=True)
+        raise typer.Exit(code=1)
+    target = output or source.with_suffix(".marked.tex")
+    target.write_text(latex.propose_markers(source.read_text()))
+    typer.echo(
+        f"wrote {target}. Review it: sections and bullets got ids; wrap job/project blocks in "
+        "`% jh:entry <id> [required]` ... `% jh:endentry` by hand, "
+        "then save it as config/cv/master.tex."
+    )
+
+
+@app.command()
+def calibrate(
+    count: Annotated[int, typer.Option(help="How many scored postings to review.")] = 20,
+    config: ConfigOption = Path("config/config.yaml"),
+) -> None:
+    """Review the LLM's scores (y/n) so the rubric and threshold can be tuned."""
+    import json
+
+    cfg = _load(config)
+    conn = connect(cfg.paths.db)
+    rows = conn.execute(
+        "SELECT j.id, j.title, j.company, j.location, j.url, s.score, s.reasons FROM jobs j "
+        "JOIN scores s ON s.job_id = j.id WHERE j.id NOT IN (SELECT job_id FROM calibration) "
+        "AND j.status IN ('selected', 'scored', 'below_threshold') "
+        "GROUP BY j.id ORDER BY RANDOM() LIMIT ?",
+        (count,),
+    ).fetchall()
+    if not rows:
+        typer.echo("nothing to calibrate yet: score some postings first.")
+        return
+    from datetime import UTC, datetime
+
+    for row in rows:
+        info = json.loads(row["reasons"])
+        typer.echo(f"\n#{row['id']} {row['title']} — {row['company']} ({row['location']})")
+        typer.echo(f"  score {row['score']} · {info['verdict']} · {info['reason']}")
+        if info.get("red_flags"):
+            typer.echo(f"  red flags: {', '.join(info['red_flags'])}")
+        typer.echo(f"  {row['url']}")
+        agrees = typer.confirm("  Do you agree with this verdict?", default=True)
+        with conn:
+            conn.execute(
+                "INSERT INTO calibration(job_id, llm_score, verdict, agrees, created_at) "
+                "VALUES (?,?,?,?,?)",
+                (
+                    row["id"],
+                    row["score"],
+                    info["verdict"],
+                    int(agrees),
+                    datetime.now(UTC).isoformat(),
+                ),
+            )
+    agree, total = conn.execute(
+        "SELECT COALESCE(SUM(agrees), 0), COUNT(*) FROM calibration WHERE verdict = 'apply'"
+    ).fetchone()
+    if total:
+        typer.echo(f"\nagreement on 'apply' verdicts so far: {agree}/{total} ({agree / total:.0%})")

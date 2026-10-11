@@ -28,9 +28,10 @@ The person's existing LaTeX CV, kept as-is, plus lightweight **marker comments**
 ```
 
 Rules:
+- **Marker grammar (implemented in `latex.py`):** `% jh:section <name>` … `% jh:endsection`; `% jh:entry <id> [required]` … `% jh:endentry` (a job/project block; may contain items or none); `% jh:item <id> [tags=a,b]` (a bullet). An item runs from its marker until the next marker, the next `\item`, an `\end{...}` line or a **blank line**, so both `\item` bullets and plain-text `• ...` bullets (possibly wrapped over several lines) work. Text between markers belongs to the container (`head`/`suffix`) or travels with the preceding sibling (`tail`), so dropping or reordering items keeps `\begin{itemize}`/`\end{itemize}` intact. Assembling without a selection reproduces the original file minus the marker comments (verified on the real CV).
 - Everything **outside** `jh:` markers (preamble, header with name/contact, education if fixed, etc.) is copied **verbatim** and is **never sent to the LLM**. This keeps contact details out of any API call.
 - `jh:item` = a bullet that can be kept, dropped or reordered. `jh:entry` = a block (job, project) that can be kept or dropped as a whole. `jh:section` = a section whose entries can be reordered.
-- A `skills` section may be marked as `jh:list skills` (comma-separated tokens) so skills can be reordered/filtered.
+- Skills lines can be marked as items (one per category line). A finer-grained `jh:list` for individual skill tokens is deferred until Phase 4 needs it.
 - Each ID is stable and unique. A one-time conversion helper (`jobhunter cv init`) inserts markers with proposed IDs; the person reviews them.
 - The loader parses `master.tex` into a `Profile` model: sections → entries → items, each with ID, raw LaTeX and plain text. The LLM only ever sees the **plain text + IDs** (cheaper than raw LaTeX and no LaTeX noise), never the preamble.
 

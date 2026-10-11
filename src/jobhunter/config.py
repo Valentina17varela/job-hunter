@@ -31,15 +31,29 @@ class SearchConfig(_Strict):
     max_age_days_ats: int | None = None  # company boards; None = no limit (still listed = open)
 
 
+class LlmConfig(_Strict):
+    backend: Literal["claude_cli", "anthropic_api"] = "claude_cli"
+    claude_path: str = "claude"
+    timeout_seconds: int = 180
+    max_attempts: int = 3
+    effort: str | None = "low"  # `claude --effort`; low keeps scoring fast and terse
+    max_thinking_tokens: int | None = 0  # 0 disables extended thinking (fast, cheap)
+    # Optional USD per million tokens (input, output) per model, for the API backend's budget.
+    api_prices: dict[str, tuple[float, float]] = {}
+
+
 class ScoringConfig(_Strict):
-    model: str = "claude-haiku-5-5"
+    model: str = "haiku"
     score_threshold: int = 75
+    batch_size: int = 8
     max_description_tokens: int = 1500
+    max_profile_tokens: int = 3000
+    candidate_context: str = ""
     use_batch: bool = False
 
 
 class TailoringConfig(_Strict):
-    model: str = "claude-sonnet-5-5"
+    model: str = "sonnet"
     mode: Literal["select", "rewrite"] = "select"
     max_packages_per_day: int = 10
     languages: list[str] = ["en", "es"]
@@ -53,7 +67,8 @@ class LatexConfig(_Strict):
 
 
 class BudgetConfig(_Strict):
-    daily_budget_usd: float = 1.0
+    max_llm_calls_per_run: int = 60  # claude_cli backend
+    daily_budget_usd: float = 1.0  # anthropic_api backend
 
 
 class PathsConfig(_Strict):
@@ -91,6 +106,7 @@ class SourcesConfig(_Strict):
 class Config(_Strict):
     sources: SourcesConfig = SourcesConfig()
     search: SearchConfig = SearchConfig()
+    llm: LlmConfig = LlmConfig()
     scoring: ScoringConfig = ScoringConfig()
     tailoring: TailoringConfig = TailoringConfig()
     latex: LatexConfig = LatexConfig()

@@ -55,7 +55,13 @@ def test_run_dry_run_lists_sources(tmp_path):
     assert "remotive: 1" in result.stdout
 
 
-def test_run_unimplemented_stage_fails():
+def test_run_score_stage_without_a_cv_explains_what_is_missing():
     result = runner.invoke(app, ["run", "--stage", "score", "--config", EXAMPLE_CONFIG])
+    assert result.exit_code == 1
+    assert "master.tex not found" in result.output
+
+
+def test_run_tailor_stage_is_not_implemented_yet():
+    result = runner.invoke(app, ["run", "--stage", "tailor", "--config", EXAMPLE_CONFIG])
     assert result.exit_code == 1
     assert "not implemented" in result.output

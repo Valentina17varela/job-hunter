@@ -13,8 +13,8 @@ Local Python pipeline that finds job postings on public job boards, filters and 
 |---|---|---|
 | 0 | Skeleton: config, SQLite, `doctor` (LaTeX toolchain check) | ✅ Done |
 | 1 | Sources: aggregators + ATS boards, dedupe, company discovery | ✅ Done |
-| 2 | Hard filter on your criteria (`refilter`, `explain`) | ✅ Done (pending review) |
-| 3 | LLM scoring (Haiku), LaTeX CV parser, `calibrate` | ⏳ Planned |
+| 2 | Hard filter on your criteria (`refilter`, `explain`) | ✅ Done |
+| 3 | LLM scoring (Haiku via your Claude subscription), LaTeX CV parser, `calibrate` | ✅ Done (pending review) |
 | 4 | Tailoring: LaTeX CV/letter packages + PDF, translations, verification | ⏳ Planned |
 | 5 | Daily operation: `review`, `mark`, `stats`, scheduling | ⏳ Planned |
 
@@ -24,14 +24,14 @@ What works **today**: downloading postings from many sources into a local databa
 
 ```
    fetch ──▶ filter ──▶ score ──▶ tailor ──▶ YOU review and apply
-   (done)    (done)     (Phase 3) (Phase 4)
+   (done)    (done)     (done)    (Phase 4)
 ```
 
 | Stage | What it does | Costs tokens? | Needs from you |
 |---|---|---|---|
 | **fetch** | Downloads postings from public job boards | No | Nothing |
 | **filter** | Drops postings that don't match your criteria (title, seniority, remote, location, salary, keywords) | No | Your preferences in `config/config.yaml` |
-| **score** | LLM rates the remaining postings 0–100 against your CV | Yes (cents) | Your CV + `ANTHROPIC_API_KEY` |
+| **score** | LLM rates the remaining postings 0–100 against your CV and flags explicit blockers (country restrictions, work authorization, required time zone) | Yes (your Claude plan usage, or API cents) | Your marked LaTeX CV + `claude auth login` (or an API key) |
 | **tailor** | For the best ones, builds a LaTeX CV + cover letter (PDF) | Yes | Your cover-letter template |
 | **you** | Read the package, apply, mark the result | — | — |
 
@@ -51,14 +51,14 @@ cp config/config.example.yaml config/config.yaml  # your local settings (gitigno
 uv run jobhunter doctor                           # verifies Python, config, LaTeX and API key
 ```
 
-`doctor` output (the two warnings are expected until Phase 3):
+`doctor` output (warnings do not block the fetch and filter stages):
 
 ```
 [ok  ] python: 3.12.x (need >= 3.12)
 [ok  ] config: config/config.yaml is valid
-[warn] ANTHROPIC_API_KEY: not set (needed from Phase 3)
+[warn] llm (claude_cli): not logged in — run `claude auth login` in your terminal
 [ok  ] latex (tectonic): compiled OK
-[warn] master CV: config/cv/master.tex not found (needed from Phase 3)
+[warn] master CV: config/cv/master.tex not found (needed for scoring)
 ```
 
 The first LaTeX compilation is slow because `tectonic` downloads packages; later ones are fast. If `uv` or `tectonic` are not found, make sure `/opt/homebrew/bin` is in your `PATH`.
@@ -73,7 +73,12 @@ Add any company you like to `config/company_candidates.txt` and re-run it any ti
 
 **3. Set your preferences** — edit the `search:` section of `config/config.yaml` (titles, seniority, remote/location, **annual USD** salary, keywords). See [Setting your preferences](#setting-your-preferences-search). Apply changes with `uv run jobhunter refilter`.
 
-**4. Add your CV and API key** *(needed from Phase 3)* — put your LaTeX CV at `config/cv/master.tex` and `export ANTHROPIC_API_KEY=...` in your shell.
+**4. Enable the LLM stages** *(scoring; tailoring later)*
+
+- **Log in once, in your own terminal** (default backend, uses your Claude subscription, no API key): `claude auth login`. Then `uv run jobhunter doctor` should show `[ok] llm (claude_cli): logged in`.
+  Prefer an API key instead? Set `llm.backend: anthropic_api` in `config/config.yaml` and `export ANTHROPIC_API_KEY=...`.
+- **Put your LaTeX CV at `config/cv/master.tex`** and mark which parts can be selected (see [Your LaTeX CV](#your-latex-cv)).
+- **Tell the scorer how you can work**: fill `scoring.candidate_context` in `config/config.yaml` (e.g. "Based in Colombia. Can work for companies in English-speaking countries only as an independent contractor, no work visa."). Postings that explicitly require something you cannot meet are flagged and scored down.
 
 ### B. Your routine (the core use)
 
@@ -104,10 +109,21 @@ uv run jobhunter explain 123     # why posting #123 passed or was rejected, with
 
 **Tuning your criteria:** edit `search:` in `config/config.yaml`, then `uv run jobhunter refilter` (re-evaluates everything already downloaded, no network). Too few matches? Look at which rule rejects the most in the summary and loosen it. Too many? Add `keywords_include` or tighten `titles_include`.
 
-**When the next phases land, the routine becomes:**
+**Score the postings that pass** (needs the LLM setup from step A4):
 
 ```bash
-uv run jobhunter run          # fetch → filter → score → tailor, in one command   (Phases 3–4)
+uv run jobhunter run --stage score   # ~8 postings per LLM call, ~10 s per call
+sqlite3 -separator ' | ' data/jobhunter.db "select j.id, j.company, j.title, s.score, json_extract(s.reasons,'$.verdict'), json_extract(s.reasons,'$.reason'), j.url from jobs j join scores s on s.job_id=j.id and s.created_at=(select max(created_at) from scores where job_id=j.id) where j.status='selected' order by s.score desc;"
+uv run jobhunter explain 123         # criteria view of a posting
+uv run jobhunter calibrate           # tell the tool where you disagree with it
+```
+
+Postings end as `selected` (best matches, up to 10 a day), `scored` (good but no slot today), or `below_threshold`. `red_flags` in the score shows explicit blockers it found.
+
+**When the next phase lands, the routine becomes:**
+
+```bash
+uv run jobhunter run          # fetch → filter → score (→ tailor in Phase 4), in one command
 uv run jobhunter review       # list today's best matches and their packages      (Phase 5)
 # open out/<date>/<company>-<role>/ : read cv.pdf and cover_letter.pdf, apply yourself
 uv run jobhunter mark <id> applied   # keep track of what you did                 (Phase 5)
@@ -115,6 +131,25 @@ uv run jobhunter stats               # funnel and LLM cost                      
 ```
 
 Each phase updates this section when it ships, so what is written under "today" always works.
+
+## Your LaTeX CV
+
+`config/cv/master.tex` is your own LaTeX CV plus `% jh:` marker comments (comments only; compiling it still gives your original CV). Markers say what the tool may select or reorder; everything else, including your header with name, email and links, is copied untouched and **never sent to the LLM**.
+
+```latex
+% jh:section experience
+\section*{WORK EXPERIENCE}
+% jh:entry exp-acme required          % a job/project block; "required" = never dropped
+\noindent \textbf{Software Engineer, Acme} \\
+% jh:item exp-acme-1 tags=python,aws  % one bullet (ends at the next marker or a blank line)
+• Cut latency by 40\% \\
+% jh:item exp-acme-2
+• Built an API \\
+% jh:endentry
+% jh:endsection
+```
+
+Rules: sections contain entries and/or items; entries contain items; every id is unique; every block is closed (`endentry`, `endsection`). `jobhunter cv check` validates this and compiles the file. `jobhunter cv init plain.tex` proposes markers for a CV with `\item` bullets. A copy of your unmarked original is kept as `config/cv/master.original.tex`.
 
 ## Commands
 
@@ -125,12 +160,16 @@ All commands accept `--config/-c PATH` (default `config/config.yaml`) except whe
 | Command | What it does |
 |---|---|
 | `jobhunter --help` / `--version` | Usage and version |
-| `jobhunter doctor` | Checks Python ≥ 3.12, config validity, `ANTHROPIC_API_KEY`, the LaTeX engine (compiles a minimal document) and `master.tex` if present. Exits non-zero only on **required** failures (warnings do not fail) |
+| `jobhunter doctor` | Checks Python ≥ 3.12, config validity, the LLM backend (`claude` logged in, or `ANTHROPIC_API_KEY`), the LaTeX engine (compiles a minimal document) and `master.tex` if present. Exits non-zero only on **required** failures (warnings do not fail) |
 | `jobhunter run --stage fetch` | Fetches every configured source concurrently, stores new/changed postings, closes postings that disappeared, marks cross-source duplicates. Prints a one-line summary |
 | `jobhunter run --stage filter` | Applies your `search` criteria to postings with status `new` (no network, no tokens). Prints passed/rejected counts and how many each rule rejected |
 | `jobhunter run` (no `--stage`) | Runs all implemented stages (currently `fetch` then `filter`) |
 | `jobhunter run --dry-run` | Prints the stages and how many sources of each kind would be fetched, without any network call |
-| `jobhunter run --stage score\|tailor` | Exits with "not implemented yet" |
+| `jobhunter run --stage score` | Scores `passed` postings with the LLM in batches of `scoring.batch_size`, stores score, verdict, matches, gaps and red flags, then marks postings `selected` (top `max_packages_per_day` at or above `score_threshold`), `scored` (above threshold, no slot left) or `below_threshold`. Already-scored postings are never re-scored unless your CV, `candidate_context`, criteria or the prompt change. Stops cleanly at `budget.max_llm_calls_per_run` and resumes next run |
+| `jobhunter run --stage tailor` | Exits with "not implemented yet" |
+| `jobhunter cv check` | Validates the `% jh:` markers of `master.tex` (unique ids, balanced blocks, contact details inside marked text) and compiles it |
+| `jobhunter cv init <plain.tex>` | Proposes markers for an unmarked LaTeX CV (sections and `\item` bullets) into `<plain>.marked.tex`; you review and finish it by hand |
+| `jobhunter calibrate` | Shows scored postings and asks y/n whether you agree, to measure how well the verdicts match your judgement |
 | `jobhunter refilter` | Re-applies the filter to **all** stored postings (except ones you applied to, closed or duplicates) after you change `search`. Postings that still pass keep their later-stage status |
 | `jobhunter explain <id>` | Shows a posting (title, company, location, mode, salary, URL), its stored status/reason, and whether it passes the **current** criteria, with the rule and matching text if rejected |
 | `jobhunter companies check` | Probes every board in `companies.yaml` (200 vs 404). Lists broken ones and exits 1 if any |
@@ -146,7 +185,7 @@ A second run immediately after reports `new 0 · updated 0` (idempotent).
 
 ### Planned (see [`specs/07-cli-config.md`](specs/07-cli-config.md))
 
-`show <id>`, `review`, `mark <id> applied|replied|rejected|closed`, `stats`, `calibrate`, `cv init`, `cv check`, `cv translate --lang <code>`, and `run --stage score|tailor`.
+`show <id>`, `review`, `mark <id> applied|replied|rejected|closed`, `stats`, `cv translate --lang <code>`, and `run --stage tailor`.
 
 ## What it fetches
 
@@ -180,10 +219,11 @@ Your settings live in `config/config.yaml` (create it with `cp config/config.exa
 |---|---|---|
 | `sources` | Which aggregators, WWR categories, Arbeitnow pages, concurrency limits, `stale_days`, company/candidate file paths | Phase 1 |
 | `search` | **Your criteria**: `titles_include/exclude`, `keywords_include/exclude`, `seniority`, `work_mode`, `locations_allowed`, `salary`, `max_age_days` | Phase 2 |
-| `scoring` | Model (default `claude-haiku-5-5`), `score_threshold` (75), description truncation | Phase 3 |
+| `llm` | `backend` (`claude_cli` = your subscription, default; `anthropic_api`), `claude_path`, `timeout_seconds`, `max_attempts`, `effort`, `max_thinking_tokens` | Phase 3 |
+| `scoring` | `model` (alias `haiku`), `score_threshold` (75), `batch_size` (8), description/profile limits, `candidate_context` | Phase 3 |
 | `tailoring` | Model (default `claude-sonnet-5-5`), `mode: select`, `max_packages_per_day` (10), `languages`, `tone`, `max_cv_pages` | Phase 4 |
 | `latex` | `engine` (`tectonic` or `latexmk`), `timeout_seconds` | Phase 0 |
-| `budget` | `daily_budget_usd` (1.00) cap on LLM spend | Phase 3 |
+| `budget` | `max_llm_calls_per_run` (60, subscription backend) and `daily_budget_usd` (API backend) | Phase 3 |
 | `fx_rates_to_usd` | Manual FX table used to compare salaries | Phase 2 |
 | `paths` | CV master, letter template, database, output folder | — |
 
@@ -229,7 +269,7 @@ Salary: `min_usd` is **annual USD**. After editing, run `uv run jobhunter refilt
 
 | Variable | Use |
 |---|---|
-| `ANTHROPIC_API_KEY` | Only credential; needed from Phase 3. Never put it in files |
+| `ANTHROPIC_API_KEY` | Only for `llm.backend: anthropic_api`. Never put it in files. The default `claude_cli` backend ignores it (and strips it from the subprocess) and uses your `claude auth login` session |
 
 ## Data and privacy
 
@@ -267,6 +307,9 @@ src/jobhunter/
   db.py                 SQLite connection + versioned migrations
   http.py               polite async HTTP client (UA, retries, concurrency limits)
   text.py               HTML→text, remote-mode and salary inference
+  llm.py                LLM backends (claude -p / Anthropic API), budget, retries, call log
+  latex.py              master CV parser/assembler, plain-text digest, `cv init` markers
+  scoring.py            batch scoring, truncation, selection (selected/scored/below_threshold)
   filters.py            hard filter (JobFilter): titles, seniority, mode, location, keywords, salary, age
   store.py              upsert/dedupe, close stale, duplicate marking, fetch log
   companies.py          companies.yaml, check, discover
@@ -279,7 +322,7 @@ tests/                  pytest suite with real (trimmed) fixtures; no network
 ## Development
 
 ```bash
-uv run pytest                 # 144 tests, no network, ~1 s
+uv run pytest                 # 194 tests, no network, no LLM, ~3 s (tests run in an empty temp dir and never touch your data)
 uv run ruff check .           # lint
 uv run ruff format .          # format
 ```

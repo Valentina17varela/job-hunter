@@ -19,7 +19,7 @@
 | `jobhunter cv init` | One-time helper: proposes `jh:` markers and IDs for a plain LaTeX CV (output reviewed by the person) |
 | `jobhunter cv check` | Validates `master.tex` markers (unique IDs, balanced sections) and compiles it |
 | `jobhunter cv translate --lang <code>` | One-time translation of the master CV items/labels into `config/cv/translations/<code>.json` for the person to review |
-| `jobhunter doctor` | Checks the LaTeX toolchain, config and environment |
+| `jobhunter doctor` | Checks the LaTeX toolchain, config, and the LLM backend (`claude` logged in, or API key) |
 
 ## 2. Full `config.yaml` (reference)
 
@@ -38,14 +38,25 @@ sources:                           # see 03-sources.md
 
 search: { ... }                    # see 04-filtering.md
 
+llm:
+  backend: claude_cli              # claude_cli (subscription) | anthropic_api (API key)
+  claude_path: claude              # executable for claude_cli
+  timeout_seconds: 180             # per call
+  max_attempts: 3
+  effort: low                      # claude --effort
+  max_thinking_tokens: 0           # 0 = extended thinking off (fast, cheap)
+
 scoring:
-  model: claude-haiku-5-5
+  model: haiku                     # alias for claude_cli; e.g. claude-haiku-5-5 for the API
   score_threshold: 75
+  batch_size: 8                    # postings per LLM call
   max_description_tokens: 1500
-  use_batch: false
+  max_profile_tokens: 3000
+  candidate_context: ""            # ← where you live and how you can work; read by the scorer
+  use_batch: false                 # API backend only
 
 tailoring:
-  model: claude-sonnet-5-5
+  model: sonnet                    # alias for claude_cli; e.g. claude-sonnet-5-5 for the API
   mode: select                     # select | rewrite
   max_packages_per_day: 10
   languages: ["en", "es"]          # package language = posting language if it is in the list, else "en"
@@ -57,7 +68,8 @@ latex:
   timeout_seconds: 60
 
 budget:
-  daily_budget_usd: 1.00
+  max_llm_calls_per_run: 60        # claude_cli backend
+  daily_budget_usd: 1.00           # anthropic_api backend
 
 fx_rates_to_usd: { EUR: 1.08, COP: 0.00025, GBP: 1.27 }   # manual updates
 
@@ -72,7 +84,7 @@ paths:
 
 | Variable | Use |
 |---|---|
-| `ANTHROPIC_API_KEY` | The only credential. Never in files or logs |
+| `ANTHROPIC_API_KEY` | Only for `llm.backend: anthropic_api`. Never in files or logs. Ignored (and stripped) by the default `claude_cli` backend, which uses your `claude auth login` session |
 
 ## 4. Daily scheduling
 
@@ -98,6 +110,6 @@ LLM cost today: $0.18 / $1.00
 
 - [ ] `--dry-run` makes no network call to the LLM.
 - [ ] Invalid config → clear error with the field and line.
-- [ ] Without `ANTHROPIC_API_KEY`, the fetch and filter stages work; score/tailor fail with an actionable message.
+- [ ] Without a logged-in `claude` (or an API key for the API backend), the fetch and filter stages work; score/tailor fail with an actionable message (`claude auth login`).
 - [ ] Marked items with detected sensitive data → warning before any send.
 - [ ] `jobhunter doctor` reports the LaTeX engine found, compiles a minimal document and `master.tex`, and exits non-zero with an actionable message if either fails.

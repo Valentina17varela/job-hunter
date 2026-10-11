@@ -21,12 +21,11 @@ Each phase ends with something runnable and verifiable. We don't move to the nex
 - **Done when:** the acceptance criteria in 04 pass on real data. ✅ (25k postings evaluated in < 1 s; 132 tests passing.)
 - **Personal data:** roles, seniority, work mode, location, salary range, keywords — *to be filled in `config/config.yaml`; the filter works with any values.*
 
-## Phase 3 — Scoring
-- `latex.py` master parser (sections/entries/items with IDs), `cv init` and `cv check`.
-- `llm.py` (client, caching, cost, budget), `scoring.py`, `profile_summary` built from the parsed items.
-- `calibrate`.
-- **Done when:** `master.tex` parses and compiles; cost/posting < USD 0.002 and calibration ≥ 80% hit rate.
-- **Personal data:** LaTeX CV (`master.tex`), `ANTHROPIC_API_KEY`.
+## Phase 3 — Scoring ✅ implemented, pending review
+- `latex.py` master parser/assembler (sections/entries/items, required entries, verbatim reassembly), `cv init`, `cv check`.
+- `llm.py`: backends `claude_cli` (default, subscription) and `anthropic_api`, retries, call-count/USD budget, call log. `scoring.py`: batched scoring, caching, selection. `calibrate`. `doctor` checks the login.
+- **Done when:** `master.tex` parses and compiles ✅; scoring runs on the real postings ✅ (≈ 11 s per batch of 8 after disabling extended thinking); calibration ≥ 80% hit rate *(needs the person to run `jobhunter calibrate`)*.
+- **Personal data:** LaTeX CV (`master.tex`) ✅, `scoring.candidate_context` ✅, `claude auth login` ✅.
 
 ## Phase 4 — Tailoring
 - `cv translate` (one-time, reviewed translations per language) and posting-language detection.
