@@ -237,6 +237,15 @@ Two more tables, `fetch_log` (what each source returned, or why it failed) and `
 
 `uv run jobhunter ui --open` serves a local dashboard on `127.0.0.1`. Every button runs the same command as the CLI and streams its log into a panel on the page.
 
+What you can do there:
+
+- **Home:** a guided 3-step workflow (Search → Score with AI → Build packages), KPIs, a plain-language "what to do next" list, upcoming interviews and the funnel.
+- **Job matches:** tabs (best matches, all evaluated, applied, filtered out), search and filters, one-click *Build package* / *I applied* / *Hide*. **Any posting** can get a package by hand, whatever its score.
+- **Applications:** kanban from *Ready to apply* to *Offer*, notes and interviews (type, date, outcome) per application.
+- **Documents:** every generated CV and cover letter with its checks, the recruiter message, and a **Delete** button per package.
+- **Actions:** every stage and maintenance command with its options (dry run, only these ids, limit, rebuild).
+- **Settings:** edit everything: search criteria, AI engine and limits, sources and company list, your LaTeX CV and your cover-letter template.
+
 | | |
 |---|---|
 | ![Matches](docs/images/matches.png) **Job matches:** AI score, why it fits, what to verify, one-click build/apply | ![Detail](docs/images/job-detail.png) **Posting detail:** score, live filter verdict, package, notes and interviews |
