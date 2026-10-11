@@ -256,8 +256,12 @@ Two more tables, `fetch_log` (what each source returned, or why it failed) and `
 
 1. **`rewrite` tailoring mode:** let the LLM reword bullets (with a LaTeX escaper and command allow-list) for more freedom.
 2. **More sources:** Adzuna, Jooble and The Muse (need a free personal key), Himalayas, GetOnBoard, Torre.
-3. **Settings editor in the UI:** today criteria are edited in `config/config.yaml` and the page shows them.
-4. **Multiple CV variants** (e.g. backend vs. platform) chosen per posting.
+3. **Multiple CV variants** (e.g. backend vs. platform) chosen per posting.
+4. **Add a posting by hand** (paste a URL or text from LinkedIn, a referral or a newsletter) and run it through score and tailor.
+5. **Interview prep pack** per application: likely questions from the posting, your CV stories to tell, and gaps to prepare.
+6. **Follow-up reminders** with a drafted message for applications that have been quiet for a week.
+7. **Analytics:** response rate by source, time to first reply, and the technologies most requested in your matches vs. your CV.
+8. **Saved search profiles** (e.g. "backend", "platform") that can be switched in one click.
 
 <br>
 
@@ -337,7 +341,7 @@ search:
   max_age_days: 30       # aggregator postings only
 ```
 
-After editing, press **Re-filter everything** in Actions (or `uv run jobhunter refilter`). The **Settings** page shows what is in effect, and the dashboard shows which rule discards the most postings so you know what to loosen.
+You can edit all of this **in the UI** (Settings): tag inputs, checkboxes and plain-language hints, **Save & re-filter** in one click. Saving writes `config/config.yaml` keeping your comments (except inside a list you edit), validates every value first, and keeps a `.bak` of the previous version plus a one-time `.orig`. The same page edits your **LaTeX CV**, **cover-letter template** and **company list**. Prefer files? Edit `config.yaml` by hand and press **Re-filter everything** in Actions (or `uv run jobhunter refilter`). The dashboard shows which rule discards the most postings so you know what to loosen.
 
 <details>
 <summary><b>CLI reference</b></summary>
@@ -389,6 +393,8 @@ tests/             pytest suite (no network, no LLM)
 
 - **What reaches the LLM:** the plain text of the CV items you marked, your `candidate_context`, and the posting text. Never your name, email, phone or links (they live in the LaTeX header).
 - **What stays local:** the database, your CV, the generated documents and the web UI (`127.0.0.1` only; do not put it behind a tunnel, it shows your applications).
+- **Settings are safe to edit from the UI:** fields that choose a file or a program to run (`llm.claude_path`, the company files) can only be changed by hand in `config.yaml`, so a settings save can never become an arbitrary file write or code execution.
+- **Delete what you do not need:** each generated package (CV, letter, notes) has a Delete button in Documents and on the posting; only folders inside `out/` are ever removed and your application record is kept.
 - **Not committed:** `config/config.yaml`, `config/companies.yaml`, `config/cv/`, `data/`, `out/` and any API key.
 - **No automation:** the tool never applies, messages recruiters or runs in the background.
 - **Source terms:** aggregators ask for a link back to the original posting; every posting keeps its original URL and the tool is for personal use.

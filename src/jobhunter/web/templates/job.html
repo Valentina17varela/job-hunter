@@ -54,7 +54,8 @@
     <pre class="copy" id="recruiter">{{ package.recruiter_message }}</pre>
     <button class="btn small" data-copy="#recruiter">Copy message</button>
     {% endif %}
-    <div class="actions mt"><button class="btn small" data-run='{{ {"id": "tailor", "jobs": [job.id]}|tojson|forceescape }}' data-label="Rebuilding the package" data-reload>Rebuild package</button></div>
+    <div class="actions mt"><button class="btn small" data-run='{{ {"id": "tailor", "jobs": [job.id]}|tojson|forceescape }}' data-label="Rebuilding the package" data-reload>Rebuild package</button>
+      <button class="btn small danger" data-post="/api/jobs/{{ job.id }}/package/delete" data-json='{}' data-confirm="Delete the generated CV, letter and notes for this posting? Your application record is kept.">Delete package</button></div>
   {% else %}
     <p class="muted">No package yet. Interested in this one? Build it by hand, whatever its score or filter verdict. It runs here, only for this posting.</p>
     <button class="btn primary" data-run='{{ {"id": "tailor", "jobs": [job.id]}|tojson|forceescape }}' data-label="Building the package for this posting" data-reload>Build package for this posting</button>

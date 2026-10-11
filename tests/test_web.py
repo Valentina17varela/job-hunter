@@ -325,8 +325,9 @@ def test_health_endpoint_reports_checks(env):
 
 def test_settings_shows_search_criteria_and_cv_tree(env):
     html = env[0].get("/settings", headers=HOST).text
-    assert "What you are looking for" in html and "engineer" in html and "s-1" in html
-    assert "titles_include" not in html  # shown in plain language, not as config keys
+    assert "What I&#39;m looking for" in html or "What I'm looking for" in html
+    assert 'data-cfg="search.titles_include"' in html and "engineer" in html and "s-1" in html
+    assert "titles_include" in html and "Roles I want" in html  # editable, with plain labels
 
 
 # --- regressions found in review ---------------------------------------------------------------

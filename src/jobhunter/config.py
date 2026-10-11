@@ -6,7 +6,15 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PositiveInt,
+    ValidationError,
+)
 
 
 class _Strict(BaseModel):
@@ -14,7 +22,7 @@ class _Strict(BaseModel):
 
 
 class SalaryConfig(_Strict):
-    min_usd: int = 0
+    min_usd: NonNegativeInt = 0
     on_missing: Literal["pass", "reject"] = "pass"
 
 
@@ -27,15 +35,17 @@ class SearchConfig(_Strict):
     work_mode: list[Literal["remote", "hybrid", "onsite"]] = ["remote"]
     locations_allowed: list[str] = []
     salary: SalaryConfig = SalaryConfig()
-    max_age_days: int = 30  # aggregators (dated feeds)
-    max_age_days_ats: int | None = None  # company boards; None = no limit (still listed = open)
+    max_age_days: PositiveInt = 30  # aggregators (dated feeds)
+    max_age_days_ats: PositiveInt | None = (
+        None  # company boards; None = no limit (still listed = open)
+    )
 
 
 class LlmConfig(_Strict):
     backend: Literal["claude_cli", "anthropic_api"] = "claude_cli"
     claude_path: str = "claude"
-    timeout_seconds: int = 180
-    max_attempts: int = 3
+    timeout_seconds: PositiveInt = 180
+    max_attempts: PositiveInt = 3
     effort: str | None = "low"  # `claude --effort`; low keeps scoring fast and terse
     max_thinking_tokens: int | None = 0  # 0 disables extended thinking (fast, cheap)
     # Optional USD per million tokens (input, output) per model, for the API backend's budget.
@@ -44,10 +54,10 @@ class LlmConfig(_Strict):
 
 class ScoringConfig(_Strict):
     model: str = "haiku"
-    score_threshold: int = 75
-    batch_size: int = 8
-    max_description_tokens: int = 1500
-    max_profile_tokens: int = 3000
+    score_threshold: int = Field(75, ge=0, le=100)
+    batch_size: PositiveInt = 8
+    max_description_tokens: PositiveInt = 1500
+    max_profile_tokens: PositiveInt = 3000
     candidate_context: str = ""
     use_batch: bool = False
 
@@ -55,20 +65,20 @@ class ScoringConfig(_Strict):
 class TailoringConfig(_Strict):
     model: str = "sonnet"
     mode: Literal["select", "rewrite"] = "select"
-    max_packages_per_day: int = 10
+    max_packages_per_day: PositiveInt = 10
     languages: list[str] = ["en", "es"]
     tone: str = ""
-    max_cv_pages: int = 1
+    max_cv_pages: PositiveInt = 1
 
 
 class LatexConfig(_Strict):
     engine: Literal["tectonic", "latexmk"] = "tectonic"
-    timeout_seconds: int = 60
+    timeout_seconds: PositiveInt = 60
 
 
 class BudgetConfig(_Strict):
-    max_llm_calls_per_run: int = 60  # claude_cli backend
-    daily_budget_usd: float = 1.0  # anthropic_api backend
+    max_llm_calls_per_run: PositiveInt = 60  # claude_cli backend
+    daily_budget_usd: NonNegativeFloat = 1.0  # anthropic_api backend
 
 
 class PathsConfig(_Strict):
@@ -95,12 +105,12 @@ class SourcesConfig(_Strict):
         "remote-full-stack-programming-jobs",
         "remote-devops-sysadmin-jobs",
     ]
-    arbeitnow_pages: int = 3
+    arbeitnow_pages: PositiveInt = 3
     companies_file: Path = Path("config/companies.yaml")
     candidates_file: Path = Path("config/company_candidates.txt")
-    max_concurrency: int = 5
-    max_per_host: int = 2
-    stale_days: int = 7
+    max_concurrency: PositiveInt = 5
+    max_per_host: PositiveInt = 2
+    stale_days: PositiveInt = 7
 
 
 class Config(_Strict):

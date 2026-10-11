@@ -19,7 +19,7 @@ Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel
 | **Applications** `/pipeline` | Kanban of applications: Applied → Screening → Interviewing → Offer → Accepted / Rejected / Withdrawn / Ghosted. Move cards, add notes, schedule interviews (kind, date, notes, outcome) |
 | **Documents** `/packages` | Generated packages (cv.pdf, cover_letter.pdf, recruiter message, notes, verification result) with preview links |
 | **Actions** `/run` | Every stage and option with a description: fetch, filter (`run`/`refilter`), score, tailor, companies check/discover, cv check, doctor; dry-run toggle; live log; history of recent runs. Shows a cost note for LLM stages |
-| **Settings** `/settings` | Read-only view of the effective configuration (search criteria, scoring, tailoring, budgets) with explanations, the CV structure (sections, entries, ids) and the doctor checks. Editing stays in `config/config.yaml` |
+| **Settings** `/settings` | **Everything is editable**: search criteria (tag inputs, checkboxes), AI engine/model/threshold/tone/limits, sources, the company list, the LaTeX CV and the cover-letter template, with plain-language hints, "Save & re-filter", field-level validation errors and the doctor checks |
 
 ### 2.1 UX decisions (v2)
 
@@ -28,6 +28,13 @@ Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel
 - **Actions run in place:** every button (Home, Job matches, a posting, Documents, Actions) starts a whitelisted run and streams its log into a docked panel available on every page; the active run survives page navigation (`sessionStorage`) and the page refreshes itself when a run finishes.
 - **Job matches** are cards (score ring, AI reason, "N things to verify", one-click Build package / I applied / Hide) with tabs (Best matches, All evaluated, Applied, Filtered out, Everything).
 - **`search` stage** = fetch + filter (everything that needs no AI) so the first button on Home is free.
+
+### 2.2 Editing configuration (security and safety)
+
+- `POST /api/config {updates}` validates with the same pydantic model the CLI uses (numeric bounds included), then rewrites `config.yaml` with `ruamel.yaml` so comments and layout survive (fields left unchanged are not touched at all; a list the person edits loses comments inside it). Writes are atomic (temp file, `fsync`, replace), follow symlinks, keep the file mode, keep `.bak` (previous version) and a one-time `.orig`, and are verified by re-reading the result with the loader the CLI uses (YAML 1.1 quirks such as `NO`/`yes` are quoted).
+- Editable sections: `search`, `scoring`, `tailoring`, `llm`, `budget`, `sources`, `latex`, `fx_rates_to_usd`. **Not editable from the UI:** `paths`, and the fields that name a file or a program to run: `llm.claude_path`, `sources.companies_file`, `sources.candidates_file` (they would turn a save into an arbitrary file write or code execution).
+- `GET/POST /api/files/{cv|letter|candidates}` read and write only the paths configured in `config.yaml`. The CV is parsed (`% jh:` markers) and the letter template checked for its placeholders before saving; empty CV/letter content, files over 512 KB and non-UTF-8 files are refused. The buttons stay disabled until the file has loaded, so a failed load cannot overwrite a file with nothing.
+- `POST /api/jobs/{id}/package/delete` removes a posting's generated folder (only inside `out/`, never following links out of it), forgets its package rows and sends a still-`packaged` posting back to `selected`; a status you recorded (applied...) is kept. If a folder cannot be removed its row stays so the person can retry.
 
 ## 3. Runs
 

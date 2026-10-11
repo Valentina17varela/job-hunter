@@ -14,7 +14,7 @@
   async function post(url, body) {
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Request failed (' + res.status + ')');
+    if (!res.ok) { const err = new Error(data.error || 'Request failed (' + res.status + ')'); err.data = data; throw err; }
     return data;
   }
 
@@ -134,6 +134,130 @@
     ev.preventDefault();
     act(() => post('/api/jobs/' + form.dataset.newInterview + '/interviews', Object.fromEntries(new FormData(form))));
   });
+
+  // ---------- settings forms ----------
+  function initTags(box) {
+    let values = [];
+    try { values = JSON.parse(box.dataset.value || '[]'); } catch (e) { values = []; }
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Type and press Enter';
+    function render() {
+      $$('.tag', box).forEach((t) => t.remove());
+      values.forEach((v, i) => {
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.append(document.createTextNode(v));
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.setAttribute('aria-label', 'Remove ' + v);
+        x.textContent = '×';
+        x.addEventListener('click', () => { values.splice(i, 1); render(); });
+        tag.append(x);
+        box.insertBefore(tag, input);
+      });
+    }
+    function add(raw) {
+      raw.split(',').map((t) => t.trim()).filter(Boolean).forEach((t) => { if (!values.includes(t)) values.push(t); });
+      input.value = '';
+      render();
+    }
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ',') { ev.preventDefault(); add(input.value); }
+      else if (ev.key === 'Backspace' && !input.value && values.length) { values.pop(); render(); }
+    });
+    input.addEventListener('blur', () => { if (input.value.trim()) add(input.value); });
+    box.append(input);
+    box.getValues = () => { if (input.value.trim()) add(input.value); return values.slice(); };
+    render();
+  }
+  $$('.tags[data-cfg]').forEach(initTags);
+
+  function readField(el) {
+    switch (el.dataset.type) {
+      case 'tags': return el.getValues();
+      case 'checks': return $$('input:checked', el).map((c) => c.value);
+      case 'number': {
+        const v = el.value.trim();
+        if (v === '') return el.hasAttribute('data-nullable') ? null : undefined;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : undefined;
+      }
+      default: return el.value;
+    }
+  }
+
+  function setNested(obj, path, value) {
+    const keys = path.split('.');
+    keys.slice(0, -1).forEach((k) => { obj = obj[k] = obj[k] || {}; });
+    obj[keys[keys.length - 1]] = value;
+  }
+
+  function showErrors(card, errors) {
+    $$('.field', card).forEach((f) => { f.classList.remove('invalid'); const e = $('.error-text', f); if (e) e.hidden = true; });
+    (errors || []).forEach((err) => {
+      const el = $$('[data-cfg]', card).find((x) => x.dataset.cfg === err.field);
+      const field = el && el.closest('.field');
+      if (field) { field.classList.add('invalid'); const e = $('.error-text', field); e.textContent = err.message; e.hidden = false; }
+    });
+  }
+
+  document.addEventListener('click', async (ev) => {
+    const saveCfg = ev.target.closest('[data-save-cfg]');
+    if (saveCfg) {
+      const card = saveCfg.closest('[data-card]');
+      const state = $('.save-state', saveCfg.closest('.form-actions'));
+      if (saveCfg.disabled) return;
+      saveCfg.disabled = true;
+      const updates = {};
+      $$('[data-cfg]', card).forEach((el) => { const v = readField(el); if (v !== undefined) setNested(updates, el.dataset.cfg, v); });
+      try {
+        await post('/api/config', { updates });
+        showErrors(card, []);
+        state.textContent = 'Saved ✓';
+        state.className = 'save-state ok small';
+        if (saveCfg.dataset.then === 'refilter') startRun({ id: 'refilter' }, 'Re-filtering with your new criteria', true);
+      } catch (err) {
+        let detail = err.message;
+        if (err.data && err.data.errors) {
+          showErrors(card, err.data.errors);
+          detail = err.data.errors.map((e) => e.field + ': ' + e.message).join(' · ');
+        }
+        state.textContent = 'Not saved: ' + detail;
+        state.className = 'save-state bad small';
+      } finally { saveCfg.disabled = false; }
+      return;
+    }
+    const saveFile = ev.target.closest('[data-save-file]');
+    if (saveFile) {
+      const name = saveFile.dataset.saveFile;
+      const area = $('[data-file="' + name + '"]');
+      const state = $('.save-state', saveFile.closest('.form-actions'));
+      if (area.dataset.loaded !== '1') { state.textContent = 'The file has not loaded; nothing was saved.'; state.className = 'save-state bad small'; return; }
+      try {
+        await post('/api/files/' + name, { content: area.value });
+        state.textContent = 'Saved ✓ (previous version kept as .bak)';
+        state.className = 'save-state ok small';
+      } catch (err) {
+        state.textContent = 'Not saved: ' + err.message;
+        state.className = 'save-state bad small';
+      }
+    }
+  });
+
+  $$('[data-file]').forEach((area) => {
+    fetch('/api/files/' + area.dataset.file).then((r) => r.json()).then((f) => {
+      if (f.error) { area.placeholder = f.error; area.disabled = true; return; }
+      area.value = f.content || '';
+      area.dataset.loaded = '1';
+      if (!f.exists) area.placeholder = 'File not found: ' + f.path + ' (saving creates it)';
+    }).catch(() => { area.placeholder = 'Could not load the file'; area.disabled = true; });
+  });
+
+  $$('#settings-tabs a').forEach((a) => a.addEventListener('click', () => {
+    $$('#settings-tabs a').forEach((x) => x.classList.remove('on'));
+    a.classList.add('on');
+  }));
 
   // ---------- health ----------
   const health = $('#health');

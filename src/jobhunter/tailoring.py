@@ -562,3 +562,42 @@ def tailor_stage(
         summary.needs_review += 0 if result.verified else 1
     summary.calls = client.calls
     return summary
+
+
+def delete_packages(conn: sqlite3.Connection, out_root: Path, job_id: int) -> int:
+    """Delete the generated files of a posting and forget them. Returns the folders removed.
+
+    Only folders inside ``out_root`` are ever removed. A posting that was still just
+    `packaged` goes back to `selected`; one you applied to keeps the status you recorded.
+    """
+    root = out_root.resolve()
+    rows = conn.execute("SELECT path FROM packages WHERE job_id = ?", (job_id,)).fetchall()
+    removed = 0
+    failed: list[str] = []
+    for row in rows:
+        folder = Path(row["path"]).resolve()
+        if root in folder.parents and folder.is_dir():
+            try:
+                shutil.rmtree(folder)
+            except OSError:
+                failed.append(row["path"])  # keep its row so the person can retry
+                continue
+            removed += 1
+            parent = folder.parent
+            if parent != root and not any(parent.iterdir()):
+                parent.rmdir()  # drop the now-empty date folder
+    with conn:
+        for row in rows:
+            if row["path"] not in failed:
+                conn.execute(
+                    "DELETE FROM packages WHERE job_id = ? AND path = ?", (job_id, row["path"])
+                )
+        current = conn.execute("SELECT status FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        if current and current["status"] == "packaged" and not failed:
+            conn.execute("UPDATE jobs SET status = 'selected' WHERE id = ?", (job_id,))
+            conn.execute(
+                "INSERT INTO events(job_id, from_status, to_status, note, created_at) "
+                "VALUES (?,?,?,?,?)",
+                (job_id, "packaged", "selected", "package deleted", datetime.now(UTC).isoformat()),
+            )
+    return removed

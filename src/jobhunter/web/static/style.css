@@ -167,3 +167,13 @@ dl.profile { display: grid; grid-template-columns: 130px 1fr; gap: .7rem 1.2rem;
 
 .step-actions { margin-top: auto; display: flex; flex-direction: column; gap: .45rem; align-items: flex-start; }
 .todo { flex-wrap: wrap; } .todo p { flex: 1 1 55%; min-width: 220px; }
+
+/* settings forms */
+.form-grid { display: grid; gap: 1.15rem; margin-top: .6rem; } .field .flabel { display: block; font-weight: 600; margin-bottom: .35rem; } .hint { margin: .3rem 0 0; color: var(--muted); font-size: .84rem; } .error-text { margin: .3rem 0 0; color: var(--bad); font-size: .84rem; }
+.form-actions { display: flex; gap: .6rem; align-items: center; margin-top: 1.1rem; flex-wrap: wrap; } .save-state.ok { color: var(--good); } .save-state.bad { color: var(--bad); }
+.tags { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; padding: .4rem .5rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); min-height: 2.6rem; } .tags:focus-within { outline: 3px solid var(--brand-soft); border-color: var(--brand); }
+.tag { display: inline-flex; align-items: center; gap: .3rem; background: var(--brand-soft); color: var(--brand); border-radius: 999px; padding: .15rem .35rem .15rem .7rem; font-size: .86rem; font-weight: 550; } .tag button { background: none; border: 0; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 .25rem; border-radius: 50%; } .tag button:hover { background: rgba(0,0,0,.12); }
+.tags input { border: 0; outline: 0; background: transparent; flex: 1; min-width: 140px; padding: .25rem; }
+.checks { display: flex; gap: .6rem; flex-wrap: wrap; } .check { display: inline-flex; align-items: center; gap: .4rem; background: var(--soft); border: 1px solid var(--border); border-radius: 999px; padding: .3rem .8rem; cursor: pointer; }
+textarea.code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .82rem; line-height: 1.45; white-space: pre; overflow: auto; tab-size: 2; }
+details.advanced { margin-top: 1rem; } details.advanced summary { margin-bottom: .6rem; } .field.invalid .tags, .field.invalid input, .field.invalid textarea, .field.invalid select { border-color: var(--bad); }

@@ -1,68 +1,112 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
 {% block title %}Settings{% endblock %}
+
+{% macro field(label, hint='') -%}
+<div class="field"><label class="flabel">{{ label }}</label>{{ caller() }}{% if hint %}<p class="hint">{{ hint }}</p>{% endif %}<p class="error-text" hidden></p></div>
+{%- endmacro %}
+{% macro tags(path, value) -%}<div class="tags" data-cfg="{{ path }}" data-type="tags" data-value='{{ value|tojson|forceescape }}'></div>{%- endmacro %}
+{% macro number(path, value, nullable=false, min=0, width='9rem') -%}<input type="number" min="{{ min }}" style="width:{{ width }}" data-cfg="{{ path }}" data-type="number" {{ 'data-nullable' if nullable }} value="{{ value if value is not none else '' }}" placeholder="{{ 'no limit' if nullable else '' }}">{%- endmacro %}
+{% macro select(path, value, options) -%}<select data-cfg="{{ path }}" data-type="text">{% for v, label in options %}<option value="{{ v }}" {{ 'selected' if value == v }}>{{ label }}</option>{% endfor %}</select>{%- endmacro %}
+{% macro checks(path, value, options) -%}<div class="checks" data-cfg="{{ path }}" data-type="checks">{% for v in options %}<label class="check"><input type="checkbox" value="{{ v }}" {{ 'checked' if v in value }}> {{ v }}</label>{% endfor %}</div>{%- endmacro %}
+{% macro text(path, value, width='100%') -%}<input type="text" style="width:{{ width }}" data-cfg="{{ path }}" data-type="text" value="{{ value or '' }}">{%- endmacro %}
+{% macro area(path, value, rows=4) -%}<textarea rows="{{ rows }}" data-cfg="{{ path }}" data-type="text">{{ value or '' }}</textarea>{%- endmacro %}
+
 {% block content %}
 {% set s = config.search %}
 <header class="page-head"><div><h1>Settings</h1>
-  <p class="muted">What the tool is using right now. To change it, edit <code>{{ config_path }}</code>, then press “Re-filter everything” in Actions. This page reads the file live.</p></div></header>
+  <p class="muted">Everything is configurable here. Changes are written to <code>{{ config_path }}</code> (comments are kept, except inside a list you edit; a <code>.bak</code> copy of the previous version and a one-time <code>.orig</code> are saved). No restart needed.</p></div></header>
 
-<section class="card">
-  <h2>What you are looking for</h2>
-  <dl class="profile">
-    <dt>Roles</dt><dd>{% for t in s.titles_include %}<span class="chip good">{{ t }}</span>{% else %}any title{% endfor %}</dd>
-    <dt>Not these</dt><dd>{% for t in s.titles_exclude %}<span class="chip warn">{{ t }}</span>{% else %}—{% endfor %}</dd>
-    <dt>Seniority</dt><dd>{% for t in s.seniority %}<span class="chip">{{ t }}</span>{% else %}any{% endfor %}</dd>
-    <dt>Work mode</dt><dd>{% for t in s.work_mode %}<span class="chip">{{ t }}</span>{% else %}any{% endfor %}</dd>
-    <dt>Open to</dt><dd>{% for t in s.locations_allowed %}<span class="chip good">{{ t }}</span>{% else %}any location{% endfor %}</dd>
-    <dt>Key technologies</dt><dd>{% for t in s.keywords_include %}<span class="chip">{{ t }}</span>{% else %}—{% endfor %}</dd>
-    <dt>Minimum pay</dt><dd>{% if s.salary.min_usd %}<b>USD {{ "{:,}".format(s.salary.min_usd) }}</b> per year{% else %}no minimum{% endif %} <span class="muted">· postings without a published salary are {{ 'kept' if s.salary.on_missing == 'pass' else 'dropped' }}</span></dd>
-    <dt>Freshness</dt><dd>aggregator postings up to {{ s.max_age_days }} days old</dd>
-  </dl>
+<nav class="tabs" id="settings-tabs">
+  <a href="#looking" class="on">What I'm looking for</a><a href="#ai">AI &amp; documents</a><a href="#sources">Sources</a><a href="#files">My CV &amp; letter</a><a href="#system">System</a>
+</nav>
+
+<section class="card" id="looking" data-card>
+  <h2>{{ m.icon('target') }} What I'm looking for</h2>
+  <p class="muted">A posting is kept only if it passes all of these. Press <b>Save &amp; re-filter</b> to apply them to everything already downloaded.</p>
+  <div class="form-grid">
+    {% call field('Roles I want', 'The title must contain at least one of these words or phrases (case-insensitive, whole words).') %}{{ tags('search.titles_include', s.titles_include) }}{% endcall %}
+    {% call field('Words I do not want in the title', 'Any match drops the posting, e.g. frontend, mobile, qa, junior.') %}{{ tags('search.titles_exclude', s.titles_exclude) }}{% endcall %}
+    {% call field('Seniority', 'Guessed from the title: staff/principal/lead = lead, senior/sr = senior, junior/intern = junior, otherwise mid.') %}{{ checks('search.seniority', s.seniority, ['junior', 'mid', 'senior', 'lead']) }}{% endcall %}
+    {% call field('Work mode') %}{{ checks('search.work_mode', s.work_mode, ['remote', 'hybrid', 'onsite']) }}{% endcall %}
+    {% call field('Where I can work', 'Postings naming a place must name one of these (LATAM also matches “Latin America”). A plain “Remote” passes unless the text restricts the country. Leave empty to accept anywhere.') %}{{ tags('search.locations_allowed', s.locations_allowed) }}{% endcall %}
+    {% call field('Technologies I want to see', 'At least one must appear in the title or description.') %}{{ tags('search.keywords_include', s.keywords_include) }}{% endcall %}
+    {% call field('Things that rule a posting out', 'e.g. security clearance, US citizen.') %}{{ tags('search.keywords_exclude', s.keywords_exclude) }}{% endcall %}
+    {% call field('Minimum yearly pay (USD)', 'Compared with the top of the published range. Monthly pay × 12. 0 turns it off.') %}{{ number('search.salary.min_usd', s.salary.min_usd) }}{% endcall %}
+    {% call field('Postings without a published salary') %}{{ select('search.salary.on_missing', s.salary.on_missing, [('pass', 'Keep them'), ('reject', 'Drop them')]) }}{% endcall %}
+    {% call field('Freshness (days)', 'Aggregator postings older than this are dropped. For company boards a posting still listed is open, so leave it empty unless you want a limit.') %}
+      <div class="row">{{ number('search.max_age_days', s.max_age_days, min=1, width='7rem') }} <span class="muted small">aggregators</span>
+      {{ number('search.max_age_days_ats', s.max_age_days_ats, nullable=true, min=1, width='7rem') }} <span class="muted small">company boards</span></div>{% endcall %}
+  </div>
+  <div class="form-actions">
+    <button class="btn" data-save-cfg>Save</button>
+    <button class="btn primary" data-save-cfg data-then="refilter">Save &amp; re-filter</button>
+    <span class="save-state muted small"></span>
+  </div>
 </section>
 
-<div class="grid-2">
-  <section class="card">
-    <h2>How AI scoring works</h2>
-    <dl class="kv">
-      <dt>Engine</dt><dd>{{ config.llm.backend }} {% if config.llm.backend == 'claude_cli' %}<span class="muted">(your Claude subscription)</span>{% endif %}</dd>
-      <dt>Scoring model</dt><dd>{{ config.scoring.model }}</dd>
-      <dt>Writing model</dt><dd>{{ config.tailoring.model }}</dd>
-      <dt>Best-match threshold</dt><dd>{{ config.scoring.score_threshold }} / 100</dd>
-      <dt>Packages per day</dt><dd>up to {{ config.tailoring.max_packages_per_day }}</dd>
-      <dt>CV length</dt><dd>{{ config.tailoring.max_cv_pages }} page(s)</dd>
-      <dt>Letter tone</dt><dd>{{ config.tailoring.tone or '—' }}</dd>
-      <dt>Languages</dt><dd>{{ config.tailoring.languages|join(', ') }}</dd>
-      <dt>AI calls per run</dt><dd>up to {{ config.budget.max_llm_calls_per_run }}</dd>
-    </dl>
-  </section>
-  <section class="card">
-    <h2>What the AI knows about you</h2>
-    <p>{{ config.scoring.candidate_context or '—' }}</p>
-    <p class="muted small">Plus the marked parts of your LaTeX CV (never your name, email or phone).</p>
-  </section>
-</div>
-
-<section class="card">
-  <h2>My CV <code>{{ config.paths.cv_master }}</code></h2>
-  {% if cv is none %}<p class="muted">No master CV found. Put your LaTeX CV there and mark it (see the README).</p>
-  {% elif cv is string %}<p><span class="badge bad">Invalid markers</span> {{ cv }}</p>
-  {% else %}
-    <p class="muted">Only these marked parts can be selected or sent to the AI; your header and contact details never are.</p>
-    <div class="tree-grid">
-    {% for section in cv.sections %}
-      <div><h3>{{ section.name }}</h3>
-      <ul class="tree">
-      {% for child in section.children %}
-        <li><code>{{ child.id }}</code>{% if child.required is defined and child.required %} <span class="badge">required</span>{% endif %}
-          {% if child.items is defined %}<ul>{% for it in child.items %}<li><code>{{ it.id }}</code></li>{% endfor %}</ul>{% endif %}</li>
-      {% endfor %}
-      </ul></div>
-    {% endfor %}
-    </div>
-  {% endif %}
+<section class="card" id="ai" data-card>
+  <h2>{{ m.icon('spark') }} AI &amp; documents</h2>
+  <div class="form-grid">
+    {% call field('AI engine', 'Your Claude subscription (run “claude auth login” once) or an Anthropic API key.') %}{{ select('llm.backend', config.llm.backend, [('claude_cli', 'My Claude subscription'), ('anthropic_api', 'Anthropic API key')]) }}{% endcall %}
+    {% call field('What the AI should know about me', 'Where you live and what is a deal-breaker. The AI reads this when scoring and writing.') %}{{ area('scoring.candidate_context', config.scoring.candidate_context, 5) }}{% endcall %}
+    {% call field('Best-match threshold', 'Postings scoring at or above this (0-100) become best matches.') %}{{ number('scoring.score_threshold', config.scoring.score_threshold) }}{% endcall %}
+    {% call field('Packages per run', 'At most this many best matches are marked ready for packaging at once.') %}{{ number('tailoring.max_packages_per_day', config.tailoring.max_packages_per_day) }}{% endcall %}
+    {% call field('Letter tone') %}{{ text('tailoring.tone', config.tailoring.tone) }}{% endcall %}
+    {% call field('Languages', 'Letter and CV follow the posting\'s language when it is in this list; otherwise English. Codes like en, es.') %}{{ tags('tailoring.languages', config.tailoring.languages) }}{% endcall %}
+    {% call field('CV length (pages)') %}{{ number('tailoring.max_cv_pages', config.tailoring.max_cv_pages, min=1, width='6rem') }}{% endcall %}
+    {% call field('AI calls per run', 'A safety cap: a run stops cleanly when it is reached.') %}{{ number('budget.max_llm_calls_per_run', config.budget.max_llm_calls_per_run, min=1) }}{% endcall %}
+  </div>
+  <details class="advanced"><summary>Advanced</summary>
+  <div class="form-grid">
+    {% call field('Scoring model') %}{{ text('scoring.model', config.scoring.model, '14rem') }}{% endcall %}
+    {% call field('Writing model') %}{{ text('tailoring.model', config.tailoring.model, '14rem') }}{% endcall %}
+    {% call field('Postings per scoring call') %}{{ number('scoring.batch_size', config.scoring.batch_size, min=1, width='6rem') }}{% endcall %}
+    {% call field('Tailoring mode', 'select = reorders your own bullets (safe). rewrite is not available yet.') %}{{ select('tailoring.mode', config.tailoring.mode, [('select', 'select (safe)'), ('rewrite', 'rewrite')]) }}{% endcall %}
+    {% call field('Seconds before an AI call times out') %}{{ number('llm.timeout_seconds', config.llm.timeout_seconds, min=10, width='7rem') }}{% endcall %}
+    {% call field('LaTeX engine') %}{{ select('latex.engine', config.latex.engine, [('tectonic', 'tectonic'), ('latexmk', 'latexmk')]) }}{% endcall %}
+  </div></details>
+  <div class="form-actions"><button class="btn primary" data-save-cfg>Save</button><span class="save-state muted small"></span></div>
 </section>
 
-<section class="card">
+<section class="card" id="sources" data-card>
+  <h2>{{ m.icon('search') }} Sources</h2>
+  <div class="form-grid">
+    {% call field('Job boards to search', 'Company boards (Greenhouse, Lever, Ashby) come from your company list below.') %}{{ checks('sources.aggregators', config.sources.aggregators, ['remotive', 'remoteok', 'weworkremotely', 'arbeitnow', 'jobicy']) }}{% endcall %}
+    {% call field('We Work Remotely categories') %}{{ tags('sources.wwr_categories', config.sources.wwr_categories) }}{% endcall %}
+    {% call field('Close a posting after it disappears for (days)') %}{{ number('sources.stale_days', config.sources.stale_days, min=1, width='6rem') }}{% endcall %}
+  </div>
+  <div class="form-actions"><button class="btn primary" data-save-cfg>Save</button><span class="save-state muted small"></span></div>
+  <h3>Companies to look at</h3>
+  <p class="muted small">One company name per line. “Find their job boards” checks which of them publish on Greenhouse, Lever or Ashby and adds the ones found to your list. The company is only a way to discover boards: filtering ignores it.</p>
+  <textarea class="code" rows="8" data-file="candidates" spellcheck="false"></textarea>
+  <div class="form-actions">
+    <button class="btn" data-save-file="candidates">Save list</button>
+    <button class="btn" data-run='{"id":"companies-discover"}' data-label="Finding company job boards">Find their job boards</button>
+    <span class="save-state muted small"></span>
+  </div>
+</section>
+
+<section class="card" id="files">
+  <h2>{{ m.icon('doc') }} My CV and cover letter</h2>
+  <p class="muted">The LaTeX files the tool reads. Your header (name, contact) is never sent to the AI. A <code>.bak</code> copy of the previous version is kept when you save.</p>
+  <h3>CV <code>{{ config.paths.cv_master }}</code></h3>
+  <textarea class="code" rows="16" data-file="cv" spellcheck="false"></textarea>
+  <div class="form-actions"><button class="btn primary" data-save-file="cv">Save CV</button>
+    <button class="btn" data-run='{"id":"cv-check"}' data-label="Checking and compiling my CV">Check &amp; compile</button><span class="save-state muted small"></span></div>
+  <h3>Cover letter template <code>{{ config.paths.letter_template }}</code></h3>
+  <textarea class="code" rows="14" data-file="letter" spellcheck="false"></textarea>
+  <div class="form-actions"><button class="btn primary" data-save-file="letter">Save template</button><span class="save-state muted small"></span></div>
+  {% if cv is not none and cv is not string %}
+  <details class="advanced"><summary>CV structure the tool sees ({{ cv.sections|length }} sections)</summary>
+    <div class="tree-grid">{% for section in cv.sections %}<div><h3>{{ section.name }}</h3><ul class="tree">
+      {% for child in section.children %}<li><code>{{ child.id }}</code>{% if child.required is defined and child.required %} <span class="badge">required</span>{% endif %}
+        {% if child.items is defined %}<ul>{% for it in child.items %}<li><code>{{ it.id }}</code></li>{% endfor %}</ul>{% endif %}</li>{% endfor %}
+    </ul></div>{% endfor %}</div></details>
+  {% elif cv is string %}<p><span class="badge bad">Invalid markers</span> {{ cv }}</p>{% endif %}
+</section>
+
+<section class="card" id="system">
   <h2>System check</h2>
   <ul id="health" class="health"><li class="muted">Checking…</li></ul>
 </section>

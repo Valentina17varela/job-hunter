@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from jobhunter import applications, latex
+from jobhunter import applications, config_edit, latex, tailoring
 from jobhunter.config import Config, ConfigError, load_config
 from jobhunter.db import connect
 from jobhunter.doctor import run_checks
@@ -419,6 +419,73 @@ def create_app(
             ]
             health_cache["at"] = time.monotonic()
         return health_cache["data"]
+
+    async def read_json(request: Request) -> Any:
+        try:
+            return await request.json()
+        except ValueError:
+            return None
+
+    @app.get("/api/config")
+    def api_get_config() -> Any:
+        return cfg().model_dump(mode="json")
+
+    @app.post("/api/config")
+    async def api_save_config(request: Request) -> Any:
+        body = await read_json(request)
+        updates = body.get("updates") if isinstance(body, dict) else None
+        if not isinstance(updates, dict) or not updates:
+            return JSONResponse({"error": "updates object required"}, status_code=400)
+        try:
+            config_edit.save_updates(config_path, updates)
+        except config_edit.ConfigUpdateError as exc:
+            return JSONResponse({"error": str(exc), "errors": exc.errors}, status_code=422)
+        return {"ok": True}
+
+    def editable_file(name: str) -> Path | None:
+        config = cfg()
+        return {
+            "cv": config.paths.cv_master,
+            "letter": config.paths.letter_template,
+            "candidates": config.sources.candidates_file,
+        }.get(name)
+
+    @app.get("/api/files/{name}")
+    def api_get_file(name: str) -> Any:
+        path = editable_file(name)
+        if path is None:
+            return JSONResponse({"error": "unknown file"}, status_code=404)
+        try:
+            content = path.read_text(encoding="utf-8") if path.exists() else ""
+        except UnicodeDecodeError:
+            return JSONResponse({"error": "the file is not valid UTF-8 text"}, status_code=422)
+        return {"path": str(path), "exists": path.exists(), "content": content}
+
+    @app.post("/api/files/{name}")
+    async def api_save_file(request: Request, name: str) -> Any:
+        path = editable_file(name)
+        body = await read_json(request)
+        content = body.get("content") if isinstance(body, dict) else None
+        if path is None or not isinstance(content, str):
+            return JSONResponse({"error": "unknown file or missing content"}, status_code=400)
+        try:
+            config_edit.check_file_size(content)
+            if name in ("cv", "letter") and not content.strip():
+                raise ValueError("refusing to save an empty file")
+            if name == "cv":
+                latex.parse(content)
+            elif name == "letter":
+                config_edit.validate_letter_template(content)
+        except (ValueError, latex.CvError) as exc:
+            return JSONResponse({"error": str(exc)}, status_code=422)
+        config_edit.write_atomic(path, content if content.endswith("\n") else content + "\n")
+        return {"ok": True}
+
+    @app.post("/api/jobs/{job_id}/package/delete")
+    async def api_delete_package(job_id: int) -> Any:
+        config = cfg()
+        removed = tailoring.delete_packages(db(config), config.paths.out, job_id)
+        return {"ok": True, "deleted": removed}
 
     @app.post("/api/jobs/{job_id}/stage")
     async def api_stage(request: Request, job_id: int) -> Any:
