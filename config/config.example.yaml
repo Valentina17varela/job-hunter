@@ -1,5 +1,5 @@
 # Default configuration. Personal values (search criteria, salary, tone) are filled in
-# during the phases that need them; see specs/04-filtering.md and specs/07-cli-config.md.
+# when the feature that uses them is set up; see specs/04-filtering.md and specs/07-cli-config.md.
 sources:
   aggregators: [remotive, remoteok, weworkremotely, arbeitnow, jobicy]
   wwr_categories:

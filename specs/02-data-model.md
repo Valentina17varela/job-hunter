@@ -76,7 +76,7 @@ events(                              -- status-change history
 );
 ```
 
-### Application tracking (Phase 5, web UI)
+### Application tracking (web UI)
 
 ```sql
 applications(                        -- one row per posting the person applied to

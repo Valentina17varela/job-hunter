@@ -1,4 +1,4 @@
-"""Pipeline orchestration: fetch (Phase 1) and filter (Phase 2) stages."""
+"""Pipeline orchestration: the fetch and filter stages."""
 
 from __future__ import annotations
 

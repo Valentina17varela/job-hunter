@@ -75,7 +75,11 @@ Keyword counting is not understanding: counts reflect mentions, not importance; 
 - [ ] Optional LLM market brief with number verification.
 - [ ] README and this spec marked done.
 
-## 10. Acceptance criteria
+## 10. Consumers of these numbers
+
+- The salary percentiles feed the offer negotiation helper ([17](17-offer-negotiation.md)); the skills extraction and demand ranking also feed the leverage factors there.
+
+## 11. Acceptance criteria
 
 - [ ] The page lists the skills requested by the matches that are missing from the CV, with percentages and sample sizes.
 - [ ] The page shows how many postings fail only one rule, per rule.

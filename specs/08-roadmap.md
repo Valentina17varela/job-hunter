@@ -1,78 +1,50 @@
-# 08 — Roadmap and tasks
+# 08 — Roadmap
 
-Each phase ends with something runnable and verifiable. We don't move to the next phase without approval. No phase requires personal data before the one indicated.
+A flat list of tasks. Done tasks are checked; the rest are in the suggested order. Every task points to the spec that describes it and, where it matters, to what it depends on. Nothing here is a phase or a gate: each task is picked up, built, tested and documented on its own.
 
-## Phase 0 — Skeleton
-- Repo, `pyproject.toml` (uv), ruff, pytest, `.gitignore` (profile, data, out).
-- `models.py`, `config.py`, `db.py` + initial migration.
-- `jobhunter doctor` with LaTeX toolchain check (tectonic/latexmk) compiling a minimal document.
-- **Done when:** `pytest` and `ruff` pass; `jobhunter --help` and `jobhunter doctor` work.
-- **Personal data:** none.
+## Done
 
-## Phase 1 — Sources ✅ done
-- Breadth first: aggregators (Remotive, RemoteOK, We Work Remotely, Arbeitnow, Jobicy), then per-company ATS boards (Greenhouse, Lever, Ashby).
-- `companies discover` grows `companies.yaml` from `company_candidates.txt`; `companies check` validates slugs. (Any-company coverage: see 03 §1.)
-- Dedupe, `fetch_log`, closing absent postings, cross-source duplicates.
-- **Done when:** `jobhunter run --stage fetch` fills the DB with real postings; fixture tests pass. ✅ (25,069 postings from 204 sources in ~35 s; re-run → 0 new / 0 updated; 76 tests passing.)
-- **Personal data:** none needed (extra candidate company names optional).
+- [x] Project skeleton: config, SQLite with migrations, `doctor`, tests and lint
+- [x] Sources: Greenhouse, Lever, Ashby and five remote aggregators, dedupe, company discovery — [03](03-sources.md)
+- [x] Hard filter with `explain` and `refilter` — [04](04-filtering.md)
+- [x] LaTeX CV parser and markers, `cv check`, `cv init` — [06](06-tailoring.md)
+- [x] LLM scoring (subscription or API backend), batches, cache, selection, `calibrate` — [05](05-scoring.md)
+- [x] Tailored CV and cover letter (LaTeX → PDF) with verification, `cv translate`, `letter init`, `review` — [06](06-tailoring.md)
+- [x] Application tracking: stages, interviews, `mark`, `stats` — [02](02-data-model.md)
+- [x] Local web UI: Home, Job matches, Applications, Documents, Actions, Settings — [09](09-web-ui.md)
+- [x] Settings editor in the UI (criteria, AI, sources, CV, letter, company list) with safe writes — [09](09-web-ui.md)
+- [x] Build a package by hand for any posting; delete generated documents — [09](09-web-ui.md)
+- [x] Demo workspace (`scripts/seed_demo.py`) and README
 
-## Phase 2 — Filter ✅ done
-- `filters.py`, `refilter`, `explain`, `run --stage filter`.
-- **Done when:** the acceptance criteria in 04 pass on real data. ✅ (25k postings evaluated in < 1 s; 132 tests passing.)
-- **Personal data:** roles, seniority, work mode, location, salary range, keywords — *to be filled in `config/config.yaml`; the filter works with any values.*
+## To do
 
-## Phase 3 — Scoring ✅ done
-- `latex.py` master parser/assembler (sections/entries/items, required entries, verbatim reassembly), `cv init`, `cv check`.
-- `llm.py`: backends `claude_cli` (default, subscription) and `anthropic_api`, retries, call-count/USD budget, call log. `scoring.py`: batched scoring, caching, selection. `calibrate`. `doctor` checks the login.
-- **Done when:** `master.tex` parses and compiles ✅; scoring runs on the real postings ✅ (≈ 11 s per batch of 8 after disabling extended thinking); calibration ≥ 80% hit rate *(needs the person to run `jobhunter calibrate`)*.
-- **Personal data:** LaTeX CV (`master.tex`) ✅, `scoring.candidate_context` ✅, `claude auth login` ✅.
+Suggested order: small and independent first, those that gain from more data later, the ones needed late in a process last.
 
-## Phase 4 — Tailoring ✅ done (pending the person's review of real packages)
-- `cv translate` (one-time, reviewed translations per language), posting-language detection.
-- `tailoring.py`: LLM selection of CV items (select mode), page-fit trimming, cover letter + recruiter message + notes in the posting's language, verification (ids, verbatim, letter facts, compile, pages), export to `out/`.
-- LaTeX letter template (formal, one page) + generic example; `letter init`; `run --stage tailor`; `review`.
-- **Done when:** the criteria in 06 pass; the person reviews 3 real packages (`.tex` + `.pdf`) and approves them.
-- **Personal data:** letter template/tone ✅ (formal, warm, one page), languages ✅ (en/es), max CV pages ✅ (1).
+- [ ] **Favorites and company block list** — [11](11-favorites-and-blocklist.md)
+- [ ] **Add a posting by hand** (URL or pasted text) — [10](10-manual-postings.md)
+- [ ] **The Muse as a new source** (works without a key) — [14](14-new-sources-api-keys.md)
+- [ ] **CV importer**: any CV to a marked LaTeX master — [16](16-cv-importer.md)
+- [ ] **First-run setup wizard** in the UI (uses the importer for its CV step) — [15](15-onboarding-wizard.md) · after the importer, or first with the "I have a marked CV / skip" paths
+- [ ] **Market insights**: skills demand, gaps vs your CV, what a single rule discards, pay — [13](13-market-insights.md) · gains from The Muse and some weeks of data
+- [ ] **Offer negotiation helper** — [17](17-offer-negotiation.md) · needs the pay percentiles of the insights task
+- [ ] **Interview preparation kit**, on demand once a company answers — [12](12-interview-prep.md)
+- [ ] **Adzuna and Jooble sources**, once there are keys — [14](14-new-sources-api-keys.md)
 
-## Phase 5 — Tracking, web UI and docs ✅ done
-- `applications.py`: `mark`, `stats`, application stages and interviews; `review`.
-- Local web UI (`jobhunter ui`, see 09): dashboard, postings, pipeline/interviews, packages, manual runs, settings.
-- README in the style of the author's other projects (badges, diagrams, clear sections); a redesigned, friendlier UI (guided workflow, plain-language labels).
-- **Done when:** the person can run the whole flow and track applications and interviews from the UI or the CLI, entirely by hand.
-- **Out of scope by decision:** scheduling/automatic runs (see 00 principles).
+## Not specified yet
 
-## Phase 6 — Improvements (backlog, not committed)
-- `rewrite` tailoring mode (LLM rewording with LaTeX escaper and command allow-list).
-- Multiple CV variants (e.g. backend vs. platform) selectable per posting.
-- More ATS (Workable, Recruitee, SmartRecruiters) and sources (Himalayas, GetOnBoard, Torre, HN). Keyed sources are in spec 14.
-- Pre-ranking with local embeddings.
-- Preference learning from `mark` and `calibrate`.
+Ideas reviewed and kept for later specs: match breakdown and keyword coverage of the generated CV; next actions, tasks and follow-up reminders with contacts and drafted outreach messages; answers bank and apply-assistant panel; trust and freshness badges; saved search profiles; learning from what you hide or apply to; a clip bookmarklet; weekly goals; UI in Spanish; `rewrite` tailoring mode; multiple CV variants; more boards (Workable, Recruitee, SmartRecruiters, Himalayas, GetOnBoard, Torre); CSV export and backup; `.ics` export of interviews.
 
-## Phase 7 — Planned features (specs written, nothing implemented yet)
+Reviewed and deliberately **not** adopted: mass auto-apply, scraping recruiter emails, browser extensions that fill other sites' forms.
 
-Each feature has its own spec with a task list, so it can be built task by task. Suggested order (small and independent first, the ones that gain from more data last):
+## Decisions
 
-| # | Feature | Spec | Why this position |
-|---|---|---|---|
-| 1 | Favorites and company block list | [11](11-favorites-and-blocklist.md) | Small, no new dependencies, immediately useful; adds the multi-rule evaluation hook (`evaluate_all`) that insights need |
-| 2 | Add a posting by hand | [10](10-manual-postings.md) | Closes the biggest coverage gap (referrals, LinkedIn, newsletters); needs the safe URL fetcher |
-| 3 | New sources with API keys, **The Muse first** | [14](14-new-sources-api-keys.md) | More data for everything after; The Muse needs no key to start; defines the shared key/redaction rules for Adzuna and Jooble |
-| 4 | Market insights (analytics) | [13](13-market-insights.md) | Most valuable with several sources and some weeks of history; deterministic, no LLM |
-| 5 | Interview preparation kit | [12](12-interview-prep.md) | **Only on demand and only once a company answers** (`screening`/`interviewing`); built last because it is needed last |
-
-Decisions recorded for this phase:
-
-- The interview kit is never generated for postings that were merely applied to; the person asks for it per interview.
-- The Muse is the first keyed/keyless extra source (works without a key, 500 requests/hour); Adzuna and Jooble wait until the person has keys and the design is proven.
-- Insights are computed locally from the collected postings (skills vocabulary + cohorts); the LLM "market brief" is optional and off by default.
-- The block list lives in `config.yaml` (`search.companies_exclude`), favorites in the database.
-- Everything stays manual: none of these features adds a scheduler, background job or notification.
-
-## Decisions (from review)
-
-1. `tailoring.mode` default: **`select`**.
-2. Package language: **the posting's** language for the CV, cover letter and recruiter message. The master CV is English-only, so the CV is translated **once per language** and reviewed by the person (see 06 §4.0). Allowed languages in `tailoring.languages`; unsupported languages fall back to English.
-3. Score threshold **75**, **10 packages/day**.
-4. Daily budget **USD 1**.
-5. No automatic runs and no notifications: everything is triggered by hand from the CLI or the UI.
-6. No sources added or excluded in v1.
+1. Tailoring mode is `select`: the LLM reorders and picks the person's own bullets; code copies the original LaTeX.
+2. Packages follow the posting's language; the master CV is translated once per language and reviewed by the person (06 §4.0).
+3. Score threshold 75, up to 10 packages per run, a cap of AI calls per run instead of a price (subscription backend).
+4. **Everything is manual**: no scheduler, background job or notification. Every stage is started from the CLI or the UI.
+5. The README describes only what works today; planned work lives in the specs and in this list.
+6. The interview kit and the negotiation helper are on demand and only available at the right stage of an application.
+7. Keys for extra sources live only in environment variables and are redacted from every log (14).
+8. The CV importer never sends contact details to the LLM and the LaTeX is produced by code (16).
+9. The block list lives in `config.yaml` (`search.companies_exclude`); favorites live in the database (11).
+10. Insights are computed locally from collected postings; any LLM summary is optional and off by default (13).

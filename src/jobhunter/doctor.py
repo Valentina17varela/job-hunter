@@ -70,6 +70,6 @@ def run_checks(config_path: Path) -> list[Check]:
             checks.append(Check("master CV", ok, f"{master}: {detail}", required=False))
         else:
             checks.append(
-                Check("master CV", False, f"{master} not found (needed from Phase 3)", False)
+                Check("master CV", False, f"{master} not found (needed for scoring)", False)
             )
     return checks

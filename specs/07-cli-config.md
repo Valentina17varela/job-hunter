@@ -88,6 +88,10 @@ paths:
 |---|---|
 | `ANTHROPIC_API_KEY` | Only for `llm.backend: anthropic_api`. Never in files or logs. Ignored (and stripped) by the default `claude_cli` backend, which uses your `claude auth login` session |
 
+## 3.1 Planned commands (specs only)
+
+`jobhunter add` ([10](10-manual-postings.md)), `jobhunter favorite|favorites` ([11](11-favorites-and-blocklist.md)), `jobhunter prep` ([12](12-interview-prep.md)), `jobhunter insights` ([13](13-market-insights.md)), `jobhunter cv import` ([16](16-cv-importer.md)), `jobhunter offer` ([17](17-offer-negotiation.md)); `jobhunter ui` will create `config/config.yaml` when it is missing ([15](15-onboarding-wizard.md)).
+
 ## 4. No automatic runs
 
 Everything is triggered by the person: `jobhunter run ...` in a terminal or the buttons of the web UI (`jobhunter ui`). The project deliberately ships no scheduler, daemon or notification; the web UI only listens while `jobhunter ui` is running.

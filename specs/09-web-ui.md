@@ -36,6 +36,10 @@ Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel
 - `GET/POST /api/files/{cv|letter|candidates}` read and write only the paths configured in `config.yaml`. The CV is parsed (`% jh:` markers) and the letter template checked for its placeholders before saving; empty CV/letter content, files over 512 KB and non-UTF-8 files are refused. The buttons stay disabled until the file has loaded, so a failed load cannot overwrite a file with nothing.
 - `POST /api/jobs/{id}/package/delete` removes a posting's generated folder (only inside `out/`, never following links out of it), forgets its package rows and sends a still-`packaged` posting back to `selected`; a status you recorded (applied...) is kept. If a folder cannot be removed its row stays so the person can retry.
 
+### 2.3 Planned UI additions (specs only)
+
+`/setup` first-run wizard ([15](15-onboarding-wizard.md)), the CV importer screens ([16](16-cv-importer.md)), the Offer card and analysis page on applications at stage `offer` ([17](17-offer-negotiation.md)), plus the pages of specs 10-14 (add posting dialog, favorites tab, Insights, Prep card).
+
 ## 3. Runs
 
 - `POST /api/runs {command: [...], dry_run}` accepts only a **whitelist** of commands (`run --stage …`, `refilter`, `companies check|discover`, `cv check`, `doctor`); anything else is rejected. Arguments are never interpolated into a shell.

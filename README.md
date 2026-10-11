@@ -261,20 +261,6 @@ What you can do there:
 - **Packages are replaced atomically.** A rebuild is written in a temporary folder and swapped in, so a failed run never leaves half old, half new files.
 - **Tests never touch your data.** Each test runs in an empty temporary directory.
 
-### Roadmap
-
-Planned features, each with a spec and a task list (nothing below is implemented yet; the order is a suggestion):
-
-| Feature | What it will do | Spec |
-|---|---|---|
-| ⭐ **Favorites and company block list** | Star any posting to keep it close whatever the AI said; block companies you never want to see again | [11](specs/11-favorites-and-blocklist.md) |
-| ➕ **Add a posting by hand** | Paste a URL or the text of an offer found on LinkedIn, a referral or a newsletter and run it through scoring and packaging | [10](specs/10-manual-postings.md) |
-| 🔌 **New sources, The Muse first** | The Muse works without a key (500 requests/hour); Adzuna and Jooble with free keys, kept in environment variables and redacted from every log | [14](specs/14-new-sources-api-keys.md) |
-| 📊 **Market insights** | Which technologies your matches ask for that your CV lacks, what is rising, what you discard because of a single rule, pay and top companies | [13](specs/13-market-insights.md) |
-| 🎤 **Interview prep kit** | On demand, only once a company answers: likely questions, STAR stories from your CV, gaps and questions to ask | [12](specs/12-interview-prep.md) |
-
-Smaller ideas not yet specified: `rewrite` tailoring mode, multiple CV variants per posting, saved search profiles, follow-up reminders with a drafted message, `.ics` export of interviews, CSV export and backup.
-
 <br>
 
 ## ⚙️ How To Run
@@ -420,7 +406,7 @@ uv run pytest             # no network, no LLM; each test runs in an empty temp 
 uv run ruff check . && uv run ruff format --check .
 ```
 
-The project is built spec-first: [`specs/`](specs/) holds the design (start at [`00-overview.md`](specs/00-overview.md)) and [`CLAUDE.md`](CLAUDE.md) the working conventions (English everywhere, phase by phase, README kept current).
+The project is built spec-first: [`specs/`](specs/) holds the design (start at [`00-overview.md`](specs/00-overview.md)) and [`CLAUDE.md`](CLAUDE.md) the working conventions (English everywhere, one task at a time, README kept current).
 
 ## ❓ Troubleshooting
 

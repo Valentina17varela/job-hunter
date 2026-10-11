@@ -31,7 +31,7 @@ Rules:
 - **Marker grammar (implemented in `latex.py`):** `% jh:section <name>` … `% jh:endsection`; `% jh:entry <id> [required]` … `% jh:endentry` (a job/project block; may contain items or none); `% jh:item <id> [tags=a,b]` (a bullet). An item runs from its marker until the next marker, the next `\item`, an `\end{...}` line or a **blank line**, so both `\item` bullets and plain-text `• ...` bullets (possibly wrapped over several lines) work. Text between markers belongs to the container (`head`/`suffix`) or travels with the preceding sibling (`tail`), so dropping or reordering items keeps `\begin{itemize}`/`\end{itemize}` intact. Assembling without a selection reproduces the original file minus the marker comments (verified on the real CV).
 - Everything **outside** `jh:` markers (preamble, header with name/contact, education if fixed, etc.) is copied **verbatim** and is **never sent to the LLM**. This keeps contact details out of any API call.
 - `jh:item` = a bullet that can be kept, dropped or reordered. `jh:entry` = a block (job, project) that can be kept or dropped as a whole. `jh:section` = a section whose entries can be reordered.
-- Skills lines can be marked as items (one per category line). A finer-grained `jh:list` for individual skill tokens is deferred until Phase 4 needs it.
+- Skills lines can be marked as items (one per category line). A finer-grained `jh:list` for individual skill tokens is deferred until it is needed.
 - Each ID is stable and unique. A one-time conversion helper (`jobhunter cv init`) inserts markers with proposed IDs; the person reviews them.
 - The loader parses `master.tex` into a `Profile` model: sections → entries → items, each with ID, raw LaTeX and plain text. The LLM only ever sees the **plain text + IDs** (cheaper than raw LaTeX and no LaTeX noise), never the preamble.
 
@@ -123,7 +123,7 @@ Deterministic checks (no LLM):
 - Compiler: `tectonic` (self-contained, auto-fetches packages) preferred; `latexmk -pdf` as fallback. Configurable: `latex.engine`.
 - Compilation runs in a temp directory with a timeout (60 s) and `-no-shell-escape`; no network needed beyond package fetching.
 - Class, style, font and image files next to `master.tex` (`.cls .sty .bst .bib .png .jpg .pdf .ttf .otf`) are copied into the temp directory, so CVs with custom classes compile as they do in place.
-- Phase 0 includes a toolchain check (`jobhunter doctor`) that reports which engine is installed and compiles a minimal document.
+- `jobhunter doctor` includes a toolchain check (`jobhunter doctor`) that reports which engine is installed and compiles a minimal document.
 - Fonts/classes used by the person's CV must be available to the engine; `doctor` compiles `master.tex` as-is to catch this early.
 
 ## 7. Token savings

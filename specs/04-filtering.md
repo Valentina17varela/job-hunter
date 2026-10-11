@@ -40,7 +40,7 @@ Evaluated in order, stopping at the first failure and storing `filter_reason`:
 - **Geographic restriction:** regex over common patterns (`US only`, `must be located in`, `EU timezone`) → `reject` if it doesn't match `locations_allowed`.
 - **Currency:** conversion to USD with a fixed rate table in `config.yaml` (manual updates), enough for filtering.
 
-### Implementation notes (Phase 2)
+### Implementation notes
 
 - Terms match on **word boundaries**, case-insensitive: `intern` does not match "Internal".
 - A non-generic location ("Remote - US", "Seattle") must contain an allowed term (`latam` also matches "latin america"). Generic ones ("Remote", "Worldwide", "Anywhere in the World") pass unless the description restricts the location ("US only", "must be located in the United States", "EU time zones") **and** no allowed place is mentioned next to the restriction. Acronyms (`US`, `EU`) are case-sensitive so "contact us only…" is not a restriction; "US-based startup" is not a restriction either.

@@ -69,8 +69,8 @@ A local Python pipeline that, **whenever the person triggers it** (nothing runs 
 
 | Stage | Data |
 |---|---|
-| Phase 1 (sources) | Target company list (optional; a seed list is provided) |
-| Phase 2 (filter) | Target roles, seniority, location/remote, salary range, keywords to include/exclude |
-| Phase 3 (scoring) | Master CV in LaTeX (`master.tex`) with achievements and stack; a sentence on where you live and how you can work (`scoring.candidate_context`) |
-| Phase 4 (tailoring) | Cover-letter LaTeX template (or "build one from my CV style"), letter tone, languages, max CV pages |
+| Search (sources) | Target company list (optional; a seed list is provided) |
+| Filtering | Target roles, seniority, location/remote, salary range, keywords to include/exclude |
+| Scoring | Master CV in LaTeX (`master.tex`) with achievements and stack; a sentence on where you live and how you can work (`scoring.candidate_context`) |
+| Tailoring | Cover-letter LaTeX template (or "build one from my CV style"), letter tone, languages, max CV pages |
 | Before calling the LLM | Either `claude auth login` once (default: uses your Claude subscription, no API key) or `ANTHROPIC_API_KEY` (see 05 §1) |
