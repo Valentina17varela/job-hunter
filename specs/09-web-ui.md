@@ -38,6 +38,9 @@ Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel
 
 ### 2.3 Planned UI additions (specs only)
 
+A visual redesign from collected design ideas is specified in [18](18-frontend-redesign.md) (inputs in `design/`).
+
+
 `/setup` first-run wizard ([15](15-onboarding-wizard.md)), the CV importer screens ([16](16-cv-importer.md)), the Offer card and analysis page on applications at stage `offer` ([17](17-offer-negotiation.md)), plus the pages of specs 10-14 (add posting dialog, favorites tab, Insights, Prep card).
 
 ## 3. Runs

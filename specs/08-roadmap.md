@@ -28,13 +28,16 @@ Suggested order: small and independent first, those that gain from more data lat
 - [ ] **Market insights**: skills demand, gaps vs your CV, what a single rule discards, pay — [13](13-market-insights.md) · gains from The Muse and some weeks of data
 - [ ] **Offer negotiation helper** — [17](17-offer-negotiation.md) · needs the pay percentiles of the insights task
 - [ ] **Interview preparation kit**, on demand once a company answers — [12](12-interview-prep.md)
+- [ ] **Frontend redesign** with the inputs in `design/` (Kinetic Horizon palette, mascot logo, project brief): tokens, fonts, components, then page by page — [18](18-frontend-redesign.md) · inputs and decisions are complete (transparent logo received, orange brand and derived dark theme confirmed); only the go-ahead to download the font files is pending; best done before the new pages (wizard, insights...) so they use the new components
 - [ ] **Adzuna and Jooble sources**, once there are keys — [14](14-new-sources-api-keys.md)
 
 ## Not specified yet
 
+From the design brief (see [18](18-frontend-redesign.md) §2.4): inline PDF preview with a "what changed vs. my master CV" view; application inspection drawer; extra instructions when building a package by hand; keyboard navigation and a command palette; a Stop run button; live preview while editing the CV or letter; company whitelist ("prefer"); local models (Ollama) as an AI backend.
+
 Ideas reviewed and kept for later specs: match breakdown and keyword coverage of the generated CV; next actions, tasks and follow-up reminders with contacts and drafted outreach messages; answers bank and apply-assistant panel; trust and freshness badges; saved search profiles; learning from what you hide or apply to; a clip bookmarklet; weekly goals; UI in Spanish; `rewrite` tailoring mode; multiple CV variants; more boards (Workable, Recruitee, SmartRecruiters, Himalayas, GetOnBoard, Torre); CSV export and backup; `.ics` export of interviews.
 
-Reviewed and deliberately **not** adopted: mass auto-apply, scraping recruiter emails, browser extensions that fill other sites' forms.
+Reviewed and deliberately **not** adopted: mass auto-apply, scraping recruiter emails, browser extensions that fill other sites' forms, an interactive terminal inside the web UI, API keys typed into the UI, an "autonomous daemon" framing.
 
 ## Decisions
 
