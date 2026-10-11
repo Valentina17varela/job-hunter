@@ -23,6 +23,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 
 MARKER_RE = re.compile(r"^\s*%\s*jh:(\w+)\s*(.*?)\s*$")
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
@@ -432,18 +433,41 @@ class CompileResult:
     pages: int = 0
 
 
-def compile_pdf(tex: str, engine: str, timeout: int) -> CompileResult:
-    """Compile LaTeX source in a temp dir (shell escape off) and return the PDF and page count."""
+RESOURCE_SUFFIXES = {
+    ".cls",
+    ".sty",
+    ".bst",
+    ".bib",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".pdf",
+    ".ttf",
+    ".otf",
+}
+
+
+def compile_pdf(
+    tex: str, engine: str, timeout: int, resources: Path | None = None
+) -> CompileResult:
+    """Compile LaTeX source in a temp dir (shell escape off) and return the PDF and page count.
+
+    ``resources`` is a folder whose class/style/font/image files are copied next to the source,
+    so CVs that rely on custom ``.cls``/``.sty`` files or images compile like they do in place.
+    """
     import shutil
     import subprocess
     import tempfile
-    from pathlib import Path
 
     binary = shutil.which(engine)
     if binary is None:
         return CompileResult(False, f"'{engine}' not found in PATH")
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
+        if resources is not None and resources.is_dir():
+            for extra in resources.iterdir():
+                if extra.is_file() and extra.suffix.lower() in RESOURCE_SUFFIXES:
+                    shutil.copy(extra, work / extra.name)
         (work / "doc.tex").write_text(tex)
         if engine == "tectonic":
             cmd = [binary, "-X", "compile", "--untrusted", "doc.tex"]

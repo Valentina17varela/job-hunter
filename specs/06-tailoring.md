@@ -122,6 +122,7 @@ Deterministic checks (no LLM):
 
 - Compiler: `tectonic` (self-contained, auto-fetches packages) preferred; `latexmk -pdf` as fallback. Configurable: `latex.engine`.
 - Compilation runs in a temp directory with a timeout (60 s) and `-no-shell-escape`; no network needed beyond package fetching.
+- Class, style, font and image files next to `master.tex` (`.cls .sty .bst .bib .png .jpg .pdf .ttf .otf`) are copied into the temp directory, so CVs with custom classes compile as they do in place.
 - Phase 0 includes a toolchain check (`jobhunter doctor`) that reports which engine is installed and compiles a minimal document.
 - Fonts/classes used by the person's CV must be available to the engine; `doctor` compiles `master.tex` as-is to catch this early.
 

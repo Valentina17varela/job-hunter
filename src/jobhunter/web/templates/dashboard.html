@@ -1,78 +1,126 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% import "_macros.html" as m %}
+{% block title %}Home{% endblock %}
 {% block content %}
 {% set f = stats.funnel %}
-<header class="page-head">
-  <div><h1>Dashboard</h1><p class="muted">From fetched postings to offers.</p></div>
-  <div class="actions">
-    <a class="btn" href="/run">Run a stage</a>
-    <a class="btn primary" href="/jobs?status=selected">Best matches</a>
-  </div>
-</header>
 
-{% if running %}<div class="notice">A run is in progress: <b>{{ running.spec_id }}</b>. <a href="/run">View log</a></div>{% endif %}
+<section class="hero">
+  <div>
+    <span class="eyebrow">Personal job-search copilot</span>
+    <h1>Find the roles that fit you. Apply with a tailored CV.</h1>
+    <p>It searches public job boards, keeps only what matches your criteria, scores each role against your CV, writes a tailored CV and cover letter, and tracks every step until the offer. Everything runs on your machine, only when you click.</p>
+  </div>
+  <div class="hero-stats">
+    <div><b>{{ "{:,}".format(f.fetched) }}</b><span>postings found</span></div>
+    <div><b>{{ kpis.matches }}</b><span>matches for you</span></div>
+    <div><b>{{ f.applied }}</b><span>applications</span></div>
+  </div>
+</section>
+
+{% if running %}<div class="notice">{{ m.icon('play') }} A run is in progress: <b>{{ running.spec_id }}</b>. Its log is in the panel at the bottom right.</div>{% endif %}
+
+<section class="kpis">
+  <a class="kpi" href="/jobs?status=best"><span class="kpi-ic g1">{{ m.icon('target') }}</span><div><b>{{ kpis.matches }}</b><span>Matches worth a look</span></div></a>
+  <a class="kpi" href="/packages"><span class="kpi-ic g2">{{ m.icon('doc') }}</span><div><b>{{ kpis.ready }}</b><span>Ready to apply</span></div></a>
+  <a class="kpi" href="/pipeline"><span class="kpi-ic g3">{{ m.icon('send') }}</span><div><b>{{ kpis.active }}</b><span>Active applications</span></div></a>
+  <a class="kpi" href="/pipeline"><span class="kpi-ic g4">{{ m.icon('cal') }}</span><div><b>{{ kpis.interviews }}</b><span>Interviews pending</span></div></a>
+</section>
 
 <section class="card">
-  <h2>Funnel</h2>
-  {% set steps = [
-    ('Fetched', f.fetched), ('Passed filter', f.passed_filter), ('Scored', f.scored),
-    ('Selected', f.selected), ('Packaged', f.packaged), ('Applied', f.applied),
-    ('Interviewing', f.interviewing), ('Offers', f.offer)] %}
-  {% for label, n in steps %}
-  <div class="funnel-row">
-    <span class="funnel-label">{{ label }}</span>
-    <span class="bar"><span style="width: {{ (100 * n / f.fetched) if f.fetched else 0 }}%"></span></span>
-    <span class="funnel-n">{{ "{:,}".format(n) }}</span>
+  <div class="card-head"><h2>Your workflow</h2><p class="muted">Three steps. Press them in order whenever you want to look for work.</p></div>
+  <div class="steps">
+    <div class="step">
+      <span class="step-n">1</span>
+      <h3>Search</h3>
+      <p>Look for new postings on all sources and keep only the ones matching your criteria. Free, no AI.</p>
+      <div class="step-actions"><button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button></div>
+    </div>
+    <div class="step">
+      <span class="step-n">2</span>
+      <h3>Review matches</h3>
+      <p>AI reads each posting against your CV, rates the fit and flags blockers such as country restrictions.</p>
+      <div class="step-actions"><button class="btn primary" data-run='{"id":"score"}' data-label="Scoring postings with AI" data-reload>{{ m.icon('spark') }} Score with AI</button>
+      <a class="link" href="/jobs?status=best">See best matches →</a></div>
+    </div>
+    <div class="step">
+      <span class="step-n">3</span>
+      <h3>Prepare &amp; apply</h3>
+      <p>For your top matches: a CV that highlights what matters, a one-page cover letter and a recruiter message.</p>
+      <div class="step-actions"><button class="btn primary" data-run='{"id":"tailor"}' data-label="Building application packages" data-reload>{{ m.icon('doc') }} Build packages</button>
+      <a class="link" href="/packages">Open documents →</a></div>
+    </div>
   </div>
-  {% endfor %}
 </section>
 
 <div class="grid-2">
   <section class="card">
-    <h2>Why postings were filtered out</h2>
-    {% if stats.rejected_by_rule %}
-    {% set top = stats.rejected_by_rule.values()|max %}
-    {% for rule, n in stats.rejected_by_rule.items() %}
-    <div class="funnel-row">
-      <span class="funnel-label">{{ rule }}</span>
-      <span class="bar warn"><span style="width: {{ 100 * n / top }}%"></span></span>
-      <span class="funnel-n">{{ "{:,}".format(n) }}</span>
+    <div class="card-head"><h2>What to do next</h2></div>
+    {% for s in suggestions %}
+    <div class="todo">
+      <span class="todo-ic">{{ m.icon('check') }}</span>
+      <p>{{ s.text }}</p>
+      {% if s.run %}<button class="btn small primary" data-run='{{ {"id": s.run.id}|tojson|forceescape }}' data-label="{{ s.run.label }}" data-reload>{{ s.run.label }}</button>{% endif %}
+      {% if s.link %}<a class="btn small" href="{{ s.link.href }}">{{ s.link.label }}</a>{% endif %}
     </div>
+    {% else %}
+    <p class="muted">You are all caught up. Run a new search when you want to look for more roles.</p>
     {% endfor %}
-    {% else %}<p class="muted">No postings filtered yet. Run fetch and filter.</p>{% endif %}
   </section>
 
   <section class="card">
-    <h2>Applications</h2>
+    <div class="card-head"><h2>Upcoming interviews</h2><a class="link" href="/pipeline">Applications →</a></div>
+    {% for i in upcoming %}
+    <a class="todo plain" href="/jobs/{{ i.job_id }}">
+      <span class="todo-ic cal">{{ m.icon('cal') }}</span>
+      <p><b>{{ i.kind.replace('_', ' ')|capitalize }}</b> · {{ i.title }}<br><span class="muted">{{ i.company }} · {{ i.scheduled_at.replace('T', ' ') if i.scheduled_at else 'date not set' }}</span></p>
+    </a>
+    {% else %}<p class="muted">No interviews yet. Add one from an application's page.</p>{% endfor %}
     {% if stats.stages %}
-    <div class="chips">
-      {% for stage, n in stats.stages.items() %}
-      <a class="chip stage-{{ stage }}" href="/pipeline">{{ STAGE_LABELS[stage] }} <b>{{ n }}</b></a>
-      {% endfor %}
-    </div>
-    {% else %}<p class="muted">No applications yet. Mark a posting as applied from its page.</p>{% endif %}
-    <h2 class="mt">LLM usage</h2>
-    <p>Today: <b>{{ stats.llm_today.calls }}</b> calls, {{ "{:,}".format(stats.llm_today.tin + stats.llm_today.tout) }} tokens.
-       All time: {{ stats.llm_total.calls }} calls.</p>
-    <p class="muted">Backend <code>{{ backend }}</code> · cap {{ max_calls }} calls per run.</p>
+    <h3 class="mt">Applications by stage</h3>
+    <div class="chips">{% for stage, n in stats.stages.items() %}<a class="chip stage-{{ stage }}" href="/pipeline">{{ STAGE_LABELS[stage] }} <b>{{ n }}</b></a>{% endfor %}</div>
+    {% endif %}
   </section>
 </div>
 
 <div class="grid-2">
   <section class="card">
-    <h2>Last fetch</h2>
-    {% if stats.last_fetch %}
-    <table class="compact"><thead><tr><th>Source</th><th>Postings</th><th>Errors</th><th>When</th></tr></thead><tbody>
-    {% for r in stats.last_fetch %}
-    <tr><td>{{ r.source }}</td><td>{{ "{:,}".format(r.jobs or 0) }}</td>
-        <td>{% if r.errors %}<span class="badge bad">{{ r.errors }}</span>{% else %}0{% endif %}</td>
-        <td class="muted">{{ r.at|dt }}</td></tr>
-    {% endfor %}</tbody></table>
-    {% else %}<p class="muted">Nothing fetched yet.</p>{% endif %}
+    <div class="card-head"><h2>From postings to offers</h2></div>
+    {% set steps = [
+      ('Postings found', f.fetched, 'Everything downloaded from all sources'),
+      ('Match your criteria', f.passed_filter, 'Right role, seniority, remote and location'),
+      ('Rated by AI', f.scored, 'Compared against your CV'),
+      ('Best matches', f.selected, 'Above your score threshold'),
+      ('Packages built', f.packaged, 'CV + cover letter ready'),
+      ('Applications sent', f.applied, 'Marked as applied by you'),
+      ('Interviews', f.interviewing, 'Reached an interview stage'),
+      ('Offers', f.offer, '')] %}
+    {% for label, n, hint in steps %}
+    <div class="funnel-row" title="{{ hint }}">
+      <span class="funnel-label">{{ label }}</span>
+      <span class="bar"><span style="width: {{ n|bar_width(f.fetched) }}%"></span></span>
+      <span class="funnel-n">{{ "{:,}".format(n) }}</span>
+    </div>
+    {% endfor %}
   </section>
+
   <section class="card">
-    <h2>Health</h2>
-    <ul id="health" class="health"><li class="muted">Checking…</li></ul>
+    <div class="card-head"><h2>Why postings were left out</h2></div>
+    {% if stats.rejected_by_rule %}
+    {% set top = stats.rejected_by_rule.values()|max %}
+    {% for rule, n in stats.rejected_by_rule.items() %}
+    <div class="funnel-row">
+      <span class="funnel-label wide">{{ rule_labels.get(rule, rule) }}</span>
+      <span class="bar warn"><span style="width: {{ 100 * n / top }}%"></span></span>
+      <span class="funnel-n">{{ "{:,}".format(n) }}</span>
+    </div>
+    {% endfor %}
+    <p class="muted mt">Too few matches? Loosen the rule with the biggest bar in <a href="/settings">Settings</a>.</p>
+    {% else %}<p class="muted">Nothing filtered yet. Run a search first.</p>{% endif %}
   </section>
 </div>
+
+<section class="card">
+  <div class="card-head"><h2>System check</h2><span class="muted small">Last search: {{ stats.last_fetch[0].at|dt if stats.last_fetch else 'never' }}</span></div>
+  <ul id="health" class="health"><li class="muted">Checking…</li></ul>
+</section>
 {% endblock %}

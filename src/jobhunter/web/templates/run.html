@@ -1,40 +1,44 @@
 {% extends "base.html" %}
-{% block title %}Run{% endblock %}
+{% import "_macros.html" as m %}
+{% block title %}Actions{% endblock %}
 {% block content %}
-<header class="page-head"><div><h1>Run</h1>
-  <p class="muted">Start any stage by hand. These are the same commands as the CLI; output appears below. One run at a time.</p></div></header>
+<header class="page-head"><div><h1>Actions</h1>
+  <p class="muted">Everything the tool can do, one button each. Nothing runs by itself: you decide when. Output appears in the panel at the bottom right, and only one action runs at a time.</p></div></header>
 
+{% set groups = [
+  ('Find jobs', ['search', 'fetch', 'filter', 'refilter']),
+  ('Evaluate with AI', ['score']),
+  ('Apply', ['tailor', 'all']),
+  ('Maintenance', ['companies-discover', 'companies-check', 'cv-check', 'doctor', 'stats'])] %}
+{% for title, ids in groups %}
+<h2 class="group">{{ title }}</h2>
 <div class="grid-3">
-{% for s in specs %}
-<section class="card runcard" data-spec="{{ s.id }}">
-  <h2>{{ s.label }} {% if s.llm %}<span class="badge warn">uses LLM</span>{% endif %}</h2>
-  <p class="muted">{{ s.description }}</p>
-  <div class="opts">
-    {% if s.supports_dry_run %}<label><input type="checkbox" data-opt="dry_run"> Dry run</label>{% endif %}
-    {% if s.supports_jobs %}
-      <label>Posting ids <input type="text" data-opt="jobs" size="10" placeholder="e.g. 1163, 9478"></label>
-      <label>Limit <input type="number" data-opt="limit" min="1" style="width:4.5em"></label>
-      <label><input type="checkbox" data-opt="force"> Rebuild existing</label>
-    {% endif %}
-  </div>
-  <button class="btn primary" data-run="{{ s.id }}">Run</button>
-  {% if s.llm %}<p class="muted small">{{ backend }} backend · max {{ max_calls }} calls per run</p>{% endif %}
-</section>
-{% endfor %}
+  {% for s in specs if s.id in ids %}
+  <section class="card runcard" data-spec="{{ s.id }}">
+    <h3 class="plain">{{ s.label }} {% if s.llm %}<span class="badge warn">uses AI</span>{% endif %}</h3>
+    <p class="muted">{{ s.description }}</p>
+    <div class="opts">
+      {% if s.supports_dry_run %}<label><input type="checkbox" data-opt="dry_run"> Preview only (dry run)</label>{% endif %}
+      {% if s.supports_jobs %}
+        <label>Only these posting ids <input type="text" data-opt="jobs" size="12" placeholder="e.g. 1163, 9478"></label>
+        <label>Limit <input type="number" data-opt="limit" min="1" style="width:4.5em"></label>
+        <label><input type="checkbox" data-opt="force"> Rebuild ones already done</label>
+      {% endif %}
+    </div>
+    <button class="btn primary" data-runcard="{{ s.id }}" data-label="{{ s.label }}">{{ m.icon('play') }} Run</button>
+    {% if s.llm %}<p class="muted small">{{ backend }} backend · up to {{ max_calls }} AI calls per run</p>{% endif %}
+  </section>
+  {% endfor %}
 </div>
+{% endfor %}
 
 <section class="card">
-  <div class="row between"><h2>Output</h2><span id="run-status" class="badge">idle</span></div>
-  <pre id="log" class="log">Nothing running.</pre>
-</section>
-
-<section class="card">
-  <h2>Recent runs</h2>
-  <table class="compact"><thead><tr><th>Command</th><th>Status</th><th>Started</th></tr></thead><tbody>
+  <div class="card-head"><h2>Recent actions</h2></div>
+  <table class="compact"><thead><tr><th>Action</th><th>Result</th><th>Started</th></tr></thead><tbody>
   {% for r in history %}
     <tr><td>{{ r.spec_id }}</td><td><span class="badge {{ 'good' if r.status == 'ok' else ('bad' if r.status == 'failed' else '') }}">{{ r.status }}</span></td>
         <td class="muted">{{ r.started_at|int }}</td></tr>
-  {% else %}<tr><td colspan="3" class="muted">No runs since the UI started.</td></tr>{% endfor %}
+  {% else %}<tr><td colspan="3" class="muted">Nothing run since the UI started.</td></tr>{% endfor %}
   </tbody></table>
 </section>
 {% endblock %}

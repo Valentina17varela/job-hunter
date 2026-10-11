@@ -25,6 +25,9 @@ class RunSpec:
 
 
 RUN_SPECS: tuple[RunSpec, ...] = (
+    RunSpec("search", "Search for new jobs", ("run", "--stage", "search"),
+            "Download new postings from all sources and keep the ones that match your criteria. "
+            "Free and fast, no AI involved.", supports_dry_run=True),
     RunSpec("fetch", "Fetch postings", ("run", "--stage", "fetch"),
             "Download postings from every configured source and store new or changed ones. "
             "No cost.", supports_dry_run=True),

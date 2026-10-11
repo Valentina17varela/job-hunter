@@ -1,4 +1,4 @@
-// Small vanilla helpers for the local UI: JSON posts, run log polling, health, copy.
+// Job Hunter UI helpers: JSON posts, the run dock (live log on any page), health, copy.
 (function () {
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
@@ -8,32 +8,99 @@
     el.textContent = message;
     el.hidden = false;
     clearTimeout(toast.t);
-    toast.t = setTimeout(() => (el.hidden = true), 4000);
+    toast.t = setTimeout(() => (el.hidden = true), 4500);
   }
 
   async function post(url, body) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body || {}),
-    });
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Request failed (' + res.status + ')');
     return data;
   }
 
   async function act(fn, reload) {
+    try { await fn(); if (reload !== false) location.reload(); return true; }
+    catch (err) { toast(err.message); return false; }
+  }
+
+  // ---------- run dock ----------
+  const dock = $('#dock');
+  const KEY = 'jh_run';
+  let timer = null;
+
+  function setDock(state, text) {
+    $('#dock-status').textContent = text;
+    $('#dock-status').className = 'badge ' + (state === 'ok' ? 'good' : state === 'bad' ? 'bad' : 'warn');
+    $('#dock-dot').className = 'dock-dot ' + (state === 'ok' ? 'ok' : state === 'bad' ? 'bad' : '');
+  }
+
+  function poll(run, since) {
+    fetch('/api/runs/' + run.id + '?since=' + since).then((r) => r.json()).then((s) => {
+      const log = $('#dock-log');
+      if (s.log) { log.textContent += (log.textContent ? '\n' : '') + s.log; log.scrollTop = log.scrollHeight; }
+      if (s.status === 'running') { timer = setTimeout(() => poll(run, s.next), 1000); return; }
+      sessionStorage.removeItem(KEY);
+      $$('[data-run],[data-runcard]').forEach((b) => (b.disabled = false));
+      const ok = s.status === 'ok';
+      setDock(ok ? 'ok' : 'bad', ok ? 'done' : 'failed');
+      $('#dock-result').textContent = ok ? 'Finished.' : 'Exited with code ' + s.exit_code + '. Read the log above.';
+      $('#dock-foot').hidden = false;
+      if (ok && run.reload) { $('#dock-result').textContent = 'Finished. Updating this page…'; setTimeout(() => location.reload(), 1200); }
+    }).catch(() => setDock('bad', 'lost connection'));
+  }
+
+  function openDock(run, resumed) {
+    dock.hidden = false;
+    dock.classList.remove('min');
+    $('#dock-title').textContent = run.label || 'Working…';
+    $('#dock-foot').hidden = true;
+    if (!resumed) $('#dock-log').textContent = '';
+    setDock('run', 'running');
+    $$('[data-run],[data-runcard]').forEach((b) => (b.disabled = true));
+    clearTimeout(timer);
+    poll(run, 0);
+  }
+
+  async function startRun(body, label, reload) {
     try {
-      await fn();
-      if (reload !== false) location.reload();
-      return true;
-    } catch (err) {
-      toast(err.message);
-      return false;
-    }
+      const run = await post('/api/runs', body);
+      const info = { id: run.id, label: label, reload: !!reload };
+      sessionStorage.setItem(KEY, JSON.stringify(info));
+      openDock(info, false);
+    } catch (err) { toast(err.message); }
+  }
+
+  if (dock) {
+    $('#dock-toggle').addEventListener('click', () => dock.classList.toggle('min'));
+    $('#dock-close').addEventListener('click', () => { dock.hidden = true; });
+    $('#dock-refresh').addEventListener('click', () => location.reload());
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+      if (saved) openDock(saved, true);
+    } catch (e) { /* ignore */ }
   }
 
   document.addEventListener('click', (ev) => {
+    const runBtn = ev.target.closest('[data-run]');
+    if (runBtn) {
+      startRun(JSON.parse(runBtn.dataset.run), runBtn.dataset.label, runBtn.hasAttribute('data-reload'));
+      return;
+    }
+    const card = ev.target.closest('[data-runcard]');
+    if (card) {
+      const box = card.closest('.runcard');
+      const opt = (name) => $('[data-opt=' + name + ']', box);
+      const body = { id: card.dataset.runcard };
+      if (opt('dry_run')) body.dry_run = opt('dry_run').checked;
+      if (opt('force')) body.force = opt('force').checked;
+      if (opt('limit') && opt('limit').value) body.limit = parseInt(opt('limit').value, 10);
+      if (opt('jobs') && opt('jobs').value.trim()) {
+        body.jobs = opt('jobs').value.split(/[\s,]+/).filter(Boolean).map((v) => parseInt(v, 10));
+        if (body.jobs.some(Number.isNaN)) return toast('Posting ids must be numbers');
+      }
+      startRun(body, card.dataset.label, false);
+      return;
+    }
     const el = ev.target.closest('[data-post]');
     if (el) {
       if (el.dataset.confirm && !confirm(el.dataset.confirm)) return;
@@ -41,14 +108,10 @@
       return;
     }
     const copy = ev.target.closest('[data-copy]');
-    if (copy) {
-      navigator.clipboard.writeText($(copy.dataset.copy).textContent).then(() => toast('Copied'));
-      return;
-    }
+    if (copy) { navigator.clipboard.writeText($(copy.dataset.copy).textContent).then(() => toast('Copied')); return; }
     const notes = ev.target.closest('[data-notes-job]');
     if (notes) {
-      act(() => post('/api/jobs/' + notes.dataset.notesJob + '/notes', { notes: $('#notes').value }), false)
-        .then((ok) => ok && toast('Notes saved'));
+      act(() => post('/api/jobs/' + notes.dataset.notesJob + '/notes', { notes: $('#notes').value }), false).then((ok) => ok && toast('Notes saved'));
       return;
     }
     const save = ev.target.closest('[data-save-interview]');
@@ -69,54 +132,22 @@
     const form = ev.target.closest('[data-new-interview]');
     if (!form) return;
     ev.preventDefault();
-    const body = Object.fromEntries(new FormData(form));
-    act(() => post('/api/jobs/' + form.dataset.newInterview + '/interviews', body));
+    act(() => post('/api/jobs/' + form.dataset.newInterview + '/interviews', Object.fromEntries(new FormData(form))));
   });
 
-  // --- build the package of ONE posting, in place ---
-  $$('[data-build-job]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const box = $('#build-box'), logEl = $('#build-log'), badge = $('#build-status');
-      const all = $$('[data-build-job]');
-      all.forEach((b) => (b.disabled = true));
-      box.hidden = false;
-      logEl.textContent = 'Starting…';
-      badge.textContent = 'running…';
-      badge.className = 'badge warn';
-      let run;
-      try {
-        run = await post('/api/runs', { id: 'tailor', jobs: [parseInt(btn.dataset.buildJob, 10)] });
-      } catch (err) {
-        badge.textContent = 'not started';
-        badge.className = 'badge bad';
-        logEl.textContent = err.message;
-        all.forEach((b) => (b.disabled = false));
-        return;
-      }
-      logEl.textContent = '';
-      const tick = (since) => fetch('/api/runs/' + run.id + '?since=' + since)
-        .then((r) => r.json()).then((state) => {
-          if (state.log) { logEl.textContent += (logEl.textContent ? '\n' : '') + state.log; logEl.scrollTop = logEl.scrollHeight; }
-          if (state.status === 'running') return setTimeout(() => tick(state.next), 1000);
-          if (state.status === 'ok') {
-            badge.textContent = 'done';
-            badge.className = 'badge good';
-            setTimeout(() => location.reload(), 900);
-          } else {
-            badge.textContent = 'failed (exit ' + state.exit_code + ')';
-            badge.className = 'badge bad';
-            all.forEach((b) => (b.disabled = false));
-          }
-        }).catch(() => { badge.textContent = 'lost connection'; badge.className = 'badge bad'; });
-      tick(0);
-    });
-  });
-
-  // --- health ---
+  // ---------- health ----------
   const health = $('#health');
   if (health) {
     fetch('/api/health').then((r) => r.json()).then((checks) => {
       health.innerHTML = '';
+      const bad = checks.filter((c) => !c.ok);
+      if (!bad.length) {
+        const li = document.createElement('li');
+        li.innerHTML = '<span class="dot"></span>';
+        li.append(document.createTextNode('Everything looks good: ' + checks.map((c) => c.name).join(', ') + '.'));
+        health.append(li);
+        return;
+      }
       checks.forEach((c) => {
         const li = document.createElement('li');
         const dot = document.createElement('span');
@@ -125,63 +156,5 @@
         health.append(li);
       });
     }).catch(() => (health.textContent = 'Could not run the checks.'));
-  }
-
-  // --- run page ---
-  const log = $('#log');
-  if (log) {
-    const status = $('#run-status');
-    let timer = null;
-
-    function setStatus(text, cls) {
-      status.textContent = text;
-      status.className = 'badge ' + (cls || '');
-    }
-
-    function poll(id, since) {
-      fetch('/api/runs/' + id + '?since=' + since).then((r) => r.json()).then((run) => {
-        if (run.log) { log.textContent += (log.textContent ? '\n' : '') + run.log; log.scrollTop = log.scrollHeight; }
-        if (run.status === 'running') {
-          setStatus('running…', 'warn');
-          timer = setTimeout(() => poll(id, run.next), 1000);
-        } else {
-          setStatus(run.status === 'ok' ? 'finished' : 'failed (exit ' + run.exit_code + ')', run.status === 'ok' ? 'good' : 'bad');
-          $$('[data-run]').forEach((b) => (b.disabled = false));
-        }
-      }).catch(() => setStatus('lost connection', 'bad'));
-    }
-
-    $$('[data-run]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const card = btn.closest('.runcard');
-        const opt = (name) => $('[data-opt=' + name + ']', card);
-        const body = { id: btn.dataset.run };
-        if (opt('dry_run')) body.dry_run = opt('dry_run').checked;
-        if (opt('force')) body.force = opt('force').checked;
-        if (opt('limit') && opt('limit').value) body.limit = parseInt(opt('limit').value, 10);
-        if (opt('jobs') && opt('jobs').value.trim()) {
-          body.jobs = opt('jobs').value.split(/[\s,]+/).filter(Boolean).map((v) => parseInt(v, 10));
-          if (body.jobs.some(Number.isNaN)) return toast('Posting ids must be numbers');
-        }
-        try {
-          const run = await post('/api/runs', body);
-          log.textContent = '';
-          $$('[data-run]').forEach((b) => (b.disabled = true));
-          setStatus('running…', 'warn');
-          clearTimeout(timer);
-          poll(run.id, 0);
-        } catch (err) { toast(err.message); }
-      });
-    });
-
-    const query = new URLSearchParams(location.search);
-    const preset = query.get('tailor');
-    if (preset) {
-      const card = $('[data-spec=tailor]');
-      $('[data-opt=jobs]', card).value = preset;
-      if (query.get('force')) $('[data-opt=force]', card).checked = true;
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (query.get('autorun')) $('[data-run=tailor]', card).click();
-    }
   }
 })();

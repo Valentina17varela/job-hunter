@@ -1,52 +1,57 @@
 {% extends "base.html" %}
-{% block title %}Postings{% endblock %}
+{% import "_macros.html" as m %}
+{% block title %}Job matches{% endblock %}
 {% block content %}
-<header class="page-head"><div><h1>Postings</h1>
-  <p class="muted">{{ "{:,}".format(total) }} match your filters.</p></div></header>
+<header class="page-head">
+  <div><h1>Job matches</h1><p class="muted">Roles that passed your criteria, rated against your CV. Open one to see why it fits and what to double-check.</p></div>
+  <button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>
+</header>
 
-<form class="filters card" method="get" action="/jobs">
+<nav class="tabs">
+  {% for t in tabs %}<a class="{{ 'on' if f.status == t.key else '' }}" href="/jobs?status={{ t.key }}">{{ t.label }} <span class="count">{{ "{:,}".format(t.n) }}</span></a>{% endfor %}
+</nav>
+
+<form class="filters" method="get" action="/jobs">
+  <input type="hidden" name="status" value="{{ f.status }}">
   <input type="search" name="q" value="{{ f.q }}" placeholder="Search title or company">
-  <select name="status">
-    <option value="active" {{ 'selected' if f.status == 'active' }}>Active (passed filter)</option>
-    <option value="all" {{ 'selected' if f.status == 'all' }}>All</option>
-    {% for s, label in STATUS_LABELS.items() %}
-    <option value="{{ s }}" {{ 'selected' if f.status == s }}>{{ label }} ({{ counts.get(s, 0) }})</option>
-    {% endfor %}
-  </select>
-  <select name="source"><option value="">Any source</option>
-    {% for s in sources %}<option value="{{ s }}" {{ 'selected' if f.source == s }}>{{ s }}</option>{% endfor %}</select>
-  <select name="mode"><option value="">Any mode</option>
-    {% for m in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ m }}" {{ 'selected' if f.mode == m }}>{{ m }}</option>{% endfor %}</select>
+  <select name="source"><option value="">Any source</option>{% for s in sources %}<option value="{{ s }}" {{ 'selected' if f.source == s }}>{{ s }}</option>{% endfor %}</select>
+  <select name="mode"><option value="">Any work mode</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md }}</option>{% endfor %}</select>
   <input type="number" name="min_score" min="0" max="100" value="{{ f.min_score if f.min_score is not none else '' }}" placeholder="Min score">
-  <select name="sort">
-    {% for k, label in [('score', 'Best score'), ('recent', 'Most recent'), ('company', 'Company')] %}
-    <option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select>
-  <button class="btn primary" type="submit">Apply</button>
+  <select name="sort">{% for k, label in [('score', 'Best score first'), ('recent', 'Most recent'), ('company', 'Company A–Z')] %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select>
+  <button class="btn" type="submit">Filter</button>
 </form>
+<p class="muted small">{{ "{:,}".format(total) }} postings</p>
 
-<div class="card flush">
-<table>
-  <thead><tr><th>Score</th><th>Posting</th><th>Where</th><th>Pay</th><th>Status</th></tr></thead>
-  <tbody>
-  {% for r in rows %}
-  <tr>
-    <td>{% if r.score is not none %}<span class="score s{{ (r.score // 25) }}">{{ r.score }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
-    <td><a class="strong" href="/jobs/{{ r.id }}">{{ r.title }}</a><div class="muted">{{ r.company }} · {{ r.source }}</div></td>
-    <td>{{ r.location or '—' }}<div class="muted">{{ r.remote }}</div></td>
-    <td class="nowrap">{{ r.salary_max|money(r.salary_currency) }}</td>
-    <td><span class="badge st-{{ r.status }}">{{ STATUS_LABELS.get(r.status, r.status) }}</span>
-        {% if r.verdict %}<div class="muted">{{ r.verdict }}</div>{% endif %}</td>
-  </tr>
-  {% else %}
-  <tr><td colspan="5" class="muted empty">Nothing matches. Try another status or run the pipeline.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
-</div>
+{% for r in rows %}
+<article class="job-card">
+  {{ m.ring(r.score) }}
+  <div class="job-main">
+    <a class="job-title" href="/jobs/{{ r.id }}">{{ r.title }}</a>
+    <div class="job-sub">{{ r.company }} · {{ r.source }}</div>
+    <div class="chips">
+      <span class="chip">{{ r.location or 'Location not stated' }}</span>
+      {% if r.remote not in (r.location or '')|lower %}<span class="chip">{{ r.remote }}</span>{% endif %}
+      {% if r.salary_max %}<span class="chip pay">{{ r.salary_max|money(r.salary_currency) }}/yr</span>{% endif %}
+      <span class="badge st-{{ r.status }}">{{ STATUS_LABELS.get(r.status, r.status) }}</span>
+      {% if r.stage %}<span class="chip stage-{{ r.stage }}">{{ STAGE_LABELS[r.stage] }}</span>{% endif %}
+    </div>
+    {% if r.reason %}<p class="job-reason">{% if r.verdict %}<b class="verdict v-{{ r.verdict }}">{{ r.verdict }}</b>{% endif %} {{ r.reason }}</p>{% endif %}
+    {% if r.flags %}<p class="warn-line">{{ m.icon('alert') }} {{ r.flags }} thing{{ 's' if r.flags > 1 }} to verify before applying</p>{% endif %}
+  </div>
+  <div class="job-actions">
+    {% if r.has_package %}<a class="btn small primary" href="/jobs/{{ r.id }}#package">View package</a>
+    {% else %}<button class="btn small primary" data-run='{{ {"id": "tailor", "jobs": [r.id]}|tojson|forceescape }}' data-label="Building the package for “{{ r.title|truncate(40) }}”" data-reload>Build package</button>{% endif %}
+    {% if not r.stage %}<button class="btn small" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>I applied</button>
+    {% if r.status != 'ignored' %}<button class="btn small ghost" data-post="/api/jobs/{{ r.id }}/ignore" data-json='{}' data-confirm="Hide this posting for good?">Hide</button>{% endif %}{% endif %}
+  </div>
+</article>
+{% else %}
+{% call m.empty('target', 'Nothing here yet', 'No postings match this view. Try another tab, or search for new jobs.') %}<button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>Search for new jobs</button>{% endcall %}
+{% endfor %}
 
 {% if pages > 1 %}
 <nav class="pager">
-  {% if page > 1 %}<a class="btn" href="/jobs?{{ qs }}&amp;page={{ page - 1 }}">← Prev</a>{% endif %}
+  {% if page > 1 %}<a class="btn" href="/jobs?{{ qs }}&amp;page={{ page - 1 }}">← Previous</a>{% endif %}
   <span class="muted">Page {{ page }} of {{ pages }}</span>
   {% if page < pages %}<a class="btn" href="/jobs?{{ qs }}&amp;page={{ page + 1 }}">Next →</a>{% endif %}
 </nav>

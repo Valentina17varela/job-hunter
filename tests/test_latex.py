@@ -146,3 +146,21 @@ def test_escape_makes_plain_text_safe_and_handles_typographic_dashes():
     assert latex.escape("Application — Senior “API” engineer – remote…") == (
         "Application --- Senior ``API'' engineer -- remote\\ldots{}"
     )
+
+
+import shutil as _shutil  # noqa: E402
+
+needs_tectonic = pytest.mark.skipif(_shutil.which("tectonic") is None, reason="tectonic missing")
+
+
+@needs_tectonic
+def test_compile_finds_custom_style_files_next_to_the_cv(tmp_path):
+    (tmp_path / "mystyle.sty").write_text(
+        "\\ProvidesPackage{mystyle}\\newcommand{\\hello}{Hello}\n"
+    )
+    tex = "\\documentclass{article}\\usepackage{mystyle}\\begin{document}\\hello\\end{document}"
+    without = latex.compile_pdf(tex, "tectonic", 120)
+    assert not without.ok
+    with_resources = latex.compile_pdf(tex, "tectonic", 120, resources=tmp_path)
+    assert with_resources.ok and with_resources.pages == 1
+    (tmp_path / "secret.txt").write_text("not a resource")  # other files are not copied

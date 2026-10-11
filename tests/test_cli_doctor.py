@@ -65,3 +65,11 @@ def test_run_tailor_stage_without_cv_or_template_explains_what_is_missing():
     result = runner.invoke(app, ["run", "--stage", "tailor", "--config", EXAMPLE_CONFIG])
     assert result.exit_code == 1
     assert "not found" in result.output and "letter init" in result.output
+
+
+def test_search_stage_is_fetch_plus_filter_and_needs_no_ai():
+    result = runner.invoke(
+        app, ["run", "--stage", "search", "--dry-run", "--config", EXAMPLE_CONFIG]
+    )
+    assert result.exit_code == 0
+    assert "Stages: fetch, filter" in result.stdout and "score" not in result.stdout

@@ -88,9 +88,9 @@ paths:
 |---|---|
 | `ANTHROPIC_API_KEY` | Only for `llm.backend: anthropic_api`. Never in files or logs. Ignored (and stripped) by the default `claude_cli` backend, which uses your `claude auth login` session |
 
-## 4. Daily scheduling
+## 4. No automatic runs
 
-v1: manual run or `cron`/`launchd` on the Mac calling `jobhunter run`. A `launchd` example is documented in the README. No server.
+Everything is triggered by the person: `jobhunter run ...` in a terminal or the buttons of the web UI (`jobhunter ui`). The project deliberately ships no scheduler, daemon or notification; the web UI only listens while `jobhunter ui` is running.
 
 ## 5. Privacy and data limits
 

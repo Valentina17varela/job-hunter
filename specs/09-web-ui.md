@@ -13,13 +13,21 @@ Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel
 
 | Page | What it shows / does |
 |---|---|
-| **Dashboard** `/` | Funnel counts by status (fetched → filtered/passed → scored → selected → packaged → applied → interviewing → offer), rejections by filter rule, LLM calls/tokens today, last fetch per source, health (LaTeX, claude login, CV). Buttons to start the common runs |
-| **Postings** `/jobs` | Table with search and filters (status, source, min score, remote mode, company), sortable by score/date. Click → detail |
+| **Home** `/` | Funnel counts by status (fetched → filtered/passed → scored → selected → packaged → applied → interviewing → offer), rejections by filter rule, LLM calls/tokens today, last fetch per source, health (LaTeX, claude login, CV). Buttons to start the common runs |
+| **Job matches** `/jobs` | Table with search and filters (status, source, min score, remote mode, company), sortable by score/date. Click → detail |
 | **Posting detail** `/jobs/<id>` | Title, company, location, mode, salary, link, description, filter verdict + flags (live `explain`), score, verdict, matches, gaps, red flags, package links. Actions: mark applied, ignore, create/rebuild a package (available for every posting, not only selected ones) |
-| **Pipeline** `/pipeline` | Kanban of applications: Applied → Screening → Interviewing → Offer → Accepted / Rejected / Withdrawn / Ghosted. Move cards, add notes, schedule interviews (kind, date, notes, outcome) |
-| **Packages** `/packages` | Generated packages (cv.pdf, cover_letter.pdf, recruiter message, notes, verification result) with preview links |
-| **Run** `/run` | Every stage and option with a description: fetch, filter (`run`/`refilter`), score, tailor, companies check/discover, cv check, doctor; dry-run toggle; live log; history of recent runs. Shows a cost note for LLM stages |
+| **Applications** `/pipeline` | Kanban of applications: Applied → Screening → Interviewing → Offer → Accepted / Rejected / Withdrawn / Ghosted. Move cards, add notes, schedule interviews (kind, date, notes, outcome) |
+| **Documents** `/packages` | Generated packages (cv.pdf, cover_letter.pdf, recruiter message, notes, verification result) with preview links |
+| **Actions** `/run` | Every stage and option with a description: fetch, filter (`run`/`refilter`), score, tailor, companies check/discover, cv check, doctor; dry-run toggle; live log; history of recent runs. Shows a cost note for LLM stages |
 | **Settings** `/settings` | Read-only view of the effective configuration (search criteria, scoring, tailoring, budgets) with explanations, the CV structure (sections, entries, ids) and the doctor checks. Editing stays in `config/config.yaml` |
+
+### 2.1 UX decisions (v2)
+
+- **Platform identity:** a "personal job-search copilot", local-first. The sidebar and hero say so; the side card states that nothing runs by itself and nothing is sent for the person.
+- **Guided workflow on Home:** three steps (Search → Review matches → Prepare & apply) with one button each, a plain-language "What to do next" list computed from the data, four KPIs, upcoming interviews, a log-scaled funnel and friendly names for filter rules.
+- **Actions run in place:** every button (Home, Job matches, a posting, Documents, Actions) starts a whitelisted run and streams its log into a docked panel available on every page; the active run survives page navigation (`sessionStorage`) and the page refreshes itself when a run finishes.
+- **Job matches** are cards (score ring, AI reason, "N things to verify", one-click Build package / I applied / Hide) with tabs (Best matches, All evaluated, Applied, Filtered out, Everything).
+- **`search` stage** = fetch + filter (everything that needs no AI) so the first button on Home is free.
 
 ## 3. Runs
 
@@ -46,7 +54,7 @@ Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel
 
 ## 7. Acceptance criteria
 
-- [ ] `jobhunter ui` starts on localhost and every page loads without console errors.
-- [ ] A stage can be started from the Run page and its log streams until completion.
-- [ ] An application can be moved through every stage and an interview scheduled, and the dashboard funnel reflects it.
-- [ ] Requests with a foreign `Host`/`Origin` are rejected; files outside `out/` cannot be fetched.
+- [x] `jobhunter ui` starts on localhost and every page loads without console errors.
+- [x] A stage can be started from the Run page and its log streams until completion.
+- [x] An application can be moved through every stage and an interview scheduled, and the dashboard funnel reflects it.
+- [x] Requests with a foreign `Host`/`Origin` are rejected; files outside `out/` cannot be fetched.

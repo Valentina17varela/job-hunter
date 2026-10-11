@@ -1,52 +1,69 @@
 {% extends "base.html" %}
+{% import "_macros.html" as m %}
 {% block title %}Settings{% endblock %}
 {% block content %}
+{% set s = config.search %}
 <header class="page-head"><div><h1>Settings</h1>
-  <p class="muted">What the tool is using right now. To change anything, edit <code>{{ config_path }}</code> and re-run (the page reads it live).</p></div></header>
+  <p class="muted">What the tool is using right now. To change it, edit <code>{{ config_path }}</code>, then press “Re-filter everything” in Actions. This page reads the file live.</p></div></header>
 
 <section class="card">
-  <h2>Health</h2>
-  <ul id="health" class="health"><li class="muted">Checking…</li></ul>
+  <h2>What you are looking for</h2>
+  <dl class="profile">
+    <dt>Roles</dt><dd>{% for t in s.titles_include %}<span class="chip good">{{ t }}</span>{% else %}any title{% endfor %}</dd>
+    <dt>Not these</dt><dd>{% for t in s.titles_exclude %}<span class="chip warn">{{ t }}</span>{% else %}—{% endfor %}</dd>
+    <dt>Seniority</dt><dd>{% for t in s.seniority %}<span class="chip">{{ t }}</span>{% else %}any{% endfor %}</dd>
+    <dt>Work mode</dt><dd>{% for t in s.work_mode %}<span class="chip">{{ t }}</span>{% else %}any{% endfor %}</dd>
+    <dt>Open to</dt><dd>{% for t in s.locations_allowed %}<span class="chip good">{{ t }}</span>{% else %}any location{% endfor %}</dd>
+    <dt>Key technologies</dt><dd>{% for t in s.keywords_include %}<span class="chip">{{ t }}</span>{% else %}—{% endfor %}</dd>
+    <dt>Minimum pay</dt><dd>{% if s.salary.min_usd %}<b>USD {{ "{:,}".format(s.salary.min_usd) }}</b> per year{% else %}no minimum{% endif %} <span class="muted">· postings without a published salary are {{ 'kept' if s.salary.on_missing == 'pass' else 'dropped' }}</span></dd>
+    <dt>Freshness</dt><dd>aggregator postings up to {{ s.max_age_days }} days old</dd>
+  </dl>
 </section>
 
 <div class="grid-2">
   <section class="card">
-    <h2>Search criteria</h2>
+    <h2>How AI scoring works</h2>
     <dl class="kv">
-    {% for k, v in config.search.items() %}
-      <dt>{{ k }}</dt><dd>{% if v is mapping %}{% for kk, vv in v.items() %}{{ kk }}: <b>{{ vv }}</b> {% endfor %}{% elif v is iterable and v is not string %}{{ v|join(', ') or '—' }}{% else %}{{ v if v is not none else '—' }}{% endif %}</dd>
-    {% endfor %}
+      <dt>Engine</dt><dd>{{ config.llm.backend }} {% if config.llm.backend == 'claude_cli' %}<span class="muted">(your Claude subscription)</span>{% endif %}</dd>
+      <dt>Scoring model</dt><dd>{{ config.scoring.model }}</dd>
+      <dt>Writing model</dt><dd>{{ config.tailoring.model }}</dd>
+      <dt>Best-match threshold</dt><dd>{{ config.scoring.score_threshold }} / 100</dd>
+      <dt>Packages per day</dt><dd>up to {{ config.tailoring.max_packages_per_day }}</dd>
+      <dt>CV length</dt><dd>{{ config.tailoring.max_cv_pages }} page(s)</dd>
+      <dt>Letter tone</dt><dd>{{ config.tailoring.tone or '—' }}</dd>
+      <dt>Languages</dt><dd>{{ config.tailoring.languages|join(', ') }}</dd>
+      <dt>AI calls per run</dt><dd>up to {{ config.budget.max_llm_calls_per_run }}</dd>
     </dl>
-    <p class="muted">Apply changes with <code>refilter</code> on the Run page.</p>
   </section>
   <section class="card">
-    <h2>Scoring &amp; tailoring</h2>
-    <dl class="kv">
-    {% for section in ['llm', 'scoring', 'tailoring', 'budget'] %}
-      {% for k, v in config[section].items() %}
-        {% if k != 'api_prices' and k != 'candidate_context' %}<dt>{{ section }}.{{ k }}</dt><dd>{{ v if v is not none else '—' }}</dd>{% endif %}
-      {% endfor %}
-    {% endfor %}
-      <dt>candidate_context</dt><dd>{{ config.scoring.candidate_context or '—' }}</dd>
-    </dl>
+    <h2>What the AI knows about you</h2>
+    <p>{{ config.scoring.candidate_context or '—' }}</p>
+    <p class="muted small">Plus the marked parts of your LaTeX CV (never your name, email or phone).</p>
   </section>
 </div>
 
 <section class="card">
-  <h2>My CV (<code>{{ config.paths.cv_master }}</code>)</h2>
-  {% if cv is none %}<p class="muted">No master CV found.</p>
+  <h2>My CV <code>{{ config.paths.cv_master }}</code></h2>
+  {% if cv is none %}<p class="muted">No master CV found. Put your LaTeX CV there and mark it (see the README).</p>
   {% elif cv is string %}<p><span class="badge bad">Invalid markers</span> {{ cv }}</p>
   {% else %}
-    <p class="muted">Only these marked parts are sent to the LLM; your header and contact details never are.</p>
+    <p class="muted">Only these marked parts can be selected or sent to the AI; your header and contact details never are.</p>
+    <div class="tree-grid">
     {% for section in cv.sections %}
-      <h3>{{ section.name }}</h3>
+      <div><h3>{{ section.name }}</h3>
       <ul class="tree">
       {% for child in section.children %}
         <li><code>{{ child.id }}</code>{% if child.required is defined and child.required %} <span class="badge">required</span>{% endif %}
           {% if child.items is defined %}<ul>{% for it in child.items %}<li><code>{{ it.id }}</code></li>{% endfor %}</ul>{% endif %}</li>
       {% endfor %}
-      </ul>
+      </ul></div>
     {% endfor %}
+    </div>
   {% endif %}
+</section>
+
+<section class="card">
+  <h2>System check</h2>
+  <ul id="health" class="health"><li class="muted">Checking…</li></ul>
 </section>
 {% endblock %}

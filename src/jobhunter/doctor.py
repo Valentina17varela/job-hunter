@@ -29,7 +29,7 @@ class Check:
 
 def compile_tex(tex_path: Path, engine: str, timeout: int) -> tuple[bool, str]:
     """Compile a .tex file; returns (ok, detail). Shell escape stays disabled."""
-    result = compile_pdf(tex_path.read_text(), engine, timeout)
+    result = compile_pdf(tex_path.read_text(), engine, timeout, resources=tex_path.parent)
     return result.ok, result.detail
 
 

@@ -14,3 +14,4 @@ Local Python pipeline that finds job postings on direct portals, filters and sco
 - Stack: Python 3.12, uv, httpx, pydantic v2, SQLite, typer, pytest, ruff.
 - No test makes real network or LLM calls.
 - The system never sends applications or messages; the human sends.
+- **Manual only:** no cron/launchd, daemon, scheduler or notification. Every stage is triggered by the person from the CLI or the web UI.

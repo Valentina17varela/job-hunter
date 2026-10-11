@@ -1,22 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Pipeline{% endblock %}
+{% import "_macros.html" as m %}
+{% block title %}Applications{% endblock %}
 {% block content %}
-<header class="page-head"><div><h1>Pipeline</h1>
-  <p class="muted">Your applications and where each one stands. Change a stage with the selector on a card.</p></div></header>
+<header class="page-head"><div><h1>Applications</h1>
+  <p class="muted">Where every application stands. Change a card's stage with its selector; open it to add notes and interviews.</p></div></header>
 <div class="board">
-  <section class="column">
+  <section class="column ready">
     <h2>Ready to apply <span class="count">{{ ready|length }}</span></h2>
     {% for r in ready %}
     <article class="kcard">
-      <a class="strong" href="/jobs/{{ r.id }}">{{ r.title }}</a>
-      <div class="muted">{{ r.company }}</div>
-      <div class="row">
-        {% if r.score is not none %}<span class="score s{{ (r.score // 25) }}">{{ r.score }}</span>{% endif %}
-        <span class="badge st-{{ r.status }}">{{ STATUS_LABELS[r.status] }}</span>
-      </div>
+      <div class="row">{{ m.ring(r.score, 36) }}<div class="grow"><a class="strong" href="/jobs/{{ r.id }}">{{ r.title }}</a><div class="muted small">{{ r.company }}</div></div></div>
       <button class="btn small primary" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>I applied</button>
     </article>
-    {% else %}<p class="muted">Nothing waiting.</p>{% endfor %}
+    {% else %}<p class="muted small">Nothing waiting. Build packages for your best matches.</p>{% endfor %}
   </section>
   {% for stage in columns %}
   {% set col = cards|selectattr('stage', 'equalto', stage)|list %}
@@ -25,16 +21,14 @@
     {% for c in col %}
     <article class="kcard">
       <a class="strong" href="/jobs/{{ c.job_id }}">{{ c.title }}</a>
-      <div class="muted">{{ c.company }}</div>
+      <div class="muted small">{{ c.company }}</div>
       {% if c.interviews %}
         {% set nxt = c.interviews|selectattr('outcome', 'equalto', 'pending')|list|first %}
-        {% if nxt %}<div class="chip warn">Next: {{ nxt.kind.replace('_', ' ') }}{% if nxt.scheduled_at %} · {{ nxt.scheduled_at.replace('T', ' ') }}{% endif %}</div>{% endif %}
-        <div class="muted">{{ c.interviews|length }} interview(s)</div>
+        {% if nxt %}<div class="chip warn">{{ m.icon('cal') }} {{ nxt.kind.replace('_', ' ') }}{% if nxt.scheduled_at %} · {{ nxt.scheduled_at.replace('T', ' ') }}{% endif %}</div>{% endif %}
+        <div class="muted small">{{ c.interviews|length }} interview(s)</div>
       {% endif %}
-      <div class="muted">updated {{ c.updated_at|dt }}</div>
-      <select data-stage-job="{{ c.job_id }}">
-        {% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if c.stage == s }}>{{ STAGE_LABELS[s] }}</option>{% endfor %}
-      </select>
+      <div class="muted small">updated {{ c.updated_at|dt }}</div>
+      <select data-stage-job="{{ c.job_id }}">{% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if c.stage == s }}>{{ STAGE_LABELS[s] }}</option>{% endfor %}</select>
     </article>
     {% endfor %}
   </section>

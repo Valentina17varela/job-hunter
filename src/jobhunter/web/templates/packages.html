@@ -1,25 +1,29 @@
 {% extends "base.html" %}
-{% block title %}Packages{% endblock %}
+{% import "_macros.html" as m %}
+{% block title %}Documents{% endblock %}
 {% block content %}
-<header class="page-head"><div><h1>Packages</h1>
-  <p class="muted">CV and cover letter (LaTeX → PDF) ready for you to review. Open the PDFs, then apply yourself.</p></div></header>
+<header class="page-head"><div><h1>Documents</h1>
+  <p class="muted">A tailored CV and cover letter for each role (LaTeX compiled to PDF). Open them, read the notes, then apply on the company site.</p></div></header>
 {% for it in items %}
-<section class="card">
+<section class="card pkg">
   <div class="row between">
-    <div><a class="strong big-link" href="/jobs/{{ it.row.id }}">{{ it.row.title }}</a>
-      <div class="muted">{{ it.row.company }} · built {{ it.row.created_at|dt }}</div></div>
+    <div class="row">{{ m.ring(it.row.score, 48) }}
+      <div><a class="strong big-link" href="/jobs/{{ it.row.id }}">{{ it.row.title }}</a>
+        <div class="muted">{{ it.row.company }} · built {{ it.row.created_at|dt }}</div></div></div>
     <div>
-      {% if it.row.score is not none %}<span class="score s{{ (it.row.score // 25) }}">{{ it.row.score }}</span>{% endif %}
       {% if it.row.verified %}<span class="badge good">Checks passed</span>{% else %}<span class="badge bad">Needs review</span>{% endif %}
       <span class="badge st-{{ it.row.status }}">{{ STATUS_LABELS.get(it.row.status, it.row.status) }}</span>
     </div>
   </div>
   {% if it.pkg %}
   {% if it.pkg.meta.get('problems') %}<ul class="flags">{% for p in it.pkg.meta.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
-  <div class="chips">{% for file in it.pkg.files %}<a class="chip link" href="{{ file.url }}" target="_blank">{{ file.name }}</a>{% endfor %}</div>
+  <div class="chips mt">
+    {% for file in it.pkg.files if file.name.endswith('.pdf') %}<a class="btn small primary" href="{{ file.url }}" target="_blank">{{ m.icon('doc') }} {{ 'CV' if file.name == 'cv.pdf' else 'Cover letter' }}</a>{% endfor %}
+    {% for file in it.pkg.files if not file.name.endswith('.pdf') %}<a class="chip link" href="{{ file.url }}" target="_blank">{{ file.name }}</a>{% endfor %}
+  </div>
   {% else %}<p class="muted">The files for this package are no longer on disk.</p>{% endif %}
 </section>
 {% else %}
-<div class="card"><p class="muted">No packages yet. Run the <a href="/run">tailor stage</a> once you have selected postings.</p></div>
+{% call m.empty('doc', 'No documents yet', 'Build packages for your best matches and they will appear here.') %}<button class="btn primary" data-run='{"id":"tailor"}' data-label="Building application packages" data-reload>Build packages</button>{% endcall %}
 {% endfor %}
 {% endblock %}

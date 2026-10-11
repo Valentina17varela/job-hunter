@@ -65,13 +65,14 @@ def doctor(config: ConfigOption = Path("config/config.yaml")) -> None:
 
 class Stage(StrEnum):
     ALL = "all"
+    SEARCH = "search"  # fetch + filter: everything that needs no LLM
     FETCH = "fetch"
     FILTER = "filter"
     SCORE = "score"
     TAILOR = "tailor"
 
 
-IMPLEMENTED_STAGES = {Stage.FETCH, Stage.FILTER, Stage.SCORE, Stage.TAILOR}
+IMPLEMENTED_STAGES = {Stage.SEARCH, Stage.FETCH, Stage.FILTER, Stage.SCORE, Stage.TAILOR}
 
 
 def _load(config_path: Path):  # noqa: ANN202
@@ -106,8 +107,8 @@ def run(
         raise typer.Exit(code=1)
     companies = load_companies(cfg.sources.companies_file)
     sources = build_sources(cfg, companies)
-    do_fetch = stage in (Stage.ALL, Stage.FETCH)
-    do_filter = stage in (Stage.ALL, Stage.FILTER)
+    do_fetch = stage in (Stage.ALL, Stage.SEARCH, Stage.FETCH)
+    do_filter = stage in (Stage.ALL, Stage.SEARCH, Stage.FILTER)
     do_score = stage in (Stage.ALL, Stage.SCORE)
     do_tailor = stage in (Stage.ALL, Stage.TAILOR)
     if dry_run:

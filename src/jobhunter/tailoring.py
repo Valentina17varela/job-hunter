@@ -521,11 +521,16 @@ def render_notes(
 def tailor_stage(
     conn: sqlite3.Connection, client: LlmClient, cfg: Config, doc: Document, *,
     cv_dir: Path, template: str, out_root: Path,
-    compile_fn: CompileFn = latex.compile_pdf, day: date | None = None,
+    compile_fn: CompileFn | None = None, day: date | None = None,
     force: bool = False, limit: int | None = None, job_ids: list[int] | None = None,
 ) -> TailorSummary:  # fmt: skip
     """Package `selected` postings, or exactly the postings in `job_ids` whatever their status."""
     day = day or datetime.now(UTC).date()
+    if compile_fn is None:  # compile next to the CV so custom classes/images are found
+
+        def compile_fn(tex: str, engine: str, timeout: int) -> latex.CompileResult:
+            return latex.compile_pdf(tex, engine, timeout, resources=cv_dir)
+
     if job_ids:  # the person picked these by hand: any posting qualifies, whatever its status
         marks = ",".join("?" for _ in job_ids)
         rows = conn.execute(

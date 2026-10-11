@@ -118,7 +118,9 @@ def test_pages_render_on_an_empty_database(tmp_path, monkeypatch):
 
 def test_dashboard_shows_funnel_and_filter_reasons(env):
     html = env[0].get("/", headers=HOST).text
-    assert "Funnel" in html and "titles_include" in html and "Passed filter" in html
+    assert "From postings to offers" in html and "Match your criteria" in html
+    assert "Title is not one of your target roles" in html  # friendly rule names, not ids
+    assert "Search for new jobs" in html and "Score with AI" in html and "Build packages" in html
 
 
 def test_jobs_filters(env):
@@ -323,7 +325,8 @@ def test_health_endpoint_reports_checks(env):
 
 def test_settings_shows_search_criteria_and_cv_tree(env):
     html = env[0].get("/settings", headers=HOST).text
-    assert "titles_include" in html and "engineer" in html and "s-1" in html
+    assert "What you are looking for" in html and "engineer" in html and "s-1" in html
+    assert "titles_include" not in html  # shown in plain language, not as config keys
 
 
 # --- regressions found in review ---------------------------------------------------------------
@@ -409,9 +412,10 @@ def test_empty_or_invalid_numeric_filters_do_not_break_the_page(env):
 def test_any_posting_can_be_packaged_by_hand_from_its_page(env):
     client = env[0]
     below = client.get("/jobs/2", headers=HOST).text  # filtered-out posting
-    assert 'data-build-job="2"' in below and "Build package for this posting" in below
-    assert "/run?tailor" not in below  # runs in place, no navigation to the Run page
-    assert 'id="build-log"' in below
+    assert "Build package for this posting" in below
+    assert "&#34;jobs&#34;: [2]" in below or '"jobs": [2]' in below  # runs only this posting
+    assert "/run?tailor" not in below  # runs in place, no navigation to the Actions page
+    assert 'id="dock"' in below  # the live log panel exists on every page
     assert "Rebuild package" in client.get("/jobs/1", headers=HOST).text  # already packaged
 
 
@@ -423,3 +427,82 @@ def test_building_one_posting_runs_only_that_posting(env):
     argv = started[-1]
     assert argv[3:6] == ["run", "--stage", "tailor"] and argv.count("--job") == 1
     assert argv[argv.index("--job") + 1] == "2"
+
+
+def test_job_list_defaults_to_best_matches_and_shows_cards_with_reasons(env):
+    client = env[0]
+    html = client.get("/jobs", headers=HOST).text
+    assert "Best matches" in html and "great fit" in html  # AI reason on the card
+    assert "Sales Manager" not in html  # filtered out is not a best match
+    assert "1 thing to verify" in html  # the red flag count is surfaced
+    filtered = client.get("/jobs?status=filtered", headers=HOST).text
+    assert "Sales Manager" in filtered and "Filtered out" in filtered
+    assert "Sales Manager" in client.get("/jobs?status=all", headers=HOST).text
+    # legacy raw status values keep working
+    assert "Platform Engineer" in client.get("/jobs?status=selected", headers=HOST).text
+
+
+def test_tabs_show_counts(env):
+    html = env[0].get("/jobs", headers=HOST).text
+    for label in ("Best matches", "All evaluated", "Applied", "Filtered out", "Everything"):
+        assert label in html
+
+
+def test_dashboard_suggests_next_steps_in_plain_language(env):
+    client, conn = env[0], env[1]
+    html = client.get("/", headers=HOST).text
+    assert "What to do next" in html
+    assert "top match has no tailored CV" in html  # job 3 is selected without a package
+    assert "package is ready" in html  # job 1 is packaged and not applied yet
+    conn.execute("UPDATE jobs SET status = 'passed' WHERE id = 3")
+    conn.commit()
+    assert "waiting for AI scoring" in client.get("/", headers=HOST).text
+
+
+def test_dashboard_on_empty_db_invites_the_first_search(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text(f"paths:\n  db: {tmp_path}/e.db\n  out: {tmp_path}/out\n")
+    html = TestClient(create_app(cfg, allowed_hosts={"testserver"})).get("/", headers=HOST).text
+    assert "Run your first search" in html
+
+
+def test_upcoming_interviews_appear_on_the_dashboard(env):
+    client = env[0]
+    client.post("/api/jobs/1/stage", json={"stage": "interviewing"}, headers=HOST)
+    client.post(
+        "/api/jobs/1/interviews",
+        headers=HOST,
+        json={"kind": "system_design", "scheduled_at": "2026-10-22T09:30"},
+    )
+    html = client.get("/", headers=HOST).text
+    assert "System design" in html and "2026-10-22 09:30" in html
+
+
+def test_search_is_a_whitelisted_run_that_needs_no_ai(env):
+    client, _, _, _, started, gate = env
+    gate.set()
+    res = client.post("/api/runs", json={"id": "search", "dry_run": True}, headers=HOST)
+    assert res.status_code == 200
+    wait_done(client, res.json()["id"])
+    assert started[-1][3:7] == ["run", "--stage", "search", "--dry-run"]
+    page = client.get("/run", headers=HOST).text
+    card = page.split('data-spec="search"')[1].split("</section>")[0]
+    assert "uses AI" not in card
+
+
+def test_actions_page_groups_every_command(env):
+    html = env[0].get("/run", headers=HOST).text
+    for heading in ("Find jobs", "Evaluate with AI", "Apply", "Maintenance"):
+        assert heading in html
+    assert html.count("data-runcard=") >= 10
+
+
+def test_suggestion_grammar_and_funnel_scale():
+    from jobhunter.web.app import bar_width, plural
+
+    assert plural(1, "package is", "packages are") == "1 package is"
+    assert plural(3, "package is", "packages are") == "3 packages are"
+    assert bar_width(0, 1000) == 0 and bar_width(5, 0) == 0
+    assert bar_width(1000, 1000) == 100
+    assert 3 <= bar_width(2, 25000) < bar_width(30, 25000) < bar_width(5000, 25000) < 100

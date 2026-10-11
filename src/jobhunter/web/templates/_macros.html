@@ -1,0 +1,18 @@
+{% macro ring(score, size=56) -%}
+{%- if score is none -%}
+<span class="ring none" style="--size:{{ size }}px" title="Not scored yet"><i>–</i></span>
+{%- else -%}
+<span class="ring r{{ (score // 25) }}" style="--size:{{ size }}px; --pct:{{ score }}" title="AI match score"><i>{{ score }}</i></span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro icon(name) -%}<svg class="ic"><use href="#i-{{ name }}"/></svg>{%- endmacro %}
+
+{% macro empty(icon_name, title, text) -%}
+<div class="empty-state">
+  <span class="empty-ic">{{ icon(icon_name) }}</span>
+  <b>{{ title }}</b>
+  <p>{{ text }}</p>
+  {{ caller() if caller else '' }}
+</div>
+{%- endmacro %}

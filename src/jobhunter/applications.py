@@ -186,6 +186,17 @@ NOT_PASSED = ("new", "filtered", "duplicate", "closed", "ignored")
 SCORED = ("scored", "selected", "packaged", "below_threshold", "applied", "replied", "rejected")
 
 
+def upcoming_interviews(conn: sqlite3.Connection, limit: int = 6) -> list[dict[str, Any]]:
+    """Pending interviews, soonest first (unscheduled ones last)."""
+    rows = conn.execute(
+        "SELECT i.id, i.job_id, i.kind, i.scheduled_at, i.notes, j.company, j.title "
+        "FROM interviews i JOIN jobs j ON j.id = i.job_id WHERE i.outcome = 'pending' "
+        "ORDER BY COALESCE(i.scheduled_at, '9999'), i.id LIMIT ?",
+        (limit,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def stats(conn: sqlite3.Connection) -> dict[str, Any]:
     """Counts for the dashboard and `jobhunter stats`."""
     by_status = {

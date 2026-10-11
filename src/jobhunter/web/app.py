@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode, urlparse
@@ -43,6 +44,125 @@ STAGE_LABELS = {
 }  # fmt: skip
 
 
+JOB_TABS = (
+    ("best", "Best matches", ("selected", "packaged")),
+    ("evaluated", "All evaluated",
+     ("scored", "selected", "packaged", "below_threshold", "applied", "replied", "rejected")),
+    ("applied", "Applied", ("applied", "replied", "rejected")),
+    ("filtered", "Filtered out", ("filtered",)),
+    ("all", "Everything", None),
+)  # fmt: skip
+RULE_LABELS = {
+    "titles_include": "Title is not one of your target roles",
+    "titles_exclude": "Title contains a word you excluded (frontend, mobile, QA...)",
+    "work_mode": "Not a remote role",
+    "seniority": "Seniority does not match (junior / staff / lead...)",
+    "locations_allowed": "Not open to your location",
+    "keywords_include": "None of your key technologies mentioned",
+    "keywords_exclude": "Mentions something you cannot do (e.g. citizenship)",
+    "salary": "Pay below your minimum",
+    "max_age_days": "Posted too long ago",
+}
+
+
+def plural(n: int, one: str, many: str) -> str:
+    return f"{n} {one if n == 1 else many}"
+
+
+def bar_width(n: int, total: int) -> float:
+    """Funnel bar width in %, log-scaled so small stages stay visible next to huge ones."""
+    if not n or not total:
+        return 0.0
+    return max(3.0, round(100 * math.log10(n + 1) / math.log10(total + 1), 1))
+
+
+def kpis(conn: sqlite3.Connection, data: dict[str, Any]) -> dict[str, int]:
+    """The four numbers shown at the top of the dashboard."""
+    by = data["by_status"]
+    ready = conn.execute(
+        "SELECT COUNT(*) FROM jobs WHERE status IN ('selected', 'packaged') AND id NOT IN "
+        "(SELECT job_id FROM applications)"
+    ).fetchone()[0]
+    active = conn.execute(
+        "SELECT COUNT(*) FROM applications WHERE stage IN ('applied', 'screening', "
+        "'interviewing', 'offer')"
+    ).fetchone()[0]
+    pending = conn.execute("SELECT COUNT(*) FROM interviews WHERE outcome = 'pending'").fetchone()[
+        0
+    ]
+    return {
+        "matches": by.get("selected", 0) + by.get("packaged", 0) + by.get("scored", 0),
+        "ready": ready, "active": active, "interviews": pending,
+    }  # fmt: skip
+
+
+def build_suggestions(conn: sqlite3.Connection, data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Plain-language 'what to do next' list, most useful first."""
+    by = data["by_status"]
+    out: list[dict[str, Any]] = []
+    if data["total"] == 0:
+        out.append(
+            {
+                "text": "No postings yet. Run your first search to see what is out there.",
+                "run": {"id": "search", "label": "Search for new jobs"},
+            }
+        )
+        return out
+    unscored = by.get("passed", 0) + by.get("score_failed", 0)
+    if unscored:
+        out.append(
+            {
+                "text": f"{plural(unscored, 'posting matches', 'postings match')} your criteria, "
+                f"{'and is' if unscored == 1 else 'and are'} waiting for AI scoring.",
+                "run": {"id": "score", "label": "Score them with AI", "llm": True},
+            }
+        )
+    unpackaged = by.get("selected", 0)
+    if unpackaged:
+        out.append(
+            {
+                "text": f"{plural(unpackaged, 'top match has', 'top matches have')} no tailored CV "
+                "and cover letter yet.",
+                "run": {"id": "tailor", "label": "Build their packages", "llm": True},
+                "link": {"href": "/jobs?status=best", "label": "Review them first"},
+            }
+        )
+    ready = conn.execute(
+        "SELECT COUNT(*) FROM jobs WHERE status = 'packaged' AND id NOT IN "
+        "(SELECT job_id FROM applications)"
+    ).fetchone()[0]
+    if ready:
+        out.append(
+            {
+                "text": f"{plural(ready, 'package is', 'packages are')} ready. Open "
+                f"{'it' if ready == 1 else 'them'}, check the notes and apply.",
+                "link": {"href": "/packages", "label": "Open packages"},
+            }
+        )
+    stale = conn.execute(
+        "SELECT COUNT(*) FROM applications WHERE stage IN ('applied', 'screening') AND "
+        "updated_at < ?",
+        ((datetime.now(UTC) - timedelta(days=7)).isoformat(),),
+    ).fetchone()[0]
+    if stale:
+        out.append(
+            {
+                "text": f"{plural(stale, 'application has', 'applications have')} had no update "
+                "for a week. Time to follow up?",
+                "link": {"href": "/pipeline", "label": "Open pipeline"},
+            }
+        )
+    last = conn.execute("SELECT MAX(created_at) FROM fetch_log").fetchone()[0]
+    if last and datetime.fromisoformat(last) < datetime.now(UTC) - timedelta(days=2):
+        out.append(
+            {
+                "text": "Your last search was more than two days ago.",
+                "run": {"id": "search", "label": "Search again"},
+            }
+        )
+    return out
+
+
 class LocalOnlyMiddleware(BaseHTTPMiddleware):
     """Reject foreign Host/Origin (DNS rebinding, cross-site posts) and non-JSON writes."""
 
@@ -76,6 +196,7 @@ def create_app(
     manager = runner or RunManager(config_path, Path.cwd(), log_dir=None)
     templates.env.filters["dt"] = fmt_dt
     templates.env.filters["money"] = money
+    templates.env.filters["bar_width"] = bar_width
     templates.env.globals.update(
         STATUS_LABELS=STATUS_LABELS, STAGE_LABELS=STAGE_LABELS,
         STAGES=applications.STAGES, KINDS=applications.INTERVIEW_KINDS,
@@ -108,23 +229,30 @@ def create_app(
         data = applications.stats(conn)
         return render(
             request, "dashboard.html", active="dashboard", stats=data,
+            suggestions=build_suggestions(conn, data),
+            upcoming=applications.upcoming_interviews(conn),
+            kpis=kpis(conn, data), rule_labels=RULE_LABELS,
             max_calls=config.budget.max_llm_calls_per_run, backend=config.llm.backend,
             running=manager.active(),
         )  # fmt: skip
 
     @app.get("/jobs")
     def jobs_page(
-        request: Request, status: str = "active", source: str = "", q: str = "",
+        request: Request, status: str = "best", source: str = "", q: str = "",
         min_score: str = "", mode: str = "", sort: str = "score", page: int = 1,
     ) -> Any:  # fmt: skip
         config = cfg()
         conn = db(config)
         score_floor = int(min_score) if min_score.strip().lstrip("-").isdigit() else None
         where, params = ["1=1"], []
+        tab_statuses = {key: sts for key, _, sts in JOB_TABS}
         if status == "active":
             where.append(f"j.status IN ({','.join('?' for _ in ACTIVE_STATUSES)})")
             params += ACTIVE_STATUSES
-        elif status != "all":
+        elif status in tab_statuses and tab_statuses[status]:
+            where.append(f"j.status IN ({','.join('?' for _ in tab_statuses[status])})")
+            params += tab_statuses[status]
+        elif status not in ("all", *tab_statuses):
             where.append("j.status = ?")
             params.append(status)
         if source:
@@ -154,17 +282,26 @@ def create_app(
         page = min(max(1, page), 100_000)
         rows = conn.execute(
             "SELECT j.id, j.company, j.title, j.location, j.remote, j.source, j.status, "
-            "j.salary_max, j.salary_currency, j.posted_at, s.score, "
-            "json_extract(s.reasons, '$.verdict') AS verdict "
+            "j.salary_min, j.salary_max, j.salary_currency, j.posted_at, s.score, "
+            "json_extract(s.reasons, '$.verdict') AS verdict, "
+            "json_extract(s.reasons, '$.reason') AS reason, "
+            "json_array_length(json_extract(s.reasons, '$.red_flags')) AS flags, "
+            "EXISTS(SELECT 1 FROM packages WHERE job_id = j.id) AS has_package, "
+            "(SELECT stage FROM applications WHERE job_id = j.id) AS stage "
             f"{base} ORDER BY {order} LIMIT ? OFFSET ?",
             [*params, PAGE_SIZE, (page - 1) * PAGE_SIZE],
         ).fetchall()
         counts = {r["status"]: r["n"] for r in conn.execute(
             "SELECT status, COUNT(*) AS n FROM jobs GROUP BY status")}  # fmt: skip
+        tabs = [
+            {"key": key, "label": label,
+             "n": sum(counts.values()) if sts is None else sum(counts.get(x, 0) for x in sts)}
+            for key, label, sts in JOB_TABS
+        ]  # fmt: skip
         sources = [r[0] for r in conn.execute("SELECT DISTINCT source FROM jobs ORDER BY source")]
         return render(
             request, "jobs.html", active="jobs", rows=rows, total=total, page=page,
-            pages=max(1, -(-total // PAGE_SIZE)), counts=counts, sources=sources,
+            pages=max(1, -(-total // PAGE_SIZE)), counts=counts, sources=sources, tabs=tabs,
             qs=urlencode({k: v for k, v in {"status": status, "source": source, "q": q,
                           "mode": mode, "sort": sort, "min_score": score_floor}.items()
                           if v not in ("", None)}),

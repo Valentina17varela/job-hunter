@@ -7,7 +7,7 @@ Searching for jobs by hand is repetitive: checking many portals, filtering by sa
 
 ## 2. Goal
 
-A local Python pipeline that, every day:
+A local Python pipeline that, **whenever the person triggers it** (nothing runs in the background, there is no scheduler):
 
 1. Discovers new postings on **direct portals** (public ATS APIs and aggregators).
 2. Discards those that fail hard criteria, without using an LLM.
@@ -23,6 +23,7 @@ A local Python pipeline that, every day:
 - **LaTeX in, LaTeX out.** The CV and cover letter are LaTeX documents (compiled to PDF), built from the person's own template.
 - **Human in the loop.** The system never sends anything. It prepares; the person decides.
 - **Idempotent.** Running the pipeline twice on the same day neither duplicates postings nor spends tokens twice.
+- **Manual only.** Every stage is started by the person, from the CLI or the web UI. There is no cron/launchd job, daemon or notification; the tool only works while a command or the UI is running.
 - **Local and simple.** SQLite, LaTeX/Markdown files, no servers.
 - **English everywhere.** Code, comments, docs, specs, commit messages, config keys and generated artifacts' tooling text are in English (see `CLAUDE.md`).
 
@@ -47,7 +48,7 @@ A local Python pipeline that, every day:
 
 | Metric | Target |
 |---|---|
-| LLM cost per daily run | < USD 1 (configurable cap) |
+| LLM cost per run | < USD 1 (configurable cap) |
 | Postings reviewed manually per day | ≤ 10, all high-match |
 | Time to review one package | < 5 min |
 | False facts in generated CV/letter | 0 (verification in `06-tailoring.md`) |
