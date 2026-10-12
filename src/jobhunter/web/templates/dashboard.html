@@ -10,10 +10,13 @@
     <h1>Find the roles that fit you. Apply with a tailored CV.</h1>
     <p>It searches public job boards, keeps only what matches your criteria, scores each role against your CV, writes a tailored CV and cover letter, and tracks every step until the offer. Everything runs on your machine, only when you click.</p>
   </div>
-  <div class="hero-stats">
-    <div><b>{{ "{:,}".format(f.fetched) }}</b><span>postings found</span></div>
-    <div><b>{{ kpis.matches }}</b><span>matches for you</span></div>
-    <div><b>{{ f.applied }}</b><span>applications</span></div>
+  <div class="hero-side">
+    <img class="hero-logo" src="/static/img/logo.png" alt="" width="150" height="150">
+    <div class="hero-stats">
+      <div><b>{{ "{:,}".format(f.fetched) }}</b><span>postings found</span></div>
+      <div><b>{{ kpis.matches }}</b><span>matches for you</span></div>
+      <div><b>{{ f.applied }}</b><span>applications</span></div>
+    </div>
   </div>
 </section>
 

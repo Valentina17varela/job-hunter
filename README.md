@@ -235,6 +235,8 @@ erDiagram
 
 ### Web UI
 
+The interface uses the Kinetic Horizon look (orange brand, mascot, self-hosted Plus Jakarta Sans; no external requests). It is light by default; the sidebar has a toggle for an optional dark theme that your browser remembers.
+
 `uv run jobhunter ui --open` serves a local dashboard on `127.0.0.1`. Every button runs the same command as the CLI and streams its log into a panel on the page.
 
 What you can do there:
@@ -252,7 +254,8 @@ What you can do there:
 | | |
 |---|---|
 | ![Matches](docs/images/matches.png) **Job matches:** AI score, why it fits, what to verify, one-click build/apply | ![Detail](docs/images/job-detail.png) **Posting detail:** score, live filter verdict, package, notes and interviews |
-| ![Applications](docs/images/applications.png) **Applications:** kanban from *Ready to apply* to *Offer* | ![Actions](docs/images/actions.png) **Actions:** every stage with its options, dry-run included |
+| ![Applications](docs/images/applications.png) **Applications:** kanban from *Ready to apply* to *Offer*, with a collapsible *Closed* group | ![Actions](docs/images/actions.png) **Actions:** every stage with its options, dry-run included |
+| ![Dark theme](docs/images/dark.png) **Dark theme:** optional, one click in the sidebar (light is the default) | ![Mobile](docs/images/mobile.png) **Small screens:** usable down to about 390 px |
 
 ### Observations
 
@@ -376,7 +379,8 @@ You can edit all of this **in the UI** (Settings): tag inputs, checkboxes and pl
 ```
 config/            config.example.yaml, company_candidates.txt, letter_template.example.tex (committed)
                    config.yaml, companies.yaml, cv/ (yours, gitignored)
-specs/             design specs 00-09 (source of truth)
+specs/             design specs (source of truth) and the roadmap
+design/            inputs of the visual identity: palette, logo, project brief
 scripts/           seed_demo.py (fictional workspace for the UI)
 docs/images/       screenshots used in this README
 src/jobhunter/
@@ -388,7 +392,7 @@ src/jobhunter/
   latex.py         CV parser/assembler, escape, compile    translate.py, language.py
   applications.py  stages, interviews, stats        store.py     upsert, dedupe, close stale
   favorites.py     stars and notes on postings
-  web/             FastAPI app, run manager, templates, static
+  web/             FastAPI app, run manager, templates, static (tokens.css, style.css, fonts, logo)
 tests/             pytest suite (no network, no LLM)
 ```
 

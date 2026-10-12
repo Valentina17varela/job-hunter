@@ -80,7 +80,7 @@
   <div class="form-actions"><button class="btn primary" data-save-cfg>Save</button><span class="save-state muted small"></span></div>
   <h3>Companies to look at</h3>
   <p class="muted small">One company name per line. “Find their job boards” checks which of them publish on Greenhouse, Lever or Ashby and adds the ones found to your list. The company is only a way to discover boards: filtering ignores it.</p>
-  <textarea class="code" rows="8" data-file="candidates" spellcheck="false"></textarea>
+  <textarea class="code" rows="8" aria-label="Company candidates list" data-file="candidates" spellcheck="false"></textarea>
   <div class="form-actions">
     <button class="btn" data-save-file="candidates">Save list</button>
     <button class="btn" data-run='{"id":"companies-discover"}' data-label="Finding company job boards">Find their job boards</button>
@@ -92,11 +92,11 @@
   <h2>{{ m.icon('doc') }} My CV and cover letter</h2>
   <p class="muted">The LaTeX files the tool reads. Your header (name, contact) is never sent to the AI. A <code>.bak</code> copy of the previous version is kept when you save.</p>
   <h3>CV <code>{{ config.paths.cv_master }}</code></h3>
-  <textarea class="code" rows="16" data-file="cv" spellcheck="false"></textarea>
+  <textarea class="code" rows="16" aria-label="Master CV (LaTeX)" data-file="cv" spellcheck="false"></textarea>
   <div class="form-actions"><button class="btn primary" data-save-file="cv">Save CV</button>
     <button class="btn" data-run='{"id":"cv-check"}' data-label="Checking and compiling my CV">Check &amp; compile</button><span class="save-state muted small"></span></div>
   <h3>Cover letter template <code>{{ config.paths.letter_template }}</code></h3>
-  <textarea class="code" rows="14" data-file="letter" spellcheck="false"></textarea>
+  <textarea class="code" rows="14" aria-label="Cover letter template (LaTeX)" data-file="letter" spellcheck="false"></textarea>
   <div class="form-actions"><button class="btn primary" data-save-file="letter">Save template</button><span class="save-state muted small"></span></div>
   {% if cv is not none and cv is not string %}
   <details class="advanced"><summary>CV structure the tool sees ({{ cv.sections|length }} sections)</summary>

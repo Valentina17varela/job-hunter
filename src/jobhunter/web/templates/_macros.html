@@ -6,6 +6,10 @@
 {%- endif -%}
 {%- endmacro %}
 
+{% macro avatar(name, size=44) -%}
+<span class="avatar" style="--size:{{ size }}px" aria-hidden="true">{{ (name or "?").strip()[:2]|upper }}</span>
+{%- endmacro %}
+
 {% macro icon(name) -%}<svg class="ic"><use href="#i-{{ name }}"/></svg>{%- endmacro %}
 
 {% macro empty(icon_name, title, text) -%}

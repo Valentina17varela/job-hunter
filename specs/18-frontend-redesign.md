@@ -1,6 +1,6 @@
 # 18 — Frontend redesign from the design inputs
 
-**Status:** PLANNED (spec only, not implemented). Inputs received and reviewed; decisions confirmed or accepted by the author (§5); derived tokens verified (§5.1). Ready to build.
+**Status:** DONE (tokens, font, logo set, all pages restyled, smoke tests, README). The contrast script and a component style page were dropped by the author.
 
 ## 1. Goal
 
@@ -111,7 +111,7 @@ The author confirmed D1 (orange brand) and D3 (derive the dark theme) and delega
 |---|---|---|---|
 | D1 | Brand direction | **Kinetic Horizon**: orange primary, slate secondary, sky-blue tertiary/info. The brief's "electric blue primary" is superseded | Confirmed by the author |
 | D2 | Primary button | Light theme: solid `#c2410c` + white text (hover `#9d4300`). Dark theme: `#f97316` + dark brown `#2b1200` text (hover `#fb923c`). `#f97316` is also used for rings, highlights and the match halo | Accepted |
-| D3 | Dark theme | **Kept and derived** from the tokens (§5.1); the light theme is the default look, dark follows `prefers-color-scheme` as today | Confirmed by the author |
+| D3 | Dark theme | **Kept and derived** from the tokens (§5.1). **Light is always the default**; dark is opt-in through a toggle in the sidebar (`data-theme="dark"`, remembered in `localStorage`); it no longer follows `prefers-color-scheme` | Confirmed by the author; opt-in change requested after the first pass |
 | D4 | Status colors | Success `#10b981` fill / `#047857` text (light) · `#34d399` (dark); warning amber `#f59e0b` fill / `#92400e` text (light) · `#fcd34d` (dark); error from the palette `#ba1a1a` (light) · `#ffb4ab` (dark) | Accepted |
 | D5 | Typography | Plus Jakarta Sans self-hosted (variable `woff2` + OFL license text); `system-ui` fallback; tabular numbers on salaries, scores and counters | Accepted (the download needs the author's go-ahead at implementation time) |
 | D6 | Logo usage | Sidebar badge, Home hero, empty states, favicon set (see §2.3); wordmark lockup as CSS text | Accepted |
@@ -169,17 +169,22 @@ The dark soft fills are the accent colors blended over `--surface` (orange 14 %,
 
 - [x] (author) Provide a transparent logo; confirm direction and dark theme (D1, D3).
 - [x] Record the derived dark theme and status colors in a token table here (§5.1, contrast-verified).
-- [ ] Self-host Plus Jakarta Sans with its license (needs the author's go-ahead to download the font files).
-- [ ] Generate the logo set from `logo_no_background.png` and the master: sizes, favicon, wordmark lockup.
-- [ ] Tokens file and migration of the current look onto it.
+- [x] Self-host Plus Jakarta Sans (`static/fonts/PlusJakartaSans.woff2`, 60 KB variable font, plus `OFL.txt`), downloaded with the author's go-ahead from github.com/tokotype/PlusJakartaSans.
+- [x] Generate the logo set from `logo_no_background.png`: `static/img/logo.png` (500), `icon-32/48/180.png`, `favicon.ico`; the wordmark is CSS text. (The 1024 px master stays in `design/` for large uses.)
+- [x] Tokens file (`static/tokens.css`, light + derived dark, §5.1) and migration of the current look onto it: orange primary with the contrast-safe pairs, slate hero, tinted KPI icons, 8 px controls with darker borders, orange focus ring and hover.
 - [ ] Component set and the style page; logo badge, favicon set and wordmark.
-- [ ] Redesign Home, Job matches, Posting detail, Applications, Documents, Actions, Settings.
+- [x] First styling pass on Home (mascot hero), Job matches (initials avatar, score ring, segmented tabs) and the shell (wordmark, active-nav bar, theme toggle).
+- [x] Applications: five columns (Ready, Applied, Screening, Interviewing, Offer) with a collapsible *Closed* group (D8), initials avatars, stage-colored tops. Documents, Actions and Settings: tokens, font, checkbox/tag/check styling.
+- [x] Polish pass: Actions option fields, Documents warnings and file chips, quiet tables, empty states, sticky save bar in Settings, 390 px layout (scrolling nav, stacked cards, horizontal kanban), dark theme checked on Home and Applications.
+- [x] Smoke tests (`tests/test_web.py`): nothing loaded from outside, one `h1` per page, labelled controls (they found and fixed unlabelled filters, note and editor fields), font and logo files served, light as default theme.
+- [x] README: new screenshots (Home, matches, detail, applications, actions, dark, mobile).
+- Dropped by the author: the contrast script (the table in §5.1 is the record) and a separate component style page.
 - [ ] Smoke tests (offline assets, labels, headings) and the contrast script; before/after screenshots.
-- [ ] README (UI section) updated to the shipped look, `design/` kept as the source, this spec marked done.
+- [x] README (UI section) updated to the shipped look, `design/` kept as the source.
 
 ## 9. Acceptance criteria
 
-- [ ] The UI visibly uses the Kinetic Horizon identity and the mascot, and §5 documents every deviation and derived value.
-- [ ] All text and control colors pass the contrast checks in both themes (or the dark theme is explicitly dropped by decision D3).
-- [ ] No request leaves the machine to render a page; the same security checks and all tests pass.
-- [ ] Every page is usable with the keyboard and at 390 px.
+- [x] The UI visibly uses the Kinetic Horizon identity and the mascot, and §5 documents every deviation and derived value.
+- [x] Text and control colors use the contrast-checked pairs of §5.1 in both themes (verified when the table was made; no automated script, by decision of the author).
+- [x] No request (covered by a test) leaves the machine to render a page; the same security checks and all tests pass.
+- [x] Pages checked at 390 px by screenshot; controls carry labels and a visible orange focus ring.

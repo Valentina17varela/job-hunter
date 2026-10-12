@@ -7,10 +7,11 @@
 {% for it in items %}
 <section class="card pkg">
   <div class="row between">
-    <div class="row">{{ m.ring(it.row.score, 48) }}
+    <div class="row">{{ m.avatar(it.row.company, 52) }}
       <div><a class="strong big-link" href="/jobs/{{ it.row.id }}">{{ it.row.title }}</a>
         <div class="muted">{{ it.row.company }} · built {{ it.row.created_at|dt }}</div></div></div>
     <div class="row">
+      {{ m.ring(it.row.score, 44) }}
       <button class="btn small danger" data-post="/api/jobs/{{ it.row.id }}/package/delete" data-json='{}' data-confirm="Delete the generated CV, letter and notes for this posting? Your application record is kept.">Delete</button>
       {% if it.row.verified %}<span class="badge good">Checks passed</span>{% else %}<span class="badge bad">Needs review</span>{% endif %}
       <span class="badge st-{{ it.row.status }}">{{ STATUS_LABELS.get(it.row.status, it.row.status) }}</span>

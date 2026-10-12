@@ -259,6 +259,24 @@
     a.classList.add('on');
   }));
 
+  // ---------- theme (light by default; dark only when chosen) ----------
+  const themeBtn = document.getElementById('theme-toggle');
+  const applyTheme = (t) => {
+    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.removeAttribute('data-theme');
+    if (themeBtn) themeBtn.textContent = t === 'dark' ? '◑ Light theme' : '◐ Dark theme';
+  };
+  let savedTheme = null;
+  try { savedTheme = localStorage.getItem('jh_theme'); } catch (e) { /* private mode */ }
+  applyTheme(savedTheme);
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      try { localStorage.setItem('jh_theme', next); } catch (e) { /* ignore */ }
+    });
+  }
+
   // ---------- add a posting by hand ----------
   const addDialog = document.getElementById('add-posting');
   if (addDialog) {

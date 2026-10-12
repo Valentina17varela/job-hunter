@@ -14,19 +14,19 @@
 
 <form class="filters" method="get" action="/jobs">
   <input type="hidden" name="status" value="{{ f.status }}">
-  <input type="search" name="q" value="{{ f.q }}" placeholder="Search title or company">
-  <select name="source"><option value="">Any source</option>{% for s in sources %}<option value="{{ s }}" {{ 'selected' if f.source == s }}>{{ s }}</option>{% endfor %}</select>
-  <select name="mode"><option value="">Any work mode</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md }}</option>{% endfor %}</select>
+  <input type="search" name="q" aria-label="Search by title or company" value="{{ f.q }}" placeholder="Search title or company">
+  <select name="source" aria-label="Source"><option value="">Any source</option>{% for s in sources %}<option value="{{ s }}" {{ 'selected' if f.source == s }}>{{ s }}</option>{% endfor %}</select>
+  <select name="mode" aria-label="Work mode"><option value="">Any work mode</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md }}</option>{% endfor %}</select>
   <label class="check chip-toggle"><input type="checkbox" name="fav" value="1" {{ 'checked' if f.fav }}> ★ Favorites only</label>
-  <input type="number" name="min_score" min="0" max="100" value="{{ f.min_score if f.min_score is not none else '' }}" placeholder="Min score">
-  <select name="sort">{% for k, label in [('score', 'Best score first'), ('recent', 'Most recent'), ('company', 'Company A–Z'), ('favorites', 'Favorites first')] %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select>
+  <input type="number" name="min_score" aria-label="Minimum score" min="0" max="100" value="{{ f.min_score if f.min_score is not none else '' }}" placeholder="Min score">
+  <select name="sort" aria-label="Sort by">{% for k, label in [('score', 'Best score first'), ('recent', 'Most recent'), ('company', 'Company A–Z'), ('favorites', 'Favorites first')] %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select>
   <button class="btn" type="submit">Filter</button>
 </form>
 <p class="muted small">{{ "{:,}".format(total) }} postings</p>
 
 {% for r in rows %}
 <article class="job-card">
-  {{ m.ring(r.score) }}
+  {{ m.avatar(r.company) }}
   <div class="job-main">
     <button class="star {{ 'on' if r.is_favorite }}" data-star="{{ r.id }}" aria-pressed="{{ 'true' if r.is_favorite else 'false' }}" title="Favorite">{{ '★' if r.is_favorite else '☆' }}</button>
     <a class="job-title" href="/jobs/{{ r.id }}">{{ r.title }}</a>
@@ -45,6 +45,7 @@
     {% if r.reason %}<p class="job-reason">{% if r.verdict %}<b class="verdict v-{{ r.verdict }}">{{ r.verdict }}</b>{% endif %} {{ r.reason }}</p>{% endif %}
     {% if r.flags %}<p class="warn-line">{{ m.icon('alert') }} {{ r.flags }} thing{{ 's' if r.flags > 1 }} to verify before applying</p>{% endif %}
   </div>
+  {{ m.ring(r.score, 52) }}
   <div class="job-actions">
     {% if r.has_package %}<a class="btn small primary" href="/jobs/{{ r.id }}#package">View package</a>
     {% else %}<button class="btn small primary" data-run='{{ {"id": "tailor", "jobs": [r.id]}|tojson|forceescape }}' data-label="Building the package for “{{ r.title|truncate(40) }}”" data-reload>Build package</button>{% endif %}

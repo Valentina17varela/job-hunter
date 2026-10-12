@@ -4,7 +4,7 @@
 {% block content %}
 <p class="crumb"><a href="/jobs">← Job matches</a></p>
 <header class="job-head card">
-  {{ m.ring(score.score if score else none, 76) }}
+  {{ m.avatar(job.company, 64) }}
   <div class="grow">
     <h1><button class="star {{ 'on' if favorite }}" data-star="{{ job.id }}" aria-pressed="{{ 'true' if favorite else 'false' }}" title="Favorite">{{ '★' if favorite else '☆' }}</button> {{ job.title }}</h1>
     <p class="muted">{{ job.company }} · {{ job.location or 'location not stated' }} · {{ job.remote }} · {{ job.source }}</p>
@@ -18,6 +18,7 @@
       {% if job.posted_at %}<span class="chip">Posted {{ job.posted_at|dt }}</span>{% endif %}
     </div>
   </div>
+  {{ m.ring(score.score if score else none, 64) }}
   <div class="actions col">
     {% if job.url.startswith('http://') or job.url.startswith('https://') %}<a class="btn primary" href="{{ job.url }}" target="_blank" rel="noopener noreferrer">Open posting {{ m.icon('ext') }}</a>{% else %}<span class="muted">Posting link unavailable</span>{% endif %}
     {% if not blocked %}<button class="btn" data-block-company="{{ job.company }}" data-blocked='{{ config_blocked|tojson|forceescape }}'>Block this company</button>{% endif %}
@@ -52,7 +53,7 @@
 
 <section class="card" id="favorite-note" {{ '' if favorite else 'hidden' }}>
   <h2>★ Favorite note</h2>
-  <input type="text" id="fav-note" maxlength="500" value="{{ favorite.note if favorite and favorite.note else '' }}" placeholder="e.g. ask about the visa">
+  <input type="text" id="fav-note" aria-label="Note about this favorite" maxlength="500" value="{{ favorite.note if favorite and favorite.note else '' }}" placeholder="e.g. ask about the visa">
   <button class="btn small" data-fav-note="{{ job.id }}">Save note</button>
 </section>
 

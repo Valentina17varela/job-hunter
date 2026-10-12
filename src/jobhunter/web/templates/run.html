@@ -18,11 +18,11 @@
     <h3 class="plain">{{ s.label }} {% if s.llm %}<span class="badge warn">uses AI</span>{% endif %}</h3>
     <p class="muted">{{ s.description }}</p>
     <div class="opts">
-      {% if s.supports_dry_run %}<label><input type="checkbox" data-opt="dry_run"> Preview only (dry run)</label>{% endif %}
+      {% if s.supports_dry_run %}<label class="opt-check"><input type="checkbox" data-opt="dry_run"> Preview only (dry run)</label>{% endif %}
       {% if s.supports_jobs or s.supports_job_ids %}
-        <label>Only these posting ids <input type="text" data-opt="jobs" size="12" placeholder="e.g. 1163, 9478"></label>
-        {% if s.supports_jobs %}<label>Limit <input type="number" data-opt="limit" min="1" style="width:4.5em"></label>
-        <label><input type="checkbox" data-opt="force"> Rebuild ones already done</label>{% endif %}
+        <label class="opt-field"><span>Only these posting ids</span><input type="text" data-opt="jobs" placeholder="e.g. 1163, 9478"></label>
+        {% if s.supports_jobs %}<label class="opt-field"><span>Limit</span><input type="number" data-opt="limit" min="1" placeholder="no limit"></label>
+        <label class="opt-check"><input type="checkbox" data-opt="force"> Rebuild ones already done</label>{% endif %}
       {% endif %}
     </div>
     <button class="btn primary" data-runcard="{{ s.id }}" data-label="{{ s.label }}">{{ m.icon('play') }} Run</button>
@@ -37,7 +37,7 @@
   <table class="compact"><thead><tr><th>Action</th><th>Result</th><th>Started</th></tr></thead><tbody>
   {% for r in history %}
     <tr><td>{{ r.spec_id }}</td><td><span class="badge {{ 'good' if r.status == 'ok' else ('bad' if r.status == 'failed' else '') }}">{{ r.status }}</span></td>
-        <td class="muted">{{ r.started_at|int }}</td></tr>
+        <td class="muted">{{ r.started_at|dt }}</td></tr>
   {% else %}<tr><td colspan="3" class="muted">Nothing run since the UI started.</td></tr>{% endfor %}
   </tbody></table>
 </section>

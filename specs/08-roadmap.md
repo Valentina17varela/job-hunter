@@ -16,6 +16,7 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 - [x] Build a package by hand for any posting; delete generated documents — [09](09-web-ui.md)
 - [x] Favorites and company block list — [11](11-favorites-and-blocklist.md)
 - [x] Add a posting by hand (URL or pasted text), scored and packaged on its own — [10](10-manual-postings.md)
+- [x] Frontend redesign: Kinetic Horizon tokens, self-hosted font, mascot, restyled pages, optional dark theme — [18](18-frontend-redesign.md)
 - [x] Demo workspace (`scripts/seed_demo.py`) and README
 
 ## To do
@@ -28,7 +29,6 @@ Suggested order: small and independent first, those that gain from more data lat
 - [ ] **Market insights**: skills demand, gaps vs your CV, what a single rule discards, pay — [13](13-market-insights.md) · gains from The Muse and some weeks of data
 - [ ] **Offer negotiation helper** — [17](17-offer-negotiation.md) · needs the pay percentiles of the insights task
 - [ ] **Interview preparation kit**, on demand once a company answers — [12](12-interview-prep.md)
-- [ ] **Frontend redesign** with the inputs in `design/` (Kinetic Horizon palette, mascot logo, project brief): tokens, fonts, components, then page by page — [18](18-frontend-redesign.md) · inputs and decisions are complete (transparent logo received, orange brand and derived dark theme confirmed); only the go-ahead to download the font files is pending; best done before the new pages (wizard, insights...) so they use the new components
 - [ ] **Adzuna and Jooble sources**, once there are keys — [14](14-new-sources-api-keys.md)
 
 ## Not specified yet

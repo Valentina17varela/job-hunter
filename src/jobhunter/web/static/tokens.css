@@ -1,0 +1,38 @@
+/* Design tokens (spec 18 §5.1). Light is ALWAYS the default; dark only when chosen (data-theme="dark").
+   Every value was checked for WCAG contrast: text >= 4.5:1, controls and focus >= 3:1. */
+@font-face { font-family: "Plus Jakarta Sans"; src: url("/static/fonts/PlusJakartaSans.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; }
+:root {
+  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --bg: #f8f9ff; --panel: #ffffff; --soft: #f8fafc; --muted-surface: #f1f5f9;
+  --border: #e2e8f0; --control-border: #8391a7;
+  --ink: #111827; --muted: #475569; --placeholder: #64748b;
+  --primary: #c2410c; --primary-hover: #9d4300; --on-primary: #ffffff;
+  --orange: #f97316; --on-orange: #582200; --orange-border: #fdba74;
+  --accent-text: #c2410c; --focus-ring: #c2410c; --focus-glow: rgba(249, 115, 22, .22);
+  --badge-soft: #fff7ed;
+  --info: #0369a1; --info-soft: #e0f2fe;
+  --good: #047857; --good-soft: #d1fae5; --good-fill: #10b981;
+  --warn: #92400e; --warn-soft: #fef3c7; --warn-fill: #f59e0b;
+  --bad: #ba1a1a; --bad-soft: #ffdad6;
+  --slate: #0f172a; --on-slate: #ffffff;
+  --shadow: 0 1px 2px rgba(15, 23, 42, .04);
+  --shadow-hover: 0 8px 24px rgba(249, 115, 22, .12);
+  --halo: 0 8px 22px rgba(249, 115, 22, .28);
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --radius: 16px; --side: 248px;
+}
+/* dark (opt-in) */
+:root[data-theme="dark"] {
+    --bg: #0b1220; --panel: #111a2e; --soft: #0f172a; --muted-surface: #1a2438;
+    --border: #243049; --control-border: #5f6f88;
+    --ink: #e6ebf5; --muted: #a3b1c6; --placeholder: #8795ab;
+    --primary: #f97316; --primary-hover: #fb923c; --on-primary: #2b1200;
+    --orange: #f97316; --on-orange: #2b1200; --orange-border: #7c3a12;
+    --accent-text: #fb923c; --focus-ring: #fb923c; --focus-glow: rgba(251, 146, 60, .25);
+    --badge-soft: #31262b;
+    --info: #7dd3fc; --info-soft: #0e3150;
+    --good: #34d399; --good-soft: #11333b; --good-fill: #34d399;
+    --warn: #fcd34d; --warn-soft: #352f28; --warn-fill: #fcd34d;
+    --bad: #ffb4ab; --bad-soft: #4c1a27;
+    --slate: #111a2e; --on-slate: #e6ebf5;
+    --shadow: none; --shadow-hover: 0 8px 24px rgba(0, 0, 0, .35); --halo: 0 8px 22px rgba(249, 115, 22, .25);
+}

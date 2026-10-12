@@ -1,7 +1,22 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
 {% block title %}Applications{% endblock %}
+{% macro kcard(c) %}
+<article class="kcard">
+  <div class="kcard-top">{{ m.avatar(c.company, 34) }}<div class="grow"><a class="ktitle" href="/jobs/{{ c.job_id }}">{{ c.title }}</a><div class="muted small">{{ c.company }}</div></div></div>
+  {% if c.interviews %}
+    {% set nxt = c.interviews|selectattr('outcome', 'equalto', 'pending')|list|first %}
+    {% if nxt %}<div class="chip warn">{{ m.icon('cal') }} {{ nxt.kind.replace('_', ' ') }}{% if nxt.scheduled_at %} · {{ nxt.scheduled_at.replace('T', ' ') }}{% endif %}</div>{% endif %}
+    <div class="muted small">{{ c.interviews|length }} interview(s)</div>
+  {% endif %}
+  <div class="muted small">updated {{ c.updated_at|dt }}</div>
+  <select data-stage-job="{{ c.job_id }}" aria-label="Stage of {{ c.title }}">{% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if c.stage == s }}>{{ STAGE_LABELS[s] }}</option>{% endfor %}</select>
+</article>
+{% endmacro %}
 {% block content %}
+{% set open_stages = ['applied', 'screening', 'interviewing', 'offer'] %}
+{% set closed_stages = columns|reject('in', open_stages)|list %}
+{% set closed = cards|selectattr('stage', 'in', closed_stages)|list %}
 <header class="page-head"><div><h1>Applications</h1>
   <p class="muted">Where every application stands. Change a card's stage with its selector; open it to add notes and interviews.</p></div></header>
 <div class="board">
@@ -9,29 +24,29 @@
     <h2>Ready to apply <span class="count">{{ ready|length }}</span></h2>
     {% for r in ready %}
     <article class="kcard">
-      <div class="row">{{ m.ring(r.score, 36) }}<div class="grow"><a class="strong" href="/jobs/{{ r.id }}">{{ r.title }}</a><div class="muted small">{{ r.company }}</div></div></div>
+      <div class="kcard-top">{{ m.ring(r.score, 40) }}<div class="grow"><a class="ktitle" href="/jobs/{{ r.id }}">{{ r.title }}</a><div class="muted small">{{ r.company }}</div></div></div>
       <button class="btn small primary" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>I applied</button>
     </article>
     {% else %}<p class="muted small">Nothing waiting. Build packages for your best matches.</p>{% endfor %}
   </section>
-  {% for stage in columns %}
+  {% for stage in open_stages %}
   {% set col = cards|selectattr('stage', 'equalto', stage)|list %}
   <section class="column stage-{{ stage }}">
     <h2>{{ STAGE_LABELS[stage] }} <span class="count">{{ col|length }}</span></h2>
-    {% for c in col %}
-    <article class="kcard">
-      <a class="strong" href="/jobs/{{ c.job_id }}">{{ c.title }}</a>
-      <div class="muted small">{{ c.company }}</div>
-      {% if c.interviews %}
-        {% set nxt = c.interviews|selectattr('outcome', 'equalto', 'pending')|list|first %}
-        {% if nxt %}<div class="chip warn">{{ m.icon('cal') }} {{ nxt.kind.replace('_', ' ') }}{% if nxt.scheduled_at %} · {{ nxt.scheduled_at.replace('T', ' ') }}{% endif %}</div>{% endif %}
-        <div class="muted small">{{ c.interviews|length }} interview(s)</div>
-      {% endif %}
-      <div class="muted small">updated {{ c.updated_at|dt }}</div>
-      <select data-stage-job="{{ c.job_id }}">{% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if c.stage == s }}>{{ STAGE_LABELS[s] }}</option>{% endfor %}</select>
-    </article>
-    {% endfor %}
+    {% for c in col %}{{ kcard(c) }}{% else %}<p class="muted small empty-col">Empty</p>{% endfor %}
   </section>
   {% endfor %}
 </div>
+<details class="closed-group card"{{ ' open' if closed|length <= 6 and closed }}>
+  <summary>Closed <span class="count">{{ closed|length }}</span> <span class="muted small">accepted, rejected, withdrawn, ghosted</span></summary>
+  <div class="board">
+    {% for stage in closed_stages %}
+    {% set col = cards|selectattr('stage', 'equalto', stage)|list %}
+    <section class="column stage-{{ stage }}">
+      <h2>{{ STAGE_LABELS[stage] }} <span class="count">{{ col|length }}</span></h2>
+      {% for c in col %}{{ kcard(c) }}{% else %}<p class="muted small empty-col">Empty</p>{% endfor %}
+    </section>
+    {% endfor %}
+  </div>
+</details>
 {% endblock %}

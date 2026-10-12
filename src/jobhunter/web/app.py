@@ -656,10 +656,12 @@ def create_app(
     return app
 
 
-def fmt_dt(value: str | None) -> str:
-    """ISO timestamp → 'Oct 11, 2026 14:05' (UTC)."""
+def fmt_dt(value: str | float | None) -> str:
+    """ISO timestamp (or epoch seconds) → 'Oct 11, 2026 14:05' (UTC)."""
     if not value:
         return "—"
+    if isinstance(value, int | float):
+        return datetime.fromtimestamp(value, UTC).strftime("%b %d, %Y %H:%M")
     try:
         parsed = datetime.fromisoformat(value)
     except ValueError:

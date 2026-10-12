@@ -595,3 +595,78 @@ def test_fetch_posting_api_refuses_private_hosts(env):
     res = client.post("/api/postings/fetch", json={"url": "http://127.0.0.1/x"}, headers=HOST)
     assert res.status_code == 422
     assert client.post("/api/postings/fetch", json={}, headers=HOST).status_code == 400
+
+
+# --- redesign smoke tests (spec 18 §7) ---------------------------------------------------------
+
+PAGES = ("/", "/jobs", "/jobs?status=all", "/jobs/1", "/jobs/2", "/jobs/3", "/pipeline",
+         "/packages", "/run", "/settings")  # fmt: skip
+
+
+def _unlabelled_controls(html: str) -> list[str]:
+    import re
+
+    labels_for = set(re.findall(r'<label[^>]*\bfor="([^"]+)"', html))
+    bad = []
+    for match in re.finditer(r"<(input|select|textarea)\b([^>]*)>", html):
+        tag, attrs = match.groups()
+        if re.search(r'type="(hidden|submit|button)"', attrs):
+            continue
+        if re.search(r'aria-label(ledby)?="', attrs):
+            continue
+        ident = re.search(r'\bid="([^"]+)"', attrs)
+        if ident and ident.group(1) in labels_for:
+            continue
+        before = html[: match.start()]
+        # wrapped by a <label> that is still open
+        if before.rfind("<label") > before.rfind("</label>"):
+            continue
+        # tag inputs and similar widgets carry their label in the surrounding field
+        in_field = before.rfind('class="field') > before.rfind("</div>")
+        if in_field and 'class="flabel"' in before[-600:]:
+            continue
+        bad.append(f"<{tag}{attrs[:60]}")
+    return bad
+
+
+def test_no_page_loads_anything_from_outside(env):
+    import re
+
+    client = env[0]
+    for url in PAGES:
+        html = client.get(url, headers=HOST).text
+        assert not re.search(r'<(script|img|iframe)[^>]+src="(https?:)?//', html), url
+        assert not re.search(r'<link[^>]+href="(https?:)?//', html), url
+        assert not re.search(r'url\(["\']?(https?:)?//', html), url
+    for sheet in ("/static/style.css", "/static/tokens.css"):
+        css = client.get(sheet, headers=HOST).text
+        assert not re.search(r'url\(["\']?(https?:)?//', css), sheet
+        assert "@import" not in css
+
+
+def test_every_page_has_one_h1_and_labelled_controls(env):
+    client = env[0]
+    for url in PAGES:
+        html = client.get(url, headers=HOST).text
+        assert html.count("<h1") == 1, url
+        bad = _unlabelled_controls(html)
+        assert bad == [], (url, bad)
+
+
+def test_font_and_logo_files_exist_and_are_served(env):
+    import re
+
+    client = env[0]
+    css = client.get("/static/tokens.css", headers=HOST).text
+    paths = re.findall(r'url\("(/static/[^"]+)"\)', css)
+    assert paths and all(client.get(p, headers=HOST).status_code == 200 for p in paths)
+    html = client.get("/", headers=HOST).text
+    for path in re.findall(r'(?:src|href)="(/static/[^"]+)"', html):
+        assert client.get(path, headers=HOST).status_code == 200, path
+
+
+def test_light_is_the_default_theme(env):
+    client = env[0]
+    css = client.get("/static/tokens.css", headers=HOST).text
+    assert "prefers-color-scheme" not in css and 'data-theme="dark"' in css
+    assert 'data-theme="dark"' not in client.get("/", headers=HOST).text
