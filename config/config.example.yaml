@@ -19,6 +19,7 @@ search:
   titles_exclude: ["intern", "junior", "manager", "director"]
   keywords_include: []
   keywords_exclude: []
+  companies_exclude: []     # block list: whole company names ("Acme" never blocks "Acmeworks")
   seniority: []
   work_mode: ["remote"]
   locations_allowed: []

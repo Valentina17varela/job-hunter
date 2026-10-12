@@ -17,11 +17,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from jobhunter import applications, config_edit, latex, tailoring
+from jobhunter import applications, config_edit, favorites, latex, tailoring
 from jobhunter.config import Config, ConfigError, load_config
 from jobhunter.db import connect
 from jobhunter.doctor import run_checks
-from jobhunter.filters import JobFilter, job_from_row
+from jobhunter.filters import JobFilter, job_from_row, normalize_company
 from jobhunter.web.runner import RUN_SPECS, Busy, RunError, RunManager
 
 HERE = Path(__file__).parent
@@ -33,7 +33,7 @@ ACTIVE_STATUSES = (
 )  # fmt: skip
 STATUS_LABELS = {
     "new": "New", "filtered": "Filtered out", "passed": "Passed filter", "scored": "Scored",
-    "selected": "Selected", "packaged": "Packaged", "below_threshold": "Below threshold",
+    "selected": "Selected", "packaged": "Packaged", "below_threshold": "Below match score",
     "score_failed": "Score failed", "applied": "Applied", "replied": "In process",
     "rejected": "Rejected", "closed": "Closed", "duplicate": "Duplicate", "ignored": "Ignored",
 }  # fmt: skip
@@ -62,6 +62,7 @@ RULE_LABELS = {
     "keywords_exclude": "Mentions something you cannot do (e.g. citizenship)",
     "salary": "Pay below your minimum",
     "max_age_days": "Posted too long ago",
+    "companies_exclude": "Company is on your block list",
 }
 
 
@@ -197,6 +198,7 @@ def create_app(
     templates.env.filters["dt"] = fmt_dt
     templates.env.filters["money"] = money
     templates.env.filters["bar_width"] = bar_width
+    templates.env.filters["norm_company"] = normalize_company
     templates.env.globals.update(
         STATUS_LABELS=STATUS_LABELS, STAGE_LABELS=STAGE_LABELS,
         STAGES=applications.STAGES, KINDS=applications.INTERVIEW_KINDS,
@@ -208,6 +210,9 @@ def create_app(
 
     def db(config: Config) -> sqlite3.Connection:
         return connect(config.paths.db)
+
+    def blocked_set(config: Config) -> set[str]:
+        return {n for n in map(normalize_company, config.search.companies_exclude) if n}
 
     def render(request: Request, name: str, **ctx: Any) -> Any:
         return templates.TemplateResponse(request, name, {"active": ctx.pop("active", ""), **ctx})
@@ -233,20 +238,23 @@ def create_app(
             upcoming=applications.upcoming_interviews(conn),
             kpis=kpis(conn, data), rule_labels=RULE_LABELS,
             max_calls=config.budget.max_llm_calls_per_run, backend=config.llm.backend,
-            running=manager.active(),
+            running=manager.active(), favorites_open=favorites.count_without_application(conn),
         )  # fmt: skip
 
     @app.get("/jobs")
     def jobs_page(
         request: Request, status: str = "best", source: str = "", q: str = "",
         min_score: str = "", mode: str = "", sort: str = "score", page: int = 1,
+        fav: str = "",
     ) -> Any:  # fmt: skip
         config = cfg()
         conn = db(config)
         score_floor = int(min_score) if min_score.strip().lstrip("-").isdigit() else None
         where, params = ["1=1"], []
         tab_statuses = {key: sts for key, _, sts in JOB_TABS}
-        if status == "active":
+        if status == "favorites":
+            where.append("f.job_id IS NOT NULL")
+        elif status == "active":
             where.append(f"j.status IN ({','.join('?' for _ in ACTIVE_STATUSES)})")
             params += ACTIVE_STATUSES
         elif status in tab_statuses and tab_statuses[status]:
@@ -255,6 +263,8 @@ def create_app(
         elif status not in ("all", *tab_statuses):
             where.append("j.status = ?")
             params.append(status)
+        if fav == "1" and status != "favorites":
+            where.append("f.job_id IS NOT NULL")
         if source:
             where.append("j.source = ?")
             params.append(source)
@@ -272,10 +282,12 @@ def create_app(
             "score": "s.score IS NULL, s.score DESC, j.id DESC",
             "recent": "j.posted_at IS NULL, j.posted_at DESC",
             "company": "j.company COLLATE NOCASE, j.title",
+            "favorites": "f.job_id IS NULL, s.score IS NULL, s.score DESC, j.id DESC",
         }.get(sort, "s.score DESC")
         base = (
             "FROM jobs j LEFT JOIN scores s ON s.job_id = j.id AND s.created_at = "
             "(SELECT MAX(created_at) FROM scores WHERE job_id = j.id) "
+            "LEFT JOIN favorites f ON f.job_id = j.id "
             f"WHERE {' AND '.join(where)}"
         )
         total = conn.execute(f"SELECT COUNT(*) {base}", params).fetchone()[0]
@@ -287,7 +299,8 @@ def create_app(
             "json_extract(s.reasons, '$.reason') AS reason, "
             "json_array_length(json_extract(s.reasons, '$.red_flags')) AS flags, "
             "EXISTS(SELECT 1 FROM packages WHERE job_id = j.id) AS has_package, "
-            "(SELECT stage FROM applications WHERE job_id = j.id) AS stage "
+            "(SELECT stage FROM applications WHERE job_id = j.id) AS stage, "
+            "f.job_id IS NOT NULL AS is_favorite, f.note AS favorite_note "
             f"{base} ORDER BY {order} LIMIT ? OFFSET ?",
             [*params, PAGE_SIZE, (page - 1) * PAGE_SIZE],
         ).fetchall()
@@ -298,15 +311,19 @@ def create_app(
              "n": sum(counts.values()) if sts is None else sum(counts.get(x, 0) for x in sts)}
             for key, label, sts in JOB_TABS
         ]  # fmt: skip
+        fav_total = conn.execute("SELECT COUNT(*) FROM favorites").fetchone()[0]
+        tabs.append({"key": "favorites", "label": "★ Favorites", "n": fav_total})
         sources = [r[0] for r in conn.execute("SELECT DISTINCT source FROM jobs ORDER BY source")]
         return render(
             request, "jobs.html", active="jobs", rows=rows, total=total, page=page,
             pages=max(1, -(-total // PAGE_SIZE)), counts=counts, sources=sources, tabs=tabs,
             qs=urlencode({k: v for k, v in {"status": status, "source": source, "q": q,
-                          "mode": mode, "sort": sort, "min_score": score_floor}.items()
+                          "mode": mode, "sort": sort, "min_score": score_floor,
+                          "fav": "1" if fav == "1" else ""}.items()
                           if v not in ("", None)}),
             f={"status": status, "source": source, "q": q, "min_score": score_floor,
-               "mode": mode, "sort": sort},
+               "mode": mode, "sort": sort, "fav": fav == "1"},
+            blocked=blocked_set(config),
         )  # fmt: skip
 
     @app.get("/jobs/{job_id}")
@@ -333,9 +350,15 @@ def create_app(
         ).fetchone()
         return render(
             request, "job.html", active="jobs", job=row, verdict=verdict,
+            threshold=config.scoring.score_threshold,
             score=score, info=json.loads(score["reasons"]) if score else None,
             package=package_view(config, package), application=application,
             interviews=applications.list_interviews(conn, job_id), events=events,
+            favorite=conn.execute(
+                "SELECT * FROM favorites WHERE job_id = ?", (job_id,)
+            ).fetchone(),
+            blocked=normalize_company(row["company"]) in blocked_set(config),
+            config_blocked=config.search.companies_exclude,
         )  # fmt: skip
 
     @app.get("/pipeline")
@@ -480,6 +503,25 @@ def create_app(
             return JSONResponse({"error": str(exc)}, status_code=422)
         config_edit.write_atomic(path, content if content.endswith("\n") else content + "\n")
         return {"ok": True}
+
+    @app.post("/api/jobs/{job_id}/favorite")
+    async def api_favorite(request: Request, job_id: int) -> Any:
+        body = await read_json(request)
+        if not isinstance(body, dict) or not isinstance(body.get("on"), bool):
+            return JSONResponse({"error": "{on: bool} required"}, status_code=400)
+        note = body.get("note")
+        if note is not None and not isinstance(note, str):
+            return JSONResponse({"error": "note must be text"}, status_code=400)
+        conn = db(cfg())
+        if body["on"]:
+            favorites.set_favorite(conn, job_id, note)
+        else:
+            favorites.remove_favorite(conn, job_id)
+        return {"ok": True}
+
+    @app.get("/api/favorites")
+    def api_favorites() -> Any:
+        return favorites.list_favorites(db(cfg()))
 
     @app.post("/api/jobs/{job_id}/package/delete")
     async def api_delete_package(job_id: int) -> Any:

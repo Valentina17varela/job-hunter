@@ -281,4 +281,36 @@
       });
     }).catch(() => (health.textContent = 'Could not run the checks.'));
   }
+  // ---------- favorites and company block list ----------
+  document.addEventListener('click', async (ev) => {
+    const star = ev.target.closest('[data-star]');
+    if (star) {
+      const on = star.getAttribute('aria-pressed') !== 'true';
+      try {
+        await post('/api/jobs/' + star.dataset.star + '/favorite', { on });
+      } catch (err) { toast(err.message); return; }
+      star.setAttribute('aria-pressed', String(on));
+      star.classList.toggle('on', on);
+      star.textContent = on ? '★' : '☆';
+      const note = $('#favorite-note');
+      if (note) note.hidden = !on;
+      return;
+    }
+    const noteBtn = ev.target.closest('[data-fav-note]');
+    if (noteBtn) {
+      const ok = await act(() => post('/api/jobs/' + noteBtn.dataset.favNote + '/favorite', { on: true, note: $('#fav-note').value }), false);
+      if (ok) toast('Note saved');
+      return;
+    }
+    const block = ev.target.closest('[data-block-company]');
+    if (block) {
+      const company = block.dataset.blockCompany;
+      if (!confirm('Block ' + company + '? Its postings will be filtered out from now on. You can undo this in Settings.')) return;
+      const list = JSON.parse(block.dataset.blocked || '[]').concat([company]);
+      const ok = await act(() => post('/api/config', { updates: { search: { companies_exclude: list } } }), false);
+      if (!ok) return;
+      if (confirm(company + ' is blocked. Re-filter now so its current postings leave your matches?')) startRun({ id: 'refilter' }, 'Re-filtering with your new criteria', true);
+      else location.reload();
+    }
+  });
 })();

@@ -76,6 +76,17 @@ events(                              -- status-change history
 );
 ```
 
+### Favorites
+
+```sql
+favorites(                           -- bookmarks; never touched by refilter, dedupe or closing
+  job_id INTEGER PRIMARY KEY REFERENCES jobs(id),
+  created_at TEXT NOT NULL, note TEXT
+);
+```
+
+Starring and unstarring write `events` rows (`to_status` = `favorited` / `unfavorited`, no `from_status`).
+
 ### Application tracking (web UI)
 
 ```sql

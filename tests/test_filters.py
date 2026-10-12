@@ -251,3 +251,47 @@ def test_acronym_tokens_are_case_sensitive(location, description, passed):
 def test_lowercase_us_in_text_is_not_an_allowed_place():
     # "Remote - us" must not match the acronym token "US"
     assert not verdict(ENGLISH, job(location="Remote - germany us")).passed
+
+
+# --- company block list ------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("Acme, Inc.", "acme"),
+        ("ACME Inc", "acme"),
+        ("Acme Co., Ltd.", "acme"),
+        ("Société Générale S.A.", "societe generale"),
+        ("Beta GmbH", "beta"),
+        ("Gamma S.A.S.", "gamma"),
+        ("Delta Corp", "delta"),
+        ("Co", "co"),  # never reduced to nothing
+        ("  Meta  ", "meta"),
+        ("AT&T", "at t"),
+    ],
+)
+def test_normalize_company(name, expected):
+    from jobhunter.filters import normalize_company
+
+    assert normalize_company(name) == expected
+
+
+def test_company_block_list_matches_whole_names_only():
+    block = {"companies_exclude": ["Meta", "Acme, Inc."], "work_mode": []}
+    assert not verdict(block, job(company="META Inc")).passed
+    assert not verdict(block, job(company="Acme LLC")).passed
+    assert verdict(block, job(company="Metamask")).passed
+    assert verdict(block, job(company="Meta Platforms")).passed  # whole-name equality
+
+
+def test_company_rule_reason_and_order():
+    block = {"companies_exclude": ["Acme"], "titles_exclude": ["senior"], "work_mode": []}
+    result = verdict(block, job())  # title would also be rejected, but the company rule is first
+    assert result.reason == 'companies_exclude: company "Acme" is on your block list'
+    old = job(source="remotive", posted_at=NOW - timedelta(days=90))
+    assert verdict({**block, "max_age_days": 30}, old).reason.startswith("max_age_days")
+
+
+def test_blank_block_entries_block_nothing():
+    assert verdict({"companies_exclude": ["", "  ", "Inc."], "work_mode": []}, job()).passed

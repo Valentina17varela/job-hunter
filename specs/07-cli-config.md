@@ -12,6 +12,7 @@
 | `jobhunter show <id>` | Posting detail + score + package path |
 | `jobhunter explain <id>` | Why it was filtered / its score |
 | `jobhunter mark <id> applied\|replied\|rejected\|closed [--note]` | Updates status |
+| `jobhunter favorite <id> [--note TEXT] [--remove]` / `jobhunter favorites` | Star/unstar a posting; list the starred ones (spec 11) |
 | `jobhunter stats` | Funnel (fetched → passed → scored → packaged → applied → replied) and cumulative cost |
 | `jobhunter companies check` | Validates `companies.yaml` slugs (200 vs 404) |
 | `jobhunter companies discover` | Probes names in `company_candidates.txt` and adds boards that exist to `companies.yaml` |

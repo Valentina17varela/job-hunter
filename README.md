@@ -112,7 +112,7 @@ graph TD
 
 1. **Fetch:** every source is a small adapter that returns normalized `Job` objects. A failing source never stops the others; a posting seen twice is stored once, changed content resets its verdict, postings that disappear for 7 days are closed, and the same job on two sources is marked duplicate (the company board wins).
 
-2. **Filter:** deterministic rules in a fixed order (age, excluded and wanted titles, seniority, remote, location, technologies, salary). Each rejection stores a reason, so `explain` and the UI can say exactly why a posting was dropped. 25,000 postings are evaluated in under a second.
+2. **Filter:** deterministic rules in a fixed order (age, company block list, excluded and wanted titles, seniority, remote, location, technologies, salary). Each rejection stores a reason, so `explain` and the UI can say exactly why a posting was dropped. 25,000 postings are evaluated in under a second.
 
 3. **Score:** postings that pass are rated in **batches** (about 8 per LLM call) against a plain-text digest of the marked parts of your CV. The prompt only allows blockers that the posting states explicitly. Scores are cached by `(posting content, CV, context, prompt version)`, so nothing is scored twice.
 
@@ -231,7 +231,7 @@ erDiagram
 
 </div>
 
-Two more tables, `fetch_log` (what each source returned, or why it failed) and `llm_calls` (tokens and cost of every call), explain what the tool did and what it cost. Migrations are versioned in `db.py`.
+`favorites` (bookmarks, kept apart from the posting status), plus two more tables, `fetch_log` (what each source returned, or why it failed) and `llm_calls` (tokens and cost of every call), explain what the tool did and what it cost. Migrations are versioned in `db.py`.
 
 ### Web UI
 
@@ -240,7 +240,9 @@ Two more tables, `fetch_log` (what each source returned, or why it failed) and `
 What you can do there:
 
 - **Home:** a guided 3-step workflow (Search → Score with AI → Build packages), KPIs, a plain-language "what to do next" list, upcoming interviews and the funnel.
-- **Job matches:** tabs (best matches, all evaluated, applied, filtered out), search and filters, one-click *Build package* / *I applied* / *Hide*. **Any posting** can get a package by hand, whatever its score.
+- **Job matches:** tabs (best matches, all evaluated, applied, filtered out, **★ Favorites**), search and filters (including a *Favorites only* toggle and *Favorites first* sort), one-click *Build package* / *I applied* / *Hide*. **Any posting** can get a package by hand, whatever its score.
+- **Favorites:** a ★ on every card and posting page, for any status (filtered-out or closed ones too). It is only a bookmark: it never changes the posting's status, and a re-filter, dedupe or closing never removes it. Add a short note ("ask about the visa") on the posting page; closed favorites show a *Closed* badge. Home links to the favorites you have not applied to.
+- **Block list:** *Block this company* on a posting page (asks first, then offers *Re-filter now*), or edit the list in Settings (× to remove). Postings of a blocked company are filtered out, now and in future searches; applied, in-process, rejected, hidden and packaged postings are left alone. A favorite from a blocked company keeps its star and shows a *Blocked company* badge.
 - **Applications:** kanban from *Ready to apply* to *Offer*, notes and interviews (type, date, outcome) per application.
 - **Documents:** every generated CV and cover letter with its checks, the recruiter message, and a **Delete** button per package.
 - **Actions:** every stage and maintenance command with its options (dry run, only these ids, limit, rebuild).
@@ -330,6 +332,7 @@ search:
   titles_include: ["software engineer", "backend", "python"]  # at least one in the title
   titles_exclude: ["intern", "junior", "frontend", "mobile"]  # any match rejects (whole words)
   keywords_include: ["python", "typescript", "golang"]        # at least one in the posting
+  companies_exclude: ["Acme"]                                 # block list: whole company names
   seniority: ["mid", "senior"]                                # junior | mid | senior | lead
   work_mode: ["remote"]                                       # remote | hybrid | onsite
   locations_allowed: ["Colombia", "LATAM", "Worldwide", "Anywhere", "Global"]
@@ -353,6 +356,8 @@ You can edit all of this **in the UI** (Settings): tag inputs, checkboxes and pl
 | `jobhunter explain ID` | Why a posting passed or was rejected, with the matching text |
 | `jobhunter review` | Packages waiting for you |
 | `jobhunter mark ID STAGE [--note]` | `applied`, `screening`, `interviewing`, `offer`, `accepted`, `rejected`, `withdrawn`, `ghosted` |
+| `jobhunter favorite ID [--note TEXT] [--remove]` | Star a posting (any status), optionally with a note, or remove its star |
+| `jobhunter favorites` | List starred postings, newest first |
 | `jobhunter stats` | Funnel, rejections by rule, applications by stage, LLM usage |
 | `jobhunter calibrate` | Say y/n to the AI's verdicts to measure how well it matches your judgement |
 | `jobhunter cv check \| init \| translate` | Validate/compile your CV, propose markers, translate once |
@@ -379,6 +384,7 @@ src/jobhunter/
   llm.py           claude -p / Anthropic API, budget, retries, call log
   latex.py         CV parser/assembler, escape, compile    translate.py, language.py
   applications.py  stages, interviews, stats        store.py     upsert, dedupe, close stale
+  favorites.py     stars and notes on postings
   web/             FastAPI app, run manager, templates, static
 tests/             pytest suite (no network, no LLM)
 ```

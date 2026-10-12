@@ -1,6 +1,6 @@
 # 11 — Favorites and company block list
 
-**Status:** PLANNED (spec only, not implemented)
+**Status:** DONE
 
 ## 1. Problem
 
@@ -42,14 +42,14 @@ Two opposite needs the scoring cannot express: "this one is interesting, keep it
 
 ## 6. Tasks
 
-- [ ] Migration: `favorites` table.
-- [ ] `JobFilter`: `companies_exclude` + name normalization + config field + validation.
-- [ ] Favorites API/CLI and queries (`favorites` tab, sort, chip).
-- [ ] UI: star, *Block this company*, Settings list, Home label for the new rule.
-- [ ] README (commands, UI, config key) and this spec marked done.
+- [x] Migration: `favorites` table.
+- [x] `JobFilter`: `companies_exclude` + name normalization + config field + validation.
+- [x] Favorites API/CLI and queries (`favorites` tab, sort, chip).
+- [x] UI: star, *Block this company*, Settings list, Home label for the new rule.
+- [x] README (commands, UI, config key) and this spec marked done.
 
 ## 7. Acceptance criteria
 
-- [ ] A starred posting stays reachable under *Favorites* whatever the filters or the AI say.
-- [ ] Blocking a company removes its postings from the matches after a re-filter and keeps them out of future fetches.
-- [ ] "Meta" never blocks "Metamask".
+- [x] A starred posting stays reachable under *Favorites* whatever the filters or the AI say.
+- [x] Blocking a company removes its postings from the matches after a re-filter and keeps them out of future fetches.
+- [x] "Meta" never blocks "Metamask".

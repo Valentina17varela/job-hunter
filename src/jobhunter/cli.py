@@ -547,6 +547,46 @@ def mark(
 
 
 @app.command()
+def favorite(
+    job_id: Annotated[int, typer.Argument(help="Posting id.")],
+    note: Annotated[str | None, typer.Option(help="Short note, e.g. 'ask about the visa'.")] = None,
+    remove: Annotated[bool, typer.Option("--remove", help="Remove the star instead.")] = False,
+    config: ConfigOption = Path("config/config.yaml"),
+) -> None:
+    """Star a posting (any status) so it stays easy to find, or remove its star."""
+    from jobhunter import favorites
+    from jobhunter.applications import TrackingError
+
+    cfg = _load(config)
+    conn = connect(cfg.paths.db)
+    try:
+        if remove:
+            changed = favorites.remove_favorite(conn, job_id)
+            typer.echo(f"#{job_id} unstarred" if changed else f"#{job_id} was not a favorite")
+            return
+        favorites.set_favorite(conn, job_id, note)
+    except TrackingError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"#{job_id} starred")
+
+
+@app.command("favorites")
+def favorites_list(config: ConfigOption = Path("config/config.yaml")) -> None:
+    """List starred postings, newest first."""
+    from jobhunter import favorites
+
+    cfg = _load(config)
+    items = favorites.list_favorites(connect(cfg.paths.db))
+    if not items:
+        typer.echo("no favorites yet. Star one with: jobhunter favorite ID")
+        return
+    for item in items:
+        note = f" — {item['note']}" if item["note"] else ""
+        typer.echo(f"#{item['id']} {item['title']} · {item['company']} [{item['status']}]{note}")
+
+
+@app.command()
 def stats(config: ConfigOption = Path("config/config.yaml")) -> None:
     """Funnel from fetched postings to offers, rejections by rule and LLM usage."""
     from jobhunter import applications

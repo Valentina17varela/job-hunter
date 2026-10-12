@@ -507,3 +507,67 @@ def test_suggestion_grammar_and_funnel_scale():
     assert bar_width(0, 1000) == 0 and bar_width(5, 0) == 0
     assert bar_width(1000, 1000) == 100
     assert 3 <= bar_width(2, 25000) < bar_width(30, 25000) < bar_width(5000, 25000) < 100
+
+
+def test_favorites_api_tab_chip_sort_and_badges(env):
+    client, conn = env[0], env[1]
+    assert client.post("/api/jobs/3/favorite", json={"on": True, "note": "visa?"},
+                       headers=HOST).status_code == 200  # fmt: skip
+    client.post("/api/jobs/2/favorite", json={"on": True}, headers=HOST)  # a filtered posting
+    listing = client.get("/api/favorites", headers=HOST).json()
+    assert {f["id"] for f in listing} == {2, 3}
+    tab = client.get("/jobs?status=favorites", headers=HOST).text
+    assert "Platform Engineer" in tab and "Sales Manager" in tab and "Senior Engineer" not in tab
+    assert "visa?" in tab
+    chip = client.get("/jobs?status=all&fav=1&sort=favorites", headers=HOST).text
+    assert "Platform Engineer" in chip and "Senior Engineer" not in chip
+    first = client.get("/jobs?status=all&sort=favorites", headers=HOST).text
+    assert first.index("Platform Engineer") < first.index("Senior Engineer")
+    assert "★ Favorites" in client.get("/jobs", headers=HOST).text
+    assert "favorites without an application" in client.get("/", headers=HOST).text
+    page = client.get("/jobs/3", headers=HOST).text
+    assert 'aria-pressed="true"' in page and "Block this company" in page
+    conn.execute("UPDATE jobs SET status='closed' WHERE id=3")
+    conn.commit()
+    assert "Closed" in client.get("/jobs/3", headers=HOST).text
+    client.post("/api/jobs/3/favorite", json={"on": False}, headers=HOST)
+    assert {f["id"] for f in client.get("/api/favorites", headers=HOST).json()} == {2}
+
+
+def test_favorite_api_validates_input(env):
+    client = env[0]
+    assert client.post("/api/jobs/1/favorite", json={}, headers=HOST).status_code == 400
+    assert client.post("/api/jobs/1/favorite", json={"on": True, "note": 5},
+                       headers=HOST).status_code == 400  # fmt: skip
+    assert client.post("/api/jobs/99/favorite", json={"on": True},
+                       headers=HOST).status_code == 400  # fmt: skip
+
+
+def test_block_company_writes_config_keeps_comments_and_shows_badges(env):
+    client, tmp = env[0], env[2]
+    cfg = tmp / "config.yaml"
+    cfg.write_text(cfg.read_text() + "# keep me\n")
+    res = client.post("/api/config", json={"updates": {"search": {"companies_exclude": ["Gamma"]}}},
+                      headers=HOST)  # fmt: skip
+    assert res.status_code == 200
+    text = cfg.read_text()
+    assert "Gamma" in text and "# keep me" in text
+    client.post("/api/jobs/3/favorite", json={"on": True}, headers=HOST)
+    assert "Blocked company" in client.get("/jobs/3", headers=HOST).text
+    assert "Blocked company" in client.get("/jobs?status=favorites", headers=HOST).text
+    assert "Block this company" not in client.get("/jobs/3", headers=HOST).text
+    assert "Gamma" in client.get("/settings", headers=HOST).text
+
+
+def test_below_threshold_is_explained_as_the_ai_match_score_not_salary(env):
+    client, conn = env[0], env[1]
+    conn.execute("UPDATE jobs SET status = 'below_threshold' WHERE id = 3")
+    conn.execute("UPDATE scores SET score = 60 WHERE job_id = 3")
+    conn.commit()
+    html = client.get("/jobs/3", headers=HOST).text
+    assert (
+        "below your best-match threshold of 75" in html
+        and "not your salary or location criteria" in html
+    )
+    assert "Below match score" in html
+    assert "Below match score" in client.get("/jobs?status=below_threshold", headers=HOST).text

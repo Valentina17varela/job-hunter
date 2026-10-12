@@ -119,6 +119,14 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX idx_interviews_job ON interviews(job_id);
     """,
+    # v6: favorites (bookmarks independent of the posting status)
+    """
+    CREATE TABLE favorites (
+        job_id INTEGER PRIMARY KEY REFERENCES jobs(id),
+        created_at TEXT NOT NULL,
+        note TEXT
+    );
+    """,
 ]
 
 

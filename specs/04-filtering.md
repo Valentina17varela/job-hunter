@@ -10,6 +10,7 @@ search:
   titles_exclude: ["intern", "junior", "manager", "director"]
   keywords_include: ["python", "typescript"]                      # optional; at least one in description
   keywords_exclude: ["security clearance", "us citizen only"]
+  companies_exclude: []                  # block list, whole company names
   seniority: ["mid", "senior"]
   work_mode: ["remote"]                  # remote | hybrid | onsite
   locations_allowed: ["Colombia", "LATAM", "Worldwide", "Anywhere"]
@@ -25,14 +26,15 @@ search:
 Evaluated in order, stopping at the first failure and storing `filter_reason`:
 
 1. Age: `max_age_days` for aggregator postings, `max_age_days_ats` for Greenhouse/Lever/Ashby ones (default: none — a posting still listed on a company board is open however old its first-publish date; on real data 65% of ATS postings were older than 30 days). Unknown posting date passes
-2. `titles_exclude`
-3. `titles_include`
-4. `seniority` — one of `junior`, `mid`, `senior`, `lead`, inferred from the title: `staff|principal|lead|head of|architect` → lead (checked first), `senior|sr` → senior, `junior|jr|entry level|graduate|intern|trainee` → junior, no marker → mid
-5. `work_mode`
-6. `locations_allowed` (for remote: looks for restrictions like "US only", "EU only" in location and description)
-7. `keywords_exclude`
-8. `keywords_include`
-9. `salary.min_usd` (if no salary, apply `on_missing`)
+2. `companies_exclude` — block list (normalized whole-name equality, spec 11)
+3. `titles_exclude`
+4. `titles_include`
+5. `seniority` — one of `junior`, `mid`, `senior`, `lead`, inferred from the title: `staff|principal|lead|head of|architect` → lead (checked first), `senior|sr` → senior, `junior|jr|entry level|graduate|intern|trainee` → junior, no marker → mid
+6. `work_mode`
+7. `locations_allowed` (for remote: looks for restrictions like "US only", "EU only" in location and description)
+8. `keywords_exclude`
+9. `keywords_include`
+10. `salary.min_usd` (if no salary, apply `on_missing`)
 
 ## 3. Inference
 

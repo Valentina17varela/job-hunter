@@ -6,10 +6,12 @@
 <header class="job-head card">
   {{ m.ring(score.score if score else none, 76) }}
   <div class="grow">
-    <h1>{{ job.title }}</h1>
+    <h1><button class="star {{ 'on' if favorite }}" data-star="{{ job.id }}" aria-pressed="{{ 'true' if favorite else 'false' }}" title="Favorite">{{ '★' if favorite else '☆' }}</button> {{ job.title }}</h1>
     <p class="muted">{{ job.company }} · {{ job.location or 'location not stated' }} · {{ job.remote }} · {{ job.source }}</p>
     <div class="chips">
       <span class="badge st-{{ job.status }}">{{ STATUS_LABELS.get(job.status, job.status) }}</span>
+      {% if favorite and job.status == 'closed' %}<span class="badge bad">Closed</span>{% endif %}
+      {% if blocked %}<span class="badge bad">Blocked company</span>{% endif %}
       {% if application %}<span class="chip stage-{{ application.stage }}">{{ STAGE_LABELS[application.stage] }}</span>{% endif %}
       {% if job.salary_max %}<span class="chip pay">{{ job.salary_min|money(job.salary_currency) }} – {{ job.salary_max|money(job.salary_currency) }} / yr</span>{% endif %}
       {% if job.posted_at %}<span class="chip">Posted {{ job.posted_at|dt }}</span>{% endif %}
@@ -17,6 +19,7 @@
   </div>
   <div class="actions col">
     {% if job.url.startswith('http://') or job.url.startswith('https://') %}<a class="btn primary" href="{{ job.url }}" target="_blank" rel="noopener noreferrer">Open posting {{ m.icon('ext') }}</a>{% else %}<span class="muted">Posting link unavailable</span>{% endif %}
+    {% if not blocked %}<button class="btn" data-block-company="{{ job.company }}" data-blocked='{{ config_blocked|tojson|forceescape }}'>Block this company</button>{% endif %}
     {% if not application and job.status != 'ignored' %}<button class="btn" data-post="/api/jobs/{{ job.id }}/ignore" data-json='{}' data-confirm="Hide this posting for good?">Hide posting</button>{% endif %}
   </div>
 </header>
@@ -29,6 +32,7 @@
       {% if info.red_flags %}<div class="callout warn"><b>{{ m.icon('alert') }} Verify before applying</b><ul class="flags">{% for x in info.red_flags %}<li>{{ x }}</li>{% endfor %}</ul></div>{% endif %}
       {% if info.must_have_match %}<h3>What matches your profile</h3><div class="chips">{% for x in info.must_have_match %}<span class="chip good">{{ x }}</span>{% endfor %}</div>{% endif %}
       {% if info.gaps %}<h3>Possible gaps</h3><div class="chips">{% for x in info.gaps %}<span class="chip warn">{{ x }}</span>{% endfor %}</div>{% endif %}
+      {% if score.score < threshold %}<p class="muted small mt">Match score {{ score.score }} is below your best-match threshold of {{ threshold }} (Settings → AI &amp; documents). This is the AI's fit score, not your salary or location criteria.</p>{% endif %}
       <p class="muted small mt">Scored by {{ score.model }} · {{ score.created_at|dt }}</p>
     {% else %}<p class="muted">Not scored yet. It has to pass your criteria first, then use “Score with AI” on the Home page.</p>{% endif %}
   </section>
@@ -41,6 +45,12 @@
     <p class="muted small mt">Checked live against the filters in Settings.</p>
   </section>
 </div>
+
+<section class="card" id="favorite-note" {{ '' if favorite else 'hidden' }}>
+  <h2>★ Favorite note</h2>
+  <input type="text" id="fav-note" maxlength="500" value="{{ favorite.note if favorite and favorite.note else '' }}" placeholder="e.g. ask about the visa">
+  <button class="btn small" data-fav-note="{{ job.id }}">Save note</button>
+</section>
 
 <section class="card" id="package">
   <h2>{{ m.icon('doc') }} Application package</h2>

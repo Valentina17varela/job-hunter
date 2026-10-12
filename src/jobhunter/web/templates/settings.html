@@ -30,6 +30,7 @@
     {% call field('Seniority', 'Guessed from the title: staff/principal/lead = lead, senior/sr = senior, junior/intern = junior, otherwise mid.') %}{{ checks('search.seniority', s.seniority, ['junior', 'mid', 'senior', 'lead']) }}{% endcall %}
     {% call field('Work mode') %}{{ checks('search.work_mode', s.work_mode, ['remote', 'hybrid', 'onsite']) }}{% endcall %}
     {% call field('Where I can work', 'Postings naming a place must name one of these (LATAM also matches “Latin America”). A plain “Remote” passes unless the text restricts the country. Leave empty to accept anywhere.') %}{{ tags('search.locations_allowed', s.locations_allowed) }}{% endcall %}
+    {% call field('Companies I never want to see', 'Whole company names; “Acme, Inc.” and “ACME” are the same, but “Meta” never blocks “Metamask”. You can also block one from its posting page.') %}{{ tags('search.companies_exclude', s.companies_exclude) }}{% endcall %}
     {% call field('Technologies I want to see', 'At least one must appear in the title or description.') %}{{ tags('search.keywords_include', s.keywords_include) }}{% endcall %}
     {% call field('Things that rule a posting out', 'e.g. security clearance, US citizen.') %}{{ tags('search.keywords_exclude', s.keywords_exclude) }}{% endcall %}
     {% call field('Minimum yearly pay (USD)', 'Compared with the top of the published range. Monthly pay × 12. 0 turns it off.') %}{{ number('search.salary.min_usd', s.salary.min_usd) }}{% endcall %}

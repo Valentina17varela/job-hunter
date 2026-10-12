@@ -26,7 +26,7 @@ Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel
 - **Platform identity:** a "personal job-search copilot", local-first. The sidebar and hero say so; the side card states that nothing runs by itself and nothing is sent for the person.
 - **Guided workflow on Home:** three steps (Search → Review matches → Prepare & apply) with one button each, a plain-language "What to do next" list computed from the data, four KPIs, upcoming interviews, a log-scaled funnel and friendly names for filter rules.
 - **Actions run in place:** every button (Home, Job matches, a posting, Documents, Actions) starts a whitelisted run and streams its log into a docked panel available on every page; the active run survives page navigation (`sessionStorage`) and the page refreshes itself when a run finishes.
-- **Job matches** are cards (score ring, AI reason, "N things to verify", one-click Build package / I applied / Hide) with tabs (Best matches, All evaluated, Applied, Filtered out, Everything).
+- **Job matches** are cards (score ring, AI reason, "N things to verify", one-click Build package / I applied / Hide) with tabs (Best matches, All evaluated, Applied, Filtered out, Everything, ★ Favorites), a *Favorites only* toggle and a *Favorites first* sort. Every card and posting page has a ★ toggle (spec 11); a posting page also has a favorite note and *Block this company*.
 - **`search` stage** = fetch + filter (everything that needs no AI) so the first button on Home is free.
 
 ### 2.2 Editing configuration (security and safety)

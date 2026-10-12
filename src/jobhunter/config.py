@@ -31,6 +31,7 @@ class SearchConfig(_Strict):
     titles_exclude: list[str] = []
     keywords_include: list[str] = []
     keywords_exclude: list[str] = []
+    companies_exclude: list[str] = []  # block list: whole company names, matched normalized
     seniority: list[Literal["junior", "mid", "senior", "lead"]] = []
     work_mode: list[Literal["remote", "hybrid", "onsite"]] = ["remote"]
     locations_allowed: list[str] = []

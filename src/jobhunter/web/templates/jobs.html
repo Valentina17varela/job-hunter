@@ -16,8 +16,9 @@
   <input type="search" name="q" value="{{ f.q }}" placeholder="Search title or company">
   <select name="source"><option value="">Any source</option>{% for s in sources %}<option value="{{ s }}" {{ 'selected' if f.source == s }}>{{ s }}</option>{% endfor %}</select>
   <select name="mode"><option value="">Any work mode</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md }}</option>{% endfor %}</select>
+  <label class="check chip-toggle"><input type="checkbox" name="fav" value="1" {{ 'checked' if f.fav }}> ★ Favorites only</label>
   <input type="number" name="min_score" min="0" max="100" value="{{ f.min_score if f.min_score is not none else '' }}" placeholder="Min score">
-  <select name="sort">{% for k, label in [('score', 'Best score first'), ('recent', 'Most recent'), ('company', 'Company A–Z')] %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select>
+  <select name="sort">{% for k, label in [('score', 'Best score first'), ('recent', 'Most recent'), ('company', 'Company A–Z'), ('favorites', 'Favorites first')] %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select>
   <button class="btn" type="submit">Filter</button>
 </form>
 <p class="muted small">{{ "{:,}".format(total) }} postings</p>
@@ -26,6 +27,7 @@
 <article class="job-card">
   {{ m.ring(r.score) }}
   <div class="job-main">
+    <button class="star {{ 'on' if r.is_favorite }}" data-star="{{ r.id }}" aria-pressed="{{ 'true' if r.is_favorite else 'false' }}" title="Favorite">{{ '★' if r.is_favorite else '☆' }}</button>
     <a class="job-title" href="/jobs/{{ r.id }}">{{ r.title }}</a>
     <div class="job-sub">{{ r.company }} · {{ r.source }}</div>
     <div class="chips">
@@ -33,8 +35,11 @@
       {% if r.remote not in (r.location or '')|lower %}<span class="chip">{{ r.remote }}</span>{% endif %}
       {% if r.salary_max %}<span class="chip pay">{{ r.salary_max|money(r.salary_currency) }}/yr</span>{% endif %}
       <span class="badge st-{{ r.status }}">{{ STATUS_LABELS.get(r.status, r.status) }}</span>
+      {% if r.is_favorite and r.status == 'closed' %}<span class="badge bad">Closed</span>{% endif %}
+      {% if r.is_favorite and (r.company|norm_company) in blocked %}<span class="badge bad">Blocked company</span>{% endif %}
       {% if r.stage %}<span class="chip stage-{{ r.stage }}">{{ STAGE_LABELS[r.stage] }}</span>{% endif %}
     </div>
+    {% if r.favorite_note %}<p class="muted small">★ {{ r.favorite_note }}</p>{% endif %}
     {% if r.reason %}<p class="job-reason">{% if r.verdict %}<b class="verdict v-{{ r.verdict }}">{{ r.verdict }}</b>{% endif %} {{ r.reason }}</p>{% endif %}
     {% if r.flags %}<p class="warn-line">{{ m.icon('alert') }} {{ r.flags }} thing{{ 's' if r.flags > 1 }} to verify before applying</p>{% endif %}
   </div>

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
@@ -58,6 +59,21 @@ def infer_seniority(title: str) -> str:
     return "mid"
 
 
+_LEGAL_SUFFIXES = {"inc", "llc", "ltd", "gmbh", "sa", "sas", "corp", "co"}
+
+
+def normalize_company(name: str) -> str:
+    """Comparable company name: lowercase, no accents or punctuation, legal suffix dropped.
+
+    "Acme, Inc." and "ACME Inc" both give "acme"; "Meta" and "Metamask" stay different.
+    """
+    text = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    tokens = re.sub(r"[^a-z0-9]+", " ", text.replace(".", "")).split()
+    while len(tokens) > 1 and tokens[-1] in _LEGAL_SUFFIXES:
+        tokens.pop()
+    return " ".join(tokens)
+
+
 def _word_regex(terms: list[str]) -> re.Pattern[str] | None:
     if not terms:
         return None
@@ -84,12 +100,14 @@ class JobFilter:
         self._titles_include = _word_regex(search.titles_include)
         self._kw_exclude = _word_regex(search.keywords_exclude)
         self._kw_include = _word_regex(search.keywords_include)
+        self._blocked = {n for n in map(normalize_company, search.companies_exclude) if n}
         self._allowed = [self._compile_place(t) for t in search.locations_allowed if t.strip()]
 
     def evaluate(self, job: Job, now: datetime | None = None) -> FilterResult:
         flags: list[str] = []
         for rule in (
             self._age,
+            self._company,
             self._title_exclude,
             self._title_include,
             self._seniority,
@@ -110,6 +128,11 @@ class JobFilter:
         limit = self.cfg.max_age_days_ats if job.source in ATS_SOURCES else self.cfg.max_age_days
         if limit is not None and job.posted_at and job.posted_at < now - timedelta(days=limit):
             return f"max_age_days: posted {job.posted_at.date()}, older than {limit} days"
+        return None
+
+    def _company(self, job: Job, flags: list[str], now: datetime) -> str | None:
+        if self._blocked and normalize_company(job.company) in self._blocked:
+            return f'companies_exclude: company "{job.company}" is on your block list'
         return None
 
     def _title_exclude(self, job: Job, flags: list[str], now: datetime) -> str | None:

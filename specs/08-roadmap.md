@@ -14,13 +14,13 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 - [x] Local web UI: Home, Job matches, Applications, Documents, Actions, Settings — [09](09-web-ui.md)
 - [x] Settings editor in the UI (criteria, AI, sources, CV, letter, company list) with safe writes — [09](09-web-ui.md)
 - [x] Build a package by hand for any posting; delete generated documents — [09](09-web-ui.md)
+- [x] Favorites and company block list — [11](11-favorites-and-blocklist.md)
 - [x] Demo workspace (`scripts/seed_demo.py`) and README
 
 ## To do
 
 Suggested order: small and independent first, those that gain from more data later, the ones needed late in a process last.
 
-- [ ] **Favorites and company block list** — [11](11-favorites-and-blocklist.md)
 - [ ] **Add a posting by hand** (URL or pasted text) — [10](10-manual-postings.md)
 - [ ] **The Muse as a new source** (works without a key) — [14](14-new-sources-api-keys.md)
 - [ ] **CV importer**: any CV to a marked LaTeX master — [16](16-cv-importer.md)

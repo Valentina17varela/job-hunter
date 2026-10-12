@@ -25,6 +25,7 @@
   <a class="kpi" href="/pipeline"><span class="kpi-ic g3">{{ m.icon('send') }}</span><div><b>{{ kpis.active }}</b><span>Active applications</span></div></a>
   <a class="kpi" href="/pipeline"><span class="kpi-ic g4">{{ m.icon('cal') }}</span><div><b>{{ kpis.interviews }}</b><span>Interviews pending</span></div></a>
 </section>
+{% if favorites_open %}<p class="muted small"><a href="/jobs?status=favorites">★ {{ favorites_open }} favorite{{ 's' if favorites_open != 1 }} without an application yet</a></p>{% endif %}
 
 <section class="card">
   <div class="card-head"><h2>Your workflow</h2><p class="muted">Three steps. Press them in order whenever you want to look for work.</p></div>
