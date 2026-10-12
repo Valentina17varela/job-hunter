@@ -46,6 +46,8 @@
 
   <main>{% block content %}{% endblock %}</main>
 
+  {% import "_macros.html" as m %}
+  {% include "_add_posting.html" %}
   <div id="toast" class="toast" hidden></div>
 
   <section id="dock" class="dock" hidden aria-live="polite">

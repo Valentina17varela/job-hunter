@@ -241,6 +241,7 @@ What you can do there:
 
 - **Home:** a guided 3-step workflow (Search → Score with AI → Build packages), KPIs, a plain-language "what to do next" list, upcoming interviews and the funnel.
 - **Job matches:** tabs (best matches, all evaluated, applied, filtered out, **★ Favorites**), search and filters (including a *Favorites only* toggle and *Favorites first* sort), one-click *Build package* / *I applied* / *Hide*. **Any posting** can get a package by hand, whatever its score.
+- **Add a posting by hand:** *Add a posting* on Home and Job matches. Paste a link (one request to that page pre-fills the form; sites that need a login do not work) or just the text, review the fields and save. It skips your filters (you chose it), shows a *Manual* badge and has its own *Score this posting with AI* and *Build package* buttons. Adding the same link twice updates the same posting.
 - **Favorites:** a ★ on every card and posting page, for any status (filtered-out or closed ones too). It is only a bookmark: it never changes the posting's status, and a re-filter, dedupe or closing never removes it. Add a short note ("ask about the visa") on the posting page; closed favorites show a *Closed* badge. Home links to the favorites you have not applied to.
 - **Block list:** *Block this company* on a posting page (asks first, then offers *Re-filter now*), or edit the list in Settings (× to remove). Postings of a blocked company are filtered out, now and in future searches; applied, in-process, rejected, hidden and packaged postings are left alone. A favorite from a blocked company keeps its star and shows a *Blocked company* badge.
 - **Applications:** kanban from *Ready to apply* to *Offer*, notes and interviews (type, date, outcome) per application.
@@ -298,6 +299,8 @@ uv run jobhunter run --stage search      # 1. fetch + filter (free)
 uv run jobhunter run --stage score       # 2. rate the survivors with the LLM
 uv run jobhunter run --stage tailor      # 3. build CV + cover letter for the best matches
 uv run jobhunter run --stage tailor --job 1163   # …or for any posting you pick, by id
+uv run jobhunter add --title "Backend Engineer" --company Acme --url https://acme.com/jobs/1 --text-file job.txt --score --package   # a posting found elsewhere
+uv run jobhunter run --stage score --job 1163    # score only these ids
 uv run jobhunter review                  # packages waiting for you
 uv run jobhunter mark 1163 applied       # keep track (screening, interviewing, offer, rejected…)
 ```
@@ -400,6 +403,7 @@ tests/             pytest suite (no network, no LLM)
 - **Settings are safe to edit from the UI:** fields that choose a file or a program to run (`llm.claude_path`, the company files) can only be changed by hand in `config.yaml`, so a settings save can never become an arbitrary file write or code execution.
 - **Delete what you do not need:** each generated package (CV, letter, notes) has a Delete button in Documents and on the posting; only folders inside `out/` are ever removed and your application record is kept.
 - **Not committed:** `config/config.yaml`, `config/companies.yaml`, `config/cv/`, `data/`, `out/` and any API key.
+- **One optional page fetch:** only when you press *Fetch details* in *Add a posting*, the tool requests that single link (public hosts only: private, loopback and link-local addresses are refused; 2 MB and 10 s limits). Nothing else is fetched outside the job sources.
 - **No automation:** the tool never applies, messages recruiters or runs in the background.
 - **Source terms:** aggregators ask for a link back to the original posting; every posting keeps its original URL and the tool is for personal use.
 

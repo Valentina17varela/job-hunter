@@ -19,10 +19,10 @@
     <p class="muted">{{ s.description }}</p>
     <div class="opts">
       {% if s.supports_dry_run %}<label><input type="checkbox" data-opt="dry_run"> Preview only (dry run)</label>{% endif %}
-      {% if s.supports_jobs %}
+      {% if s.supports_jobs or s.supports_job_ids %}
         <label>Only these posting ids <input type="text" data-opt="jobs" size="12" placeholder="e.g. 1163, 9478"></label>
-        <label>Limit <input type="number" data-opt="limit" min="1" style="width:4.5em"></label>
-        <label><input type="checkbox" data-opt="force"> Rebuild ones already done</label>
+        {% if s.supports_jobs %}<label>Limit <input type="number" data-opt="limit" min="1" style="width:4.5em"></label>
+        <label><input type="checkbox" data-opt="force"> Rebuild ones already done</label>{% endif %}
       {% endif %}
     </div>
     <button class="btn primary" data-runcard="{{ s.id }}" data-label="{{ s.label }}">{{ m.icon('play') }} Run</button>

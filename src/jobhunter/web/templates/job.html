@@ -10,6 +10,7 @@
     <p class="muted">{{ job.company }} · {{ job.location or 'location not stated' }} · {{ job.remote }} · {{ job.source }}</p>
     <div class="chips">
       <span class="badge st-{{ job.status }}">{{ STATUS_LABELS.get(job.status, job.status) }}</span>
+      {% if job.source == 'manual' %}<span class="chip">Manual</span>{% endif %}
       {% if favorite and job.status == 'closed' %}<span class="badge bad">Closed</span>{% endif %}
       {% if blocked %}<span class="badge bad">Blocked company</span>{% endif %}
       {% if application %}<span class="chip stage-{{ application.stage }}">{{ STAGE_LABELS[application.stage] }}</span>{% endif %}
@@ -34,6 +35,9 @@
       {% if info.gaps %}<h3>Possible gaps</h3><div class="chips">{% for x in info.gaps %}<span class="chip warn">{{ x }}</span>{% endfor %}</div>{% endif %}
       {% if score.score < threshold %}<p class="muted small mt">Match score {{ score.score }} is below your best-match threshold of {{ threshold }} (Settings → AI &amp; documents). This is the AI's fit score, not your salary or location criteria.</p>{% endif %}
       <p class="muted small mt">Scored by {{ score.model }} · {{ score.created_at|dt }}</p>
+    {% elif job.status in ['passed', 'score_failed'] %}
+      <p class="muted">Not scored yet. Score just this posting, or all pending ones from Home.</p>
+      <button class="btn primary" data-run='{{ {"id": "score", "jobs": [job.id]}|tojson|forceescape }}' data-label="Scoring this posting with AI" data-reload>{{ m.icon('spark') }} Score this posting with AI</button>
     {% else %}<p class="muted">Not scored yet. It has to pass your criteria first, then use “Score with AI” on the Home page.</p>{% endif %}
   </section>
 

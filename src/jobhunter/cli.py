@@ -94,7 +94,8 @@ def run(
     stage: Annotated[Stage, typer.Option(help="Run a single stage (default: all).")] = Stage.ALL,
     dry_run: Annotated[bool, typer.Option(help="Show the plan without fetching.")] = False,
     job: Annotated[
-        list[int] | None, typer.Option("--job", help="Tailor only these posting ids (repeatable).")
+        list[int] | None,
+        typer.Option("--job", help="Only these posting ids (score and tailor; repeatable)."),
     ] = None,
     force: Annotated[bool, typer.Option(help="Tailor again postings already packaged.")] = False,
     limit: Annotated[int | None, typer.Option(help="Tailor at most this many postings.")] = None,
@@ -139,7 +140,7 @@ def run(
         summary = filter_stage(conn, JobFilter(cfg.search, cfg.fx_rates_to_usd))
         _print_filter_summary(summary, conn)
     if do_score:
-        _score(cfg, conn, explicit=stage == Stage.SCORE)
+        _score(cfg, conn, explicit=stage == Stage.SCORE, job_ids=job)
     if do_tailor:
         _tailor(cfg, conn, explicit=stage == Stage.TAILOR, job_ids=job, force=force, limit=limit)
 
@@ -157,7 +158,7 @@ async def _fetch(cfg, conn, sources) -> None:  # noqa: ANN001
         typer.echo(f"  failed: {failure}", err=True)
 
 
-def _score(cfg, conn, *, explicit: bool) -> None:  # noqa: ANN001
+def _score(cfg, conn, *, explicit: bool, job_ids=None) -> None:  # noqa: ANN001
     """Run the scoring stage. In a full run it is skipped (with a note) when no CV exists yet."""
     master = cfg.paths.cv_master
     if not master.exists():
@@ -174,7 +175,7 @@ def _score(cfg, conn, *, explicit: bool) -> None:  # noqa: ANN001
         raise typer.Exit(code=1) from exc
     client = _make_client(cfg, conn)
     try:
-        summary = score_stage(conn, client, cfg, doc)
+        summary = score_stage(conn, client, cfg, doc, job_ids)
     except LlmAuthError as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
@@ -633,3 +634,55 @@ def ui(
     if open_browser:
         threading.Timer(1.0, webbrowser.open, args=(url,)).start()
     uvicorn.run(web_app, host="127.0.0.1", port=port, log_level="warning")
+
+
+@app.command()
+def add(
+    title: Annotated[str, typer.Option(help="Job title.")],
+    company: Annotated[str, typer.Option(help="Company name.")],
+    url: Annotated[str | None, typer.Option(help="Link to the posting.")] = None,
+    location: Annotated[
+        str | None, typer.Option(help="Location as written in the posting.")
+    ] = None,
+    remote: Annotated[str, typer.Option(help="remote | hybrid | onsite | unknown")] = "unknown",
+    salary_min: Annotated[int | None, typer.Option(help="Annual minimum.")] = None,
+    salary_max: Annotated[int | None, typer.Option(help="Annual maximum.")] = None,
+    currency: Annotated[str, typer.Option(help="3-letter currency code.")] = "USD",
+    text_file: Annotated[Path | None, typer.Option(help="File with the posting text.")] = None,
+    text: Annotated[str | None, typer.Option(help="The posting text, or - to read stdin.")] = None,
+    score: Annotated[bool, typer.Option(help="Score it with the AI right away.")] = False,
+    package: Annotated[bool, typer.Option(help="Build its CV and letter right away.")] = False,
+    config: ConfigOption = Path("config/config.yaml"),
+) -> None:
+    """Add a posting you found elsewhere (referral, newsletter, careers page) by hand."""
+    import sys
+
+    from jobhunter import postings
+
+    cfg = _load(config)
+    if text_file is not None:
+        description = text_file.read_text(encoding="utf-8")
+    elif text == "-":
+        description = sys.stdin.read()
+    else:
+        description = text or ""
+    conn = connect(cfg.paths.db)
+    fields = {
+        "title": title, "company": company, "url": url, "location": location, "remote": remote,
+        "salary_min": salary_min, "salary_max": salary_max, "salary_currency": currency,
+        "description": description,
+    }  # fmt: skip
+    try:
+        job_id, created = postings.add_manual(conn, fields)
+    except postings.PostingError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"{'added' if created else 'updated'} posting #{job_id} (skips the filter)")
+    from jobhunter.filters import normalize_company
+
+    if normalize_company(company) in {normalize_company(c) for c in cfg.search.companies_exclude}:
+        typer.echo(f"warning: {company} is on your block list; the posting was still added.")
+    if score:
+        _score(cfg, conn, explicit=True, job_ids=[job_id])
+    if package:
+        _tailor(cfg, conn, explicit=True, job_ids=[job_id], force=False, limit=None)

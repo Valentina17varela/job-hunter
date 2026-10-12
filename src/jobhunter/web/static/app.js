@@ -259,6 +259,45 @@
     a.classList.add('on');
   }));
 
+  // ---------- add a posting by hand ----------
+  const addDialog = document.getElementById('add-posting');
+  if (addDialog) {
+    const q = (sel) => addDialog.querySelector(sel);
+    const field = (name) => q('[name="' + name + '"]');
+    const showText = (el, text) => { el.textContent = text || ''; el.hidden = !text; };
+    document.addEventListener('click', (ev) => {
+      if (ev.target.closest('[data-open-add]')) { addDialog.showModal(); q('#add-url').focus(); }
+      if (ev.target.closest('[data-close-add]')) addDialog.close();
+    });
+    q('#add-fetch').addEventListener('click', async () => {
+      const url = field('url').value.trim();
+      const msg = q('#add-fetch-msg');
+      if (!url) { msg.className = 'error-text'; showText(msg, 'Paste a link first.'); return; }
+      const btn = q('#add-fetch');
+      btn.disabled = true; btn.textContent = 'Fetching…'; showText(msg, '');
+      try {
+        const f = await post('/api/postings/fetch', { url });
+        ['title', 'company', 'location', 'salary_min', 'salary_max', 'salary_currency', 'description'].forEach((n) => { if (f[n]) field(n).value = f[n]; });
+        if (f.remote && f.remote !== 'unknown') field('remote').value = f.remote;
+        if (f.url) field('url').value = f.url;
+        q('#add-blocked').hidden = !f.blocked;
+        msg.className = 'hint';
+        showText(msg, f.title ? 'Filled from the page. Check every field before saving.' : 'The page had little to read: fill in the fields by hand.');
+      } catch (err) { msg.className = 'error-text'; showText(msg, err.message + ' You can paste the text instead.'); }
+      finally { btn.disabled = false; btn.textContent = 'Fetch details'; }
+    });
+    q('#add-save').addEventListener('click', async () => {
+      const err = q('#add-error');
+      showText(err, '');
+      const body = {};
+      ['url', 'title', 'company', 'location', 'remote', 'salary_min', 'salary_max', 'salary_currency', 'description'].forEach((n) => { body[n] = field(n).value; });
+      const btn = q('#add-save');
+      btn.disabled = true;
+      try { const res = await post('/api/postings', body); location.href = res.url; }
+      catch (e) { showText(err, e.message); btn.disabled = false; }
+    });
+  }
+
   // ---------- health ----------
   const health = $('#health');
   if (health) {

@@ -1,6 +1,6 @@
 # 10 — Add a posting by hand
 
-**Status:** PLANNED (spec only, not implemented)
+**Status:** DONE
 
 ## 1. Problem
 
@@ -54,15 +54,20 @@ The server makes the request, so it must not become a way to reach internal serv
 
 ## 8. Tasks
 
-- [ ] `postings.py`: normalization, id, upsert for `manual`; filter exemption.
-- [ ] `fetch_url.py`: safe fetcher + extractors + tests (network mocked).
-- [ ] API endpoints and CLI `add`.
-- [ ] UI dialog, *Manual* badge, follow-up buttons.
-- [ ] Scoring prompt: `manual` flag.
-- [ ] README (commands, UI, privacy note about the single fetch) and this spec marked done.
+- [x] `postings.py`: normalization, id, upsert for `manual`; filter exemption.
+- [x] `fetch_url.py`: safe fetcher + extractors + tests (network mocked).
+- [x] API endpoints and CLI `add`.
+- [x] UI dialog, *Manual* badge, follow-up buttons.
+- [x] Scoring prompt: `manual` flag.
+- [x] README (commands, UI, privacy note about the single fetch) and this spec marked done.
 
 ## 9. Acceptance criteria
 
-- [ ] A posting pasted as text can be scored and packaged without touching the filter.
-- [ ] A URL with JobPosting JSON-LD pre-fills title, company, location and salary.
-- [ ] No request is ever made to a private/loopback address.
+- [x] A posting pasted as text can be scored and packaged without touching the filter.
+- [x] A URL with JobPosting JSON-LD pre-fills title, company, location and salary.
+- [x] No request is ever made to a private/loopback address.
+
+## 10. Deviations from the plan
+
+- The fetcher connects to the **resolved public IP** (pinned, with the original `Host` header and SNI), so a DNS answer cannot change between the check and the request. Only ports 80, 443, 8080 and 8443 are allowed; every redirect (max 3) is re-validated.
+- Sites that need a login (LinkedIn) cannot be fetched; the dialog says so and the person pastes the text.

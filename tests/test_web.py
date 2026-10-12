@@ -571,3 +571,27 @@ def test_below_threshold_is_explained_as_the_ai_match_score_not_salary(env):
     )
     assert "Below match score" in html
     assert "Below match score" in client.get("/jobs?status=below_threshold", headers=HOST).text
+
+
+def test_add_posting_api_and_pages(env):
+    client = env[0]
+    body = {"title": "Go Engineer", "company": "Delta", "description": "Write Go."}
+    res = client.post("/api/postings", json=body, headers=HOST)
+    assert res.status_code == 200 and res.json()["created"]
+    url = res.json()["url"]
+    page = client.get(url, headers=HOST).text
+    assert "Manual" in page and "Score this posting with AI" in page
+    assert "Manual" in client.get("/jobs?status=all", headers=HOST).text
+    again = client.post("/api/postings", json=body, headers=HOST).json()
+    assert not again["created"]
+    bad = client.post("/api/postings", json={**body, "title": ""}, headers=HOST)
+    assert bad.status_code == 422 and "error" in bad.json()
+    assert client.post("/api/postings", content="x", headers=HOST).status_code >= 400
+    assert 'id="add-posting"' in client.get("/", headers=HOST).text
+
+
+def test_fetch_posting_api_refuses_private_hosts(env):
+    client = env[0]
+    res = client.post("/api/postings/fetch", json={"url": "http://127.0.0.1/x"}, headers=HOST)
+    assert res.status_code == 422
+    assert client.post("/api/postings/fetch", json={}, headers=HOST).status_code == 400

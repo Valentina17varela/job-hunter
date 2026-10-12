@@ -122,7 +122,13 @@ def posting_block(row: sqlite3.Row, max_tokens: int) -> dict[str, Any]:
     salary = None
     if job.salary_max:
         salary = f"{job.salary_min}-{job.salary_max} {job.salary_currency} per year"
-    return {
+    note = (
+        "Chosen on purpose by the candidate (added by hand). Do not penalize a missing salary "
+        "or location; judge the fit and any explicit blockers."
+        if job.source == "manual"
+        else None
+    )
+    block = {
         "id": row["id"],
         "title": job.title,
         "company": job.company,
@@ -132,6 +138,9 @@ def posting_block(row: sqlite3.Row, max_tokens: int) -> dict[str, Any]:
         "filter_flags": (row["filter_flags"] or "").split(",") if row["filter_flags"] else [],
         "description": truncate_description(job.description, max_tokens),
     }
+    if note:
+        block["note"] = note
+    return block
 
 
 @dataclass
@@ -188,9 +197,16 @@ def _cached_score(conn: sqlite3.Connection, row: sqlite3.Row, phash: str) -> sql
 
 
 def score_stage(
-    conn: sqlite3.Connection, client: LlmClient, cfg: Config, doc: Document
+    conn: sqlite3.Connection,
+    client: LlmClient,
+    cfg: Config,
+    doc: Document,
+    job_ids: list[int] | None = None,
 ) -> ScoreSummary:
-    """Score `passed` (and previously failed) postings in batches, then apply the selection."""
+    """Score `passed` (and previously failed) postings in batches, then apply the selection.
+
+    With ``job_ids`` only those postings are considered (used when the person adds one by hand).
+    """
     summary = ScoreSummary()
     system = build_system_prompt(doc, cfg)
     if len(system) > cfg.scoring.max_profile_tokens * CHARS_PER_TOKEN:
@@ -205,6 +221,8 @@ def score_stage(
         "SELECT * FROM jobs WHERE status IN ('passed', 'score_failed', 'scored', "
         "'below_threshold', 'selected') ORDER BY id"
     ).fetchall()
+    if job_ids is not None:
+        rows = [r for r in rows if r["id"] in set(job_ids)]
 
     todo: list[sqlite3.Row] = []
     for row in rows:

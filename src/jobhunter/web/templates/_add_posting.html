@@ -1,0 +1,25 @@
+<dialog id="add-posting" class="modal" aria-labelledby="add-title">
+  <form method="dialog" id="add-form" class="modal-body">
+    <header class="row between"><h2 id="add-title">Add a posting by hand</h2><button type="button" class="icon-btn" data-close-add aria-label="Close">✕</button></header>
+    <p class="muted small">Found a role on LinkedIn, in a newsletter or from a referral? Paste its link or text. It skips your filters (you chose it) and goes straight to scoring and packages.</p>
+
+    <div class="field"><label class="flabel" for="add-url">Link (optional)</label>
+      <div class="row"><input id="add-url" name="url" type="url" placeholder="https://company.com/careers/backend-engineer" style="flex:1"><button type="button" class="btn" id="add-fetch">Fetch details</button></div>
+      <p class="hint">One request to that page, only to pre-fill the form. Sites that need a login (LinkedIn) will not work: paste the text instead. Review everything before saving.</p>
+      <p class="error-text" id="add-fetch-msg" hidden></p></div>
+    <div class="form-grid two">
+      <div class="field"><label class="flabel" for="add-title-in">Job title</label><input id="add-title-in" name="title" required maxlength="200"></div>
+      <div class="field"><label class="flabel" for="add-company">Company</label><input id="add-company" name="company" required maxlength="200"></div>
+      <div class="field"><label class="flabel" for="add-location">Location</label><input id="add-location" name="location" maxlength="200" placeholder="e.g. Remote, LATAM"></div>
+      <div class="field"><label class="flabel" for="add-remote">Work mode</label>
+        <select id="add-remote" name="remote"><option value="unknown">Not sure</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option></select></div>
+      <div class="field"><label class="flabel" for="add-smin">Yearly pay, from (optional)</label><input id="add-smin" name="salary_min" type="number" min="0"></div>
+      <div class="field"><label class="flabel" for="add-smax">to</label><div class="row"><input id="add-smax" name="salary_max" type="number" min="0" style="flex:1"><input name="salary_currency" value="USD" maxlength="3" style="width:5rem" aria-label="Currency"></div></div>
+    </div>
+    <div class="field"><label class="flabel" for="add-desc">Posting text</label>
+      <textarea id="add-desc" name="description" rows="9" required placeholder="Paste the full description of the role here"></textarea></div>
+    <p class="callout warn" id="add-blocked" hidden><b>{{ m.icon('alert') }} This company is on your block list.</b> You can still add it.</p>
+    <p class="error-text" id="add-error" hidden></p>
+    <div class="form-actions"><button type="button" class="btn primary" id="add-save">Add posting</button><button type="button" class="btn" data-close-add>Cancel</button></div>
+  </form>
+</dialog>

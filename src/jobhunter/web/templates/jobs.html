@@ -4,7 +4,8 @@
 {% block content %}
 <header class="page-head">
   <div><h1>Job matches</h1><p class="muted">Roles that passed your criteria, rated against your CV. Open one to see why it fits and what to double-check.</p></div>
-  <button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>
+  <div class="actions"><button class="btn" data-open-add>{{ m.icon('doc') }} Add a posting</button>
+  <button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button></div>
 </header>
 
 <nav class="tabs">
@@ -35,6 +36,7 @@
       {% if r.remote not in (r.location or '')|lower %}<span class="chip">{{ r.remote }}</span>{% endif %}
       {% if r.salary_max %}<span class="chip pay">{{ r.salary_max|money(r.salary_currency) }}/yr</span>{% endif %}
       <span class="badge st-{{ r.status }}">{{ STATUS_LABELS.get(r.status, r.status) }}</span>
+      {% if r.source == 'manual' %}<span class="chip">Manual</span>{% endif %}
       {% if r.is_favorite and r.status == 'closed' %}<span class="badge bad">Closed</span>{% endif %}
       {% if r.is_favorite and (r.company|norm_company) in blocked %}<span class="badge bad">Blocked company</span>{% endif %}
       {% if r.stage %}<span class="chip stage-{{ r.stage }}">{{ STAGE_LABELS[r.stage] }}</span>{% endif %}

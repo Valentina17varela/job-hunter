@@ -104,6 +104,8 @@ class JobFilter:
         self._allowed = [self._compile_place(t) for t in search.locations_allowed if t.strip()]
 
     def evaluate(self, job: Job, now: datetime | None = None) -> FilterResult:
+        if job.source == "manual":  # added by hand: the person chose it on purpose
+            return FilterResult(True, None, ["manual"])
         flags: list[str] = []
         for rule in (
             self._age,

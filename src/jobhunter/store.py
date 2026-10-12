@@ -136,7 +136,8 @@ def mark_duplicates(conn: sqlite3.Connection) -> int:
     """Mark cross-source copies (same company + title) as duplicates, keeping the ATS one."""
     skip = ",".join("?" for _ in TERMINAL | {JobStatus.DUPLICATE.value})
     rows = conn.execute(
-        f"SELECT id, source, company, title, status FROM jobs WHERE status NOT IN ({skip})",
+        f"SELECT id, source, company, title, status FROM jobs "
+        f"WHERE status NOT IN ({skip}) AND source != 'manual'",
         tuple(TERMINAL | {JobStatus.DUPLICATE.value}),
     ).fetchall()
     groups: dict[tuple[str, str], list[sqlite3.Row]] = {}

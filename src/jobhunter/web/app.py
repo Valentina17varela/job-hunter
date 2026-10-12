@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from jobhunter import applications, config_edit, favorites, latex, tailoring
+from jobhunter import applications, config_edit, favorites, fetch_url, latex, postings, tailoring
 from jobhunter.config import Config, ConfigError, load_config
 from jobhunter.db import connect
 from jobhunter.doctor import run_checks
@@ -528,6 +528,36 @@ def create_app(
         config = cfg()
         removed = tailoring.delete_packages(db(config), config.paths.out, job_id)
         return {"ok": True, "deleted": removed}
+
+    @app.post("/api/postings/fetch")
+    async def api_fetch_posting(request: Request) -> Any:
+        """Fetch ONE page and pre-fill the form; the person reviews before saving."""
+        body = await read_json(request)
+        url = body.get("url") if isinstance(body, dict) else None
+        if not isinstance(url, str) or not url.strip() or len(url) > postings.MAX_URL:
+            return JSONResponse({"error": "a link is required"}, status_code=400)
+        try:
+            page = fetch_url.fetch_page(url)
+        except fetch_url.FetchPageError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=422)
+        fields = fetch_url.extract_posting(page.html, page.url)
+        company = fields.get("company") or ""
+        fields["blocked"] = bool(company) and normalize_company(company) in blocked_set(cfg())
+        return fields
+
+    @app.post("/api/postings")
+    async def api_add_posting(request: Request) -> Any:
+        body = await read_json(request)
+        if not isinstance(body, dict):
+            return JSONResponse({"error": "posting fields required"}, status_code=400)
+        config = cfg()
+        try:
+            job_id, created = postings.add_manual(db(config), body)
+        except postings.PostingError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=422)
+        blocked = normalize_company(str(body.get("company", ""))) in blocked_set(config)
+        return {"ok": True, "id": job_id, "created": created, "blocked": blocked,
+                "url": f"/jobs/{job_id}"}  # fmt: skip
 
     @app.post("/api/jobs/{job_id}/stage")
     async def api_stage(request: Request, job_id: int) -> Any:

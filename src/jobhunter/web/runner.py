@@ -22,6 +22,7 @@ class RunSpec:
     llm: bool = False  # uses the LLM backend (counts against your plan / budget)
     supports_dry_run: bool = False
     supports_jobs: bool = False  # accepts --job/--limit/--force (tailor)
+    supports_job_ids: bool = False  # accepts --job only (score)
 
 
 RUN_SPECS: tuple[RunSpec, ...] = (
@@ -38,7 +39,8 @@ RUN_SPECS: tuple[RunSpec, ...] = (
             "Re-evaluate all stored postings after changing `search` in config.yaml. No network."),
     RunSpec("score", "Score with the LLM", ("run", "--stage", "score"),
             "Rate postings that passed the filter against your CV, in batches. Uses your Claude "
-            "plan (or API) up to budget.max_llm_calls_per_run.", llm=True, supports_dry_run=True),
+            "plan (or API) up to budget.max_llm_calls_per_run.", llm=True, supports_dry_run=True,
+            supports_job_ids=True),
     RunSpec("tailor", "Build application packages", ("run", "--stage", "tailor"),
             "For selected postings, pick CV bullets, write the cover letter and compile the PDFs. "
             "One LLM call per posting.", llm=True, supports_dry_run=True, supports_jobs=True),
@@ -114,8 +116,11 @@ class RunManager:
                 raise RunError(f"'{spec_id}' has no dry-run mode")
             argv.append("--dry-run")
         if jobs or limit or force:
-            if not spec.supports_jobs:
-                raise RunError(f"'{spec_id}' does not accept job/limit/force options")
+            if limit or force:
+                if not spec.supports_jobs:
+                    raise RunError(f"'{spec_id}' does not accept limit/force options")
+            elif not (spec.supports_jobs or spec.supports_job_ids):
+                raise RunError(f"'{spec_id}' does not accept job options")
             for job in jobs or []:
                 argv += ["--job", str(int(job))]
             if limit:

@@ -180,3 +180,11 @@ details.advanced { margin-top: 1rem; } details.advanced summary { margin-bottom:
 
 .star { background: none; border: 0; padding: 0 .25rem 0 0; cursor: pointer; font-size: 1.15rem; line-height: 1; color: var(--muted); } .star.on { color: #e0a100; } .star:hover { color: #e0a100; }
 .chip-toggle { padding: .3rem .8rem; }
+
+/* add-posting dialog */
+dialog.modal { border: 1px solid var(--border); border-radius: 20px; padding: 0; width: min(720px, calc(100vw - 2rem)); background: var(--panel); color: var(--ink); box-shadow: 0 30px 80px rgba(15, 23, 42, .35); }
+dialog.modal::backdrop { background: rgba(15, 23, 42, .55); backdrop-filter: blur(2px); }
+.modal-body { padding: 1.3rem 1.5rem 1.4rem; max-height: calc(100vh - 3rem); overflow: auto; }
+.form-grid.two { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.form-grid.two input, .form-grid.two select { width: 100%; }
+.modal-body input[type=url] { width: 100%; }
