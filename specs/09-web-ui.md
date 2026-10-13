@@ -1,5 +1,7 @@
 # 09 — Local web UI
 
+**Status:** LIVING (describes the system as it works today)
+
 Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel, postings, scores, packages), **run** stages manually with their options, and **follow applications** through the interview process. Everything the UI does is also possible from the CLI; the UI adds visibility, not new logic.
 
 ## 1. Principles
@@ -19,6 +21,7 @@ Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel
 | **Applications** `/pipeline` | Kanban of applications: Applied → Screening → Interviewing → Offer → Accepted / Rejected / Withdrawn / Ghosted. Move cards, add notes, schedule interviews (kind, date, notes, outcome) |
 | **Documents** `/packages` | Generated packages (cv.pdf, cover_letter.pdf, recruiter message, notes, verification result) with preview links |
 | **Actions** `/run` | Every stage and option with a description: fetch, filter (`run`/`refilter`), score, tailor, companies check/discover, cv check, doctor; dry-run toggle; live log; history of recent runs. Shows a cost note for LLM stages |
+| **Add a posting** (dialog on Home and Job matches) | Link + *Fetch details* (one SSRF-safe request, spec 10) or pasted text; reviewed fields; saved as a `manual` posting that skips the filter and gets *Score this posting with AI* / *Build package* |
 | **Settings** `/settings` | **Everything is editable**: search criteria (tag inputs, checkboxes), AI engine/model/threshold/tone/limits, sources, the company list, the LaTeX CV and the cover-letter template, with plain-language hints, "Save & re-filter", field-level validation errors and the doctor checks |
 
 ### 2.1 UX decisions (v2)
@@ -36,12 +39,18 @@ Goal: one place, on `http://127.0.0.1:<port>`, to **see** the whole flow (funnel
 - `GET/POST /api/files/{cv|letter|candidates}` read and write only the paths configured in `config.yaml`. The CV is parsed (`% jh:` markers) and the letter template checked for its placeholders before saving; empty CV/letter content, files over 512 KB and non-UTF-8 files are refused. The buttons stay disabled until the file has loaded, so a failed load cannot overwrite a file with nothing.
 - `POST /api/jobs/{id}/package/delete` removes a posting's generated folder (only inside `out/`, never following links out of it), forgets its package rows and sends a still-`packaged` posting back to `selected`; a status you recorded (applied...) is kept. If a folder cannot be removed its row stays so the person can retry.
 
-### 2.3 Planned UI additions (specs only)
+### 2.3 Visual identity
 
-A visual redesign from collected design ideas is specified in [18](18-frontend-redesign.md) (inputs in `design/`).
+Orange brand, mascot, self-hosted Plus Jakarta Sans, design tokens in `static/tokens.css` (light by default, optional dark theme from a sidebar toggle stored in the browser), components in `static/style.css`. Decisions and contrast-checked values: [18](18-frontend-redesign.md). Pages work down to ~390 px. Smoke tests guard: no external assets, one `h1` per page, labelled controls.
 
+### 2.4 Endpoints added by features
 
-`/setup` first-run wizard ([15](15-onboarding-wizard.md)), the CV importer screens ([16](16-cv-importer.md)), the Offer card and analysis page on applications at stage `offer` ([17](17-offer-negotiation.md)), plus the pages of specs 10-14 (add posting dialog, favorites tab, Insights, Prep card).
+- `POST /api/postings/fetch {url}` → extracted fields (one SSRF-safe page fetch) and `POST /api/postings {fields}` → `{id, created, blocked, url}` (spec 10).
+- Favorites and block-list endpoints (spec 11): star, note, block company.
+
+### 2.5 Planned UI additions (specs only)
+
+`/setup` first-run wizard ([15](15-onboarding-wizard.md)), the CV importer screens ([16](16-cv-importer.md)), the Offer card and analysis page ([17](17-offer-negotiation.md)), Insights ([13](13-market-insights.md)), the Prep card ([12](12-interview-prep.md)), quality badges ([21](21-posting-quality.md)). Not built; not in the README.
 
 ## 3. Runs
 

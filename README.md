@@ -420,7 +420,7 @@ uv run pytest             # no network, no LLM; each test runs in an empty temp 
 uv run ruff check . && uv run ruff format --check .
 ```
 
-The project is built spec-first: [`specs/`](specs/) holds the design (start at [`00-overview.md`](specs/00-overview.md)) and [`CLAUDE.md`](CLAUDE.md) the working conventions (English everywhere, one task at a time, README kept current).
+The project is built spec-first: [`specs/`](specs/) holds the design (index, status of each spec and a template in [`specs/README.md`](specs/README.md); overview in [`00-overview.md`](specs/00-overview.md)). [`CLAUDE.md`](CLAUDE.md) has the working conventions, the commands and the definition of done; [`AGENTS.md`](AGENTS.md) is the short version for other coding agents.
 
 ## ❓ Troubleshooting
 
@@ -433,3 +433,7 @@ The project is built spec-first: [`specs/`](specs/) holds the design (start at [
 | Too few postings pass | Open the dashboard: the biggest bar in *Why postings were left out* is the rule to loosen |
 | A package says **REVIEW** | Open its `notes.md`: it lists the failed checks; the files are still there to edit by hand |
 | Want to start over | Delete `data/jobhunter.db`; it is recreated on the next run |
+
+## 📄 License
+
+[MIT](LICENSE) © 2026 Valentina Varela Alzate. The font (Plus Jakarta Sans) keeps its own SIL Open Font License next to the file in `static/fonts/`.

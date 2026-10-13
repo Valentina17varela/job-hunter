@@ -1,5 +1,7 @@
 # 07 — CLI, config and privacy
 
+**Status:** LIVING (describes the system as it works today)
+
 ## 1. Commands
 
 | Command | What it does |
@@ -115,8 +117,8 @@ LLM cost today: $0.18 / $1.00
 
 ## 7. Acceptance criteria
 
-- [ ] `--dry-run` makes no network call to the LLM.
-- [ ] Invalid config → clear error with the field and line.
-- [ ] Without a logged-in `claude` (or an API key for the API backend), the fetch and filter stages work; score/tailor fail with an actionable message (`claude auth login`).
-- [ ] Marked items with detected sensitive data → warning before any send.
-- [ ] `jobhunter doctor` reports the LaTeX engine found, compiles a minimal document and `master.tex`, and exits non-zero with an actionable message if either fails.
+- [x] `--dry-run` makes no network call to the LLM (`tests/test_scoring.py` dry-run case, `tests/test_cli_doctor.py::test_run_dry_run_lists_sources`).
+- [x] Invalid config → clear error with the field (`tests/test_config.py::test_invalid_field_reports_path`, `test_invalid_yaml`).
+- [x] Without a logged-in `claude` (or an API key for the API backend), the fetch and filter stages work; score/tailor fail with an actionable message (`claude auth login`) (`tests/test_cli_doctor.py` missing-CV cases, message in `llm.py`).
+- [x] Marked items with detected sensitive data → warning (`cv check`; `tests/test_latex.py::test_sensitive_warnings_only_look_at_marked_text`).
+- [x] `jobhunter doctor` reports the LaTeX engine found, compiles a minimal document and `master.tex`, and exits non-zero with an actionable message if either fails.

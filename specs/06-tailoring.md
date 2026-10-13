@@ -1,5 +1,7 @@
 # 06 — Tailoring (quality LLM)
 
+**Status:** LIVING (describes the system as it works today)
+
 Goal: for `selected` postings, generate a package the person can review and send in minutes, **with no invented content**. The CV and cover letter are produced in **LaTeX** (and compiled to PDF), starting from the person's own LaTeX CV.
 
 ## 1. Input
@@ -146,6 +148,6 @@ Deterministic checks (no LLM):
 - [x] 0 packages with `verified=1` containing facts not in `master.tex` (in adversarial tests).
 - [x] `cv.tex` for every package compiles to PDF with page count within the limit.
 - [x] Preamble/header content (name, contact) is never present in any LLM request (asserted in tests).
-- [ ] Average cost per package < USD 0.05.
+- [ ] (not measurable on the subscription backend, which reports no cost; revisit with the API or OpenAI-compatible backend) Average cost per package < USD 0.05.
 - [x] Re-running does not regenerate existing packages (unless `--force`).
-- [ ] The person can review a full package in < 5 min.
+- [ ] (a human measure; the author to confirm) The person can review a full package in < 5 min.

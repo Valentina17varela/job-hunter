@@ -84,3 +84,7 @@ Keyword counting is not understanding: counts reflect mentions, not importance; 
 - [ ] The page lists the skills requested by the matches that are missing from the CV, with percentages and sample sizes.
 - [ ] The page shows how many postings fail only one rule, per rule.
 - [ ] Everything works offline and without any LLM call (the brief is optional).
+
+## 12. Idea: patterns in your own funnel (follow-up)
+
+Once there are enough applications, show which **sources, companies and kinds of role** advance to screening and which are rejected or ghost, plus time-to-first-answer per source, all computed locally from `applications`, `events` and `interviews`. Needs real data to be meaningful (a minimum sample size is shown with every number). Listed as a follow-up task in the roadmap.

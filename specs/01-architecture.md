@@ -1,6 +1,6 @@
 # 01 — Architecture
 
-**Status:** DRAFT
+**Status:** LIVING (describes the system as it works today)
 
 ## 1. Stack
 
@@ -24,42 +24,40 @@
 
 ```
 job-hunter/
-├── CLAUDE.md               # project conventions
-├── specs/                  # these specs
+├── CLAUDE.md, AGENTS.md    # conventions for agents; definition of done
+├── README.md, LICENSE      # what works today; MIT
+├── specs/                  # source of truth (index + template in specs/README.md)
+├── design/                 # visual identity inputs: palette, logo, brief (spec 18)
+├── docs/images/            # README screenshots
+├── scripts/seed_demo.py    # fictional workspace for the UI / screenshots
 ├── config/
-│   ├── config.yaml         # criteria, caps, models
-│   ├── companies.yaml      # target companies + ATS + slug
-│   └── cv/                 # NOT committed
-│       ├── master.tex          # person's LaTeX CV + jh: markers
-│       └── letter_template.tex # cover-letter template
+│   ├── config.example.yaml, company_candidates.txt, letter_template.example.tex  # committed
+│   ├── config.yaml, companies.yaml                                              # NOT committed
+│   └── cv/                 # NOT committed: master.tex (+ jh: markers), letter_template.tex, translations
 ├── src/jobhunter/
-│   ├── models.py           # Job, JobStatus (pydantic)
-│   ├── http.py             # polite async client (UA, retries, concurrency limits)
-│   ├── text.py             # HTML cleaning, remote/salary inference
-│   ├── companies.py        # companies.yaml, check, discover
+│   ├── models.py           # Job, statuses (pydantic)
+│   ├── config.py           # loads and validates YAML; config_edit.py = safe comment-preserving edits
+│   ├── db.py               # SQLite, versioned migrations
 │   ├── store.py            # upsert/dedupe, close stale, duplicates
+│   ├── http.py             # polite async client (UA, retries, concurrency limits)
+│   ├── text.py, language.py  # HTML cleaning, remote/salary inference; language detection
+│   ├── sources/            # one module per source: base.py (interface), greenhouse, lever, ashby, aggregators
+│   ├── companies.py        # companies.yaml, check, discover
+│   ├── pipeline.py         # fetch + filter stages
+│   ├── filters.py          # hard filter (+ explain)
+│   ├── llm.py              # the only LLM caller: backends, budget, retries, call log
+│   ├── scoring.py          # batch scoring, cache, selection, calibrate
+│   ├── latex.py            # master.tex parser/assembler, escaper, compile
+│   ├── tailoring.py        # package building and verification; translate.py = CV translation
+│   ├── applications.py     # stages, interviews, stats
+│   ├── favorites.py        # stars and notes
+│   ├── postings.py         # postings added by hand; fetch_url.py = SSRF-safe single-page fetcher
 │   ├── doctor.py           # environment checks
-│   ├── language.py         # posting language detection
-│   ├── applications.py     # application stages, interviews, stats
-│   └── web/                # local UI (app.py, runner.py, templates/, static/)
-│   ├── config.py           # loads and validates YAML
-│   ├── db.py               # SQLite, simple migrations
-│   ├── sources/            # one module per source
-│   │   ├── base.py         # Source interface
-│   │   ├── greenhouse.py
-│   │   ├── lever.py
-│   │   ├── ashby.py
-│   │   └── aggregators.py  # Remotive, RemoteOK, WWR, Arbeitnow, Jobicy
-│   ├── filters.py          # hard filter
-│   ├── scoring.py          # cheap LLM
-│   ├── tailoring.py        # quality LLM
-│   ├── latex.py            # master.tex parser/assembler, escaper, compiler wrapper
-│   ├── llm.py              # client, caching, cost tracking
-│   ├── pipeline.py         # orchestrates the stages
-│   └── cli.py
-├── tests/
+│   ├── cli.py              # typer commands
+│   └── web/                # app.py, runner.py, templates/, static/ (tokens.css, style.css, app.js, fonts, img)
+├── tests/                  # mirrors modules; fixtures/ holds trimmed real source responses
 ├── out/                    # generated packages (gitignored)
-├── data/jobhunter.db       # SQLite (gitignored)
+├── data/                   # SQLite db, run logs, demo workspace (gitignored)
 └── pyproject.toml
 ```
 
@@ -96,7 +94,7 @@ class Source(Protocol):
     async def fetch(self, http: HttpClient) -> list[Job]: ...  # raises on failure
 ```
 
-Adding a source = one new file + registration in `sources/__init__.py`. The rest of the pipeline is unchanged.
+Adding a source = one new file + registration in `sources/__init__.py` (`build_sources`). The rest of the pipeline is unchanged. A self-registering registry and a contract test are planned in [19](19-open-source-ready.md) §5.
 
 ## 5. Error handling
 

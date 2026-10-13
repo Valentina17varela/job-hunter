@@ -84,3 +84,24 @@ Not verifiable here (both answer 400/403 without credentials); the facts below c
 - [ ] `jobhunter run --stage search` includes The Muse and finishes within its keyless hourly limit.
 - [ ] Without any key the tool still works; with a key set the key never appears anywhere visible.
 - [ ] A decision recorded here: does The Muse add enough new matches to keep it enabled?
+
+## 7. More keyless sources (from reviewing career-ops)
+
+*career-ops* lists about 55 provider modules; these are public, no-key feeds that fit our rules and our LATAM-friendly remote focus. **Endpoints and shapes are as reported by that project and must be verified live (trimmed fixture, terms, rate limits) when each adapter is written**, exactly as was done for The Muse in §2.
+
+| Source | Type | Why it is interesting | Endpoint as reported |
+|---|---|---|---|
+| Get on Board | JSON:API | LATAM-heavy tech roles, salaries often published | `https://www.getonbrd.com/api/v0/categories/<category>/jobs` (paginated) |
+| Himalayas | JSON | Remote-first, worldwide | `https://himalayas.app/jobs/api?limit=50` |
+| Landing.jobs | JSON | Tech, Europe, relocation | `https://landing.jobs/api/v1/jobs` |
+| JustJoin.it | JSON | Polish/EU tech with salary ranges | `https://justjoin.it/api/candidate-api/offers` |
+| 4 Day Week | JSON | Reduced-hours roles | `https://4dayweek.io/api/jobs` |
+| Jobspresso | RSS | Curated remote | `https://jobspresso.co/?feed=job_feed` |
+| CryptocurrencyJobs | RSS | Remote Web3 roles | `https://cryptocurrencyjobs.co/index.xml` |
+| Hacker News "Who is hiring?" | Algolia API | Monthly thread, parsed comments | HN Algolia search for the current thread |
+
+More **company-board ATS** (they register as `ats` values for `companies.yaml`, spec 19 §5): Workable, Recruitee, SmartRecruiters, BambooHR, Breezy HR, Jobvite. Each is a small adapter over a public per-company endpoint; same fixture-and-contract-test rules.
+
+Order: The Muse (§2), Get on Board, Himalayas, then the rest by value after reading the real data. Each source is its own small task; none is added without checking its terms. Boards that answered with bot protection or were retired in the reviewed project are not attempted.
+
+Task list additions: one task per adapter above; `docs/SUPPORTED_SOURCES.md` row and README sources table updated with each.

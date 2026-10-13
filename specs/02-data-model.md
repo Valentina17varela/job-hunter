@@ -1,5 +1,7 @@
 # 02 — Data model
 
+**Status:** LIVING (describes the system as it works today)
+
 ## 1. `Job` model (common schema)
 
 Every source normalizes to this.

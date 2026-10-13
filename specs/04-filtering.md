@@ -1,5 +1,7 @@
 # 04 — Filtering (hard filter, 0 tokens)
 
+**Status:** LIVING (describes the system as it works today)
+
 Goal: drop the obvious with deterministic rules before spending a single token.
 
 ## 1. Criteria in `config.yaml`

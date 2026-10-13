@@ -59,3 +59,7 @@ Same as tailoring: only the plain text of marked CV items, the posting and `cand
 - [ ] Nothing is generated before the company answers.
 - [ ] Every story is traceable to CV items; invented facts are flagged.
 - [ ] The kit is useful on its own: the person can prepare an interview from the page alone.
+
+## 12. Idea: a reusable story bank (not part of the first version)
+
+Accumulate **STAR+Reflection stories** across kits: 5–10 master stories, each traceable to the CV items it comes from (the same no-invented-facts verification), reused to answer behavioural questions in later kits instead of regenerating them. A story can only quote numbers that exist in the CV or that the person typed; anything else is flagged. Listed as a follow-up task in the roadmap; this spec's kit works without it.

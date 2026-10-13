@@ -1,5 +1,6 @@
 # 00 — Overview
 
+**Status:** LIVING (describes the system as it works today)
 
 ## 1. Problem
 
@@ -35,7 +36,10 @@ A local Python pipeline that, **whenever the person triggers it** (nothing runs 
 - LLM scoring (Haiku) and tailoring (Sonnet) for the top-N.
 - CLI (`jobhunter run`, `review`, `mark`, `stats`).
 - Per-posting status tracker and application/interview tracking.
-- A **local web UI** (`jobhunter ui`, bound to `127.0.0.1`) to see the funnel, browse postings, run stages manually, follow applications through interview stages, open generated PDFs and inspect settings. See `09-web-ui.md`.
+- Postings added by hand (URL or pasted text), favorites and a company block list, all feeding the same pipeline (10, 11).
+- A **local web UI** (`jobhunter ui`, bound to `127.0.0.1`) to see the funnel, browse postings, run stages manually, follow applications through interview stages, open generated PDFs and inspect settings. See `09-web-ui.md`. Visual identity and design tokens: `18-frontend-redesign.md`.
+
+What comes next is in `08-roadmap.md`; the plan to open the project to contributors is `19-open-source-ready.md`.
 
 **Out of scope (v1 non-goals):**
 - LinkedIn, Indeed, and any site that requires scraping against its terms or a login.

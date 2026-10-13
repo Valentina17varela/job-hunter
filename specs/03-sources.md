@@ -1,5 +1,7 @@
 # 03 — Sources
 
+**Status:** LIVING (describes the system as it works today)
+
 Only sources with a **documented public API or feed**. No login, no browser, no scraping of sites that forbid it.
 
 ## 1. Strategy: breadth first, depth second

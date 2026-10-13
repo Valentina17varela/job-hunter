@@ -1,5 +1,7 @@
 # 05 — Scoring (cheap LLM)
 
+**Status:** LIVING (describes the system as it works today)
+
 Goal: of the postings that passed the filter, estimate how good a match each is, at the lowest possible cost, and pick the daily top-N for tailoring.
 
 ## 1. LLM backends
@@ -88,4 +90,4 @@ After scoring, per posting:
 - [x] 100% of responses pass validation or leave the posting retryable (`score_failed`).
 - [x] Re-running makes no calls for already-scored postings; stale scores (CV, context, criteria or prompt changed) are re-scored.
 - [x] Postings that explicitly require local work authorization / residency / a time zone the candidate lacks are flagged in `red_flags`.
-- [ ] In calibration, ≥ 80% of postings with `verdict=apply` receive a 👍 from the person.
+- [ ] (needs the author's `calibrate` answers; not measured yet) In calibration, ≥ 80% of postings with `verdict=apply` receive a 👍 from the person.
