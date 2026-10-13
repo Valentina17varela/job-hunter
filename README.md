@@ -380,7 +380,7 @@ Every command that reads settings accepts `--config FILE` (default `config/confi
 | `jobhunter cv check \| init [--output FILE] \| translate` | Validate/compile your CV, propose markers, translate once |
 | `jobhunter letter init` | Create your cover-letter template from the example |
 | `jobhunter companies discover \| check` | Grow / validate the list of company boards |
-| `jobhunter doctor` | Check Python, config, LLM login and LaTeX |
+| `jobhunter doctor` | Check Python, config, LLM login and LaTeX; under each problem it prints a `fix:` line for your system (macOS, Linux, WSL, Windows, Docker) |
 
 </details>
 

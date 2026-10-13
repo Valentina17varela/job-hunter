@@ -52,11 +52,13 @@ def main(
 
 @app.command()
 def doctor(config: ConfigOption = Path("config/config.yaml")) -> None:
-    """Check the environment: Python, config, API key and the LaTeX toolchain."""
+    """Check the environment: Python, config, API key and LaTeX; says how to fix what is wrong."""
     failed_required = False
     for check in run_checks(config):
         mark = "ok  " if check.ok else ("FAIL" if check.required else "warn")
         typer.echo(f"[{mark}] {check.name}: {check.detail}")
+        if check.hint and not check.ok:
+            typer.echo(f"       fix: {check.hint}")
         if not check.ok and check.required:
             failed_required = True
     if failed_required:

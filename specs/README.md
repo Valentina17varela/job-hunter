@@ -36,7 +36,7 @@ A spec is **approved** when the author says so in the conversation or the PR; ag
 | 16 | [CV importer](16-cv-importer.md) | PLANNED | — | — |
 | 17 | [Offer negotiation helper](17-offer-negotiation.md) | PLANNED | — | — |
 | 18 | [Frontend redesign](18-frontend-redesign.md) | DONE | `web/static`, `web/templates` | `test_web` (smoke tests) |
-| 19 | [Open source ready](19-open-source-ready.md) | IN PROGRESS | `sources/registry.py`, `resources.py`, `demo.py`, `cli.py` (`init`, `demo`, `ui --bind`), `scripts/check_docs.py` | `test_source_contract`, `test_init_demo` |
+| 19 | [Open source ready](19-open-source-ready.md) | DONE | `sources/registry.py`, `resources.py`, `demo.py`, `cli.py` (`init`, `demo`, `ui --bind`), `scripts/check_docs.py` | `test_source_contract`, `test_init_demo` |
 | 20 | [OpenAI-compatible backend](20-openai-compatible-backend.md) | PLANNED | — | — |
 | 21 | [Posting quality signals](21-posting-quality.md) | PLANNED | — | — |
 

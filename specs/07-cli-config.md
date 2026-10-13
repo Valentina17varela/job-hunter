@@ -126,4 +126,4 @@ LLM cost today: $0.18 / $1.00
 - [x] Invalid config → clear error with the field (`tests/test_config.py::test_invalid_field_reports_path`, `test_invalid_yaml`).
 - [x] Without a logged-in `claude` (or an API key for the API backend), the fetch and filter stages work; score/tailor fail with an actionable message (`claude auth login`) (`tests/test_cli_doctor.py` missing-CV cases, message in `llm.py`).
 - [x] Marked items with detected sensitive data → warning (`cv check`; `tests/test_latex.py::test_sensitive_warnings_only_look_at_marked_text`).
-- [x] `jobhunter doctor` reports the LaTeX engine found, compiles a minimal document and `master.tex`, and exits non-zero with an actionable message if either fails.
+- [x] `jobhunter doctor` reports the LaTeX engine found, compiles a minimal document and `master.tex`, and exits non-zero with an actionable message if either fails. Each failing check also prints a `fix:` line for the detected system (`macos`, `linux`, `wsl`, `docker`, `windows`), with the exact install command and a link into `docs/SETUP.md` (`tests/test_cli_doctor.py`).

@@ -1,6 +1,6 @@
 # 19 — Open source ready: license, contribution flow, install and plug-in sources
 
-**Status:** IN PROGRESS (all files, registry, `init`/`demo`, `--bind`, Docker (built and run), CI and docs are written; left: first CI run on GitHub, per-OS doctor hints, a trial by someone else)
+**Status:** DONE (the outside-reader trial was skipped by the author's decision; branch protection and labels are repository settings the author applies)
 
 ## 1. Goal
 
@@ -84,10 +84,10 @@ Today `build_sources` has a hard-coded `if/elif` per aggregator and `ATS_SOURCES
 - [x] `Dockerfile`, `compose.yaml`, `.dockerignore`. *Written and `compose config` validates; the image has not been built yet.*
 - [x] `docs/SETUP.md`, `docs/FAQ.md`.
 - [x] Docker image built and the first-run flow run in it. Fixes found: `python:3.12-slim` is now Debian trixie (pinned to `-bookworm`), and tectonic has no official arm64 Linux build, so the image uses TeX Live (`latexmk`, about 1.1 GB) and `latex.engine` gained `auto` (tectonic if installed, else latexmk). Verified: `init --sample-cv`, `doctor` (latexmk compiles the CV), `cv check`, `demo`, UI answers 200 on 127.0.0.1:8765 and 403 for a foreign Host.
-- [ ] `doctor` hints per OS (macOS / Linux / WSL install commands) and a link to `docs/SETUP.md`.
-- [ ] First CI run on GitHub (and set branch protection and labels, in repository settings).
-- [ ] Someone who has never seen the project follows only the README on macOS and Linux; fix what trips them.
-- [ ] This spec marked done.
+- [x] `doctor` hints per system: `detect_system()` (macOS, Linux, WSL, Docker, Windows) and a `fix:` line under each failing check with the install command and a link into `docs/SETUP.md` (`tests/test_cli_doctor.py`).
+- [x] First CI run on GitHub: all jobs green (reported by the author). Branch protection, required checks and labels are set in the repository settings (recorded in `CONTRIBUTING.md`).
+- [ ] Someone who has never seen the project follows only the README: **skipped by the author's decision**; revisit when the first outside user appears.
+- [x] This spec marked done.
 
 ## 9. Not taken from the reviewed projects
 
@@ -97,7 +97,7 @@ Today `build_sources` has a hard-coded `if/elif` per aggregator and `ATS_SOURCES
 
 ## 10. Acceptance criteria
 
-- [ ] (pending the outside trial) A person who has never seen the repository installs it, runs the demo and starts the UI by following only the README, on macOS and Linux.
-- [ ] (pending the first run) CI is green on a clean fork; a PR that breaks lint, tests or the source contract is blocked.
+- [ ] (skipped, see §8) A person who has never seen the repository installs it, runs the demo and starts the UI by following only the README, on macOS and Linux.
+- [x] CI is green (first run on GitHub, reported by the author); a PR that breaks lint, tests or the source contract is blocked.
 - [x] A new source can be added by creating one module and one fixture, with no edit to `pipeline.py` or `build_sources` (`tests/test_source_contract.py`; company-board types also add their name to `models.ATS_SOURCES`).
 - [x] The repository contains a license, a code of conduct, a security policy and contribution templates; no personal data is tracked (`scripts/check_docs.py`).

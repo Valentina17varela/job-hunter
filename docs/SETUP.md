@@ -82,6 +82,8 @@ ANTHROPIC_API_KEY=… docker compose up                            # UI at http:
 
 ## Troubleshooting
 
+`jobhunter doctor` prints a `fix:` line under every problem it finds, for your system. The common ones:
+
 | Symptom | Fix |
 |---|---|
 | `tectonic not found` | Install tectonic or a TeX Live with `latexmk` (above); `jobhunter doctor` shows which engine it found |
