@@ -52,6 +52,7 @@
     {% call field('AI engine', 'Your Claude subscription (run “claude auth login” once) or an Anthropic API key.') %}{{ select('llm.backend', config.llm.backend, [('claude_cli', 'My Claude subscription'), ('anthropic_api', 'Anthropic API key')]) }}{% endcall %}
     {% call field('What the AI should know about me', 'Where you live and what is a deal-breaker. The AI reads this when scoring and writing.') %}{{ area('scoring.candidate_context', config.scoring.candidate_context, 5) }}{% endcall %}
     {% call field('Best-match threshold', 'Postings scoring at or above this (0-100) become best matches.') %}{{ number('scoring.score_threshold', config.scoring.score_threshold) }}{% endcall %}
+    {% call field('Top matches to always show', 'The Top matches board tries to keep this many (1-20). When fewer are scored you are offered to score replacements.') %}{{ number('scoring.top_matches_count', config.scoring.top_matches_count, min=1, width='6rem') }}{% endcall %}
     {% call field('Packages per run', 'At most this many best matches are marked ready for packaging at once.') %}{{ number('tailoring.max_packages_per_day', config.tailoring.max_packages_per_day) }}{% endcall %}
     {% call field('Letter tone') %}{{ text('tailoring.tone', config.tailoring.tone) }}{% endcall %}
     {% call field('Languages', 'Letter and CV follow the posting\'s language when it is in this list; otherwise English. Codes like en, es.') %}{{ tags('tailoring.languages', config.tailoring.languages) }}{% endcall %}

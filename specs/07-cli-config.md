@@ -16,6 +16,7 @@ Every command that reads settings accepts `--config FILE` (default `config/confi
 | `jobhunter show <id>` | Posting detail + score + package path |
 | `jobhunter explain <id>` | Why it was filtered / its score |
 | `jobhunter mark <id> applied\|replied\|rejected\|closed [--note]` | Updates status |
+| `jobhunter top [--count N] [--fill] [--dry-run]` | Best matches board; `--fill` scores the best unscored postings to refill it (spec 22) |
 | `jobhunter favorite <id> [--note TEXT] [--remove]` / `jobhunter favorites` | Star/unstar a posting; list the starred ones (spec 11) |
 | `jobhunter stats` | Funnel (fetched → passed → scored → packaged → applied → replied) and cumulative cost |
 | `jobhunter companies check` | Validates `companies.yaml` slugs (200 vs 404) |

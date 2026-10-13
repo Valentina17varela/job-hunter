@@ -591,6 +591,66 @@ def favorites_list(config: ConfigOption = Path("config/config.yaml")) -> None:
 
 
 @app.command()
+def top(
+    count: Annotated[
+        int | None, typer.Option(help="How many (default: scoring.top_matches_count).")
+    ] = None,
+    fill: Annotated[
+        bool, typer.Option(help="Score the best unscored postings to fill the gaps.")
+    ] = False,
+    dry_run: Annotated[
+        bool, typer.Option(help="With --fill: only say what would be scored.")
+    ] = False,
+    config: ConfigOption = Path("config/config.yaml"),
+) -> None:
+    """Show your best matches; with --fill, score more postings when there are not enough."""
+    import math
+
+    from jobhunter import top as top_board
+
+    cfg = _load(config)
+    if count:
+        cfg.scoring.top_matches_count = count
+    conn = connect(cfg.paths.db)
+
+    def show() -> dict:
+        plan = top_board.plan(conn, cfg)
+        for row in plan["board"]:
+            tag = "  (below your threshold)" if row["below_threshold"] else ""
+            typer.echo(f"#{row['id']} {row['score']:>3}  {row['title']} · {row['company']}{tag}")
+        if not plan["board"]:
+            typer.echo("nothing scored yet: run `jobhunter run --stage score`")
+        return plan
+
+    plan = show()
+    if not plan["need"]:
+        return
+    typer.echo(f"\nonly {len(plan['board'])} of {plan['target']} matches.")
+    if not fill:
+        if plan["fill_ids"]:
+            typer.echo(
+                f"{plan['unscored_left']} postings have no score yet; "
+                "run `jobhunter top --fill` to score the most promising."
+            )
+        else:
+            typer.echo("no unscored postings left: run `jobhunter run --stage search`.")
+        return
+    ids = plan["fill_ids"]
+    if not ids:
+        typer.echo("no unscored postings left to evaluate: run `jobhunter run --stage search`.")
+        return
+    calls = math.ceil(len(ids) / max(1, cfg.scoring.batch_size))
+    if dry_run:
+        plural = "" if calls == 1 else "s"
+        typer.echo(f"would score {len(ids)} postings in about {calls} AI call{plural}: {ids}")
+        return
+    typer.echo(f"scoring {len(ids)} postings (about {calls} AI call{'' if calls == 1 else 's'})…")
+    _score(cfg, conn, explicit=True, job_ids=ids)
+    typer.echo("\nyour top matches now:")
+    show()
+
+
+@app.command()
 def stats(config: ConfigOption = Path("config/config.yaml")) -> None:
     """Funnel from fetched postings to offers, rejections by rule and LLM usage."""
     from jobhunter import applications

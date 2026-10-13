@@ -1,0 +1,13 @@
+<dialog id="not-for-me" class="modal" aria-labelledby="nfm-title">
+  <form method="dialog" class="modal-body" id="nfm-form">
+    <header class="row between"><h2 id="nfm-title">Not for me</h2><button type="button" class="icon-btn" data-close-nfm aria-label="Close">✕</button></header>
+    <p class="muted small" id="nfm-what"></p>
+    <p class="muted small">Pick a reason (optional). It is only counted, so Settings can suggest what to tighten: nothing changes by itself.</p>
+    <div class="checks" role="radiogroup" aria-label="Reason">
+      {% for key, label in NOT_FOR_ME_REASONS.items() %}<label class="check"><input type="radio" name="nfm-reason" value="{{ key }}"> {{ label }}</label>{% endfor %}
+    </div>
+    <div class="field"><label class="flabel" for="nfm-note">Note (optional)</label><input id="nfm-note" type="text" maxlength="200" placeholder="e.g. asks for US residency"></div>
+    <p class="hint" id="nfm-block" hidden>You can also <a id="nfm-block-link" href="#">open the posting to block this company</a>.</p>
+    <div class="form-actions"><button type="button" class="btn primary" id="nfm-save">Hide it</button><button type="button" class="btn" data-close-nfm>Cancel</button></div>
+  </form>
+</dialog>

@@ -259,6 +259,92 @@
     a.classList.add('on');
   }));
 
+  // ---------- top matches: notice after hiding / not-for-me / applying (spec 22) ----------
+  const NOTICE_KEY = 'jh_top_check';
+  const notice = document.getElementById('top-notice');
+
+  function showNotice(text, buttonLabel, onClick) {
+    if (!notice) return;
+    notice.textContent = '';
+    const span = document.createElement('span');
+    span.textContent = text;
+    notice.appendChild(span);
+    if (buttonLabel) {
+      const btn = document.createElement('button');
+      btn.className = 'btn small primary';
+      btn.textContent = buttonLabel;
+      btn.addEventListener('click', () => { notice.hidden = true; onClick(); });
+      notice.appendChild(btn);
+    }
+    const close = document.createElement('button');
+    close.className = 'icon-btn';
+    close.setAttribute('aria-label', 'Dismiss');
+    close.textContent = '✕';
+    close.addEventListener('click', () => { notice.hidden = true; });
+    notice.appendChild(close);
+    notice.hidden = false;
+  }
+
+  async function checkTop() {
+    try { sessionStorage.removeItem(NOTICE_KEY); } catch (e) { /* ignore */ }
+    try {
+      const res = await fetch('/api/top');
+      if (!res.ok) return;
+      const plan = await res.json();
+      if (!plan.need) return;
+      if (plan.fill_ids.length) {
+        const n = plan.fill_ids.length;
+        showNotice(
+          'Your top ' + plan.target + ' has ' + (plan.target - plan.need) + ' now.',
+          'Score ' + n + ' replacement' + (n === 1 ? '' : 's'),
+          () => startRun({ id: 'score', jobs: plan.fill_ids }, 'Scoring ' + n + ' replacements', true)
+        );
+      } else {
+        showNotice(
+          'Your top ' + plan.target + ' has ' + (plan.target - plan.need) + '. No unscored postings left.',
+          'Search for new jobs',
+          () => startRun({ id: 'search' }, 'Searching for new jobs', true)
+        );
+      }
+    } catch (e) { /* the board card still shows the same offer */ }
+  }
+
+  try { if (sessionStorage.getItem(NOTICE_KEY)) checkTop(); } catch (e) { /* ignore */ }
+  document.addEventListener('click', (ev) => {
+    const el = ev.target.closest('[data-top-check]');
+    if (!el) return;
+    try { sessionStorage.setItem(NOTICE_KEY, '1'); } catch (e) { /* ignore */ }
+  }, true);
+
+  const nfm = document.getElementById('not-for-me');
+  if (nfm) {
+    let nfmJob = null;
+    document.addEventListener('click', (ev) => {
+      const open = ev.target.closest('[data-not-for-me]');
+      if (open) {
+        nfmJob = open.dataset.notForMe;
+        nfm.querySelector('#nfm-what').textContent = open.dataset.title + ' · ' + open.dataset.company;
+        nfm.querySelectorAll('input[name="nfm-reason"]').forEach((r) => { r.checked = false; });
+        nfm.querySelector('#nfm-note').value = '';
+        const link = nfm.querySelector('#nfm-block-link');
+        link.href = '/jobs/' + nfmJob;
+        nfm.querySelector('#nfm-block').hidden = false;
+        nfm.showModal();
+      }
+      if (ev.target.closest('[data-close-nfm]')) nfm.close();
+    });
+    nfm.querySelector('#nfm-save').addEventListener('click', async () => {
+      const picked = nfm.querySelector('input[name="nfm-reason"]:checked');
+      const body = { note: nfm.querySelector('#nfm-note').value };
+      if (picked) body.reason = picked.value; else body.reason = 'other';
+      try {
+        await post('/api/jobs/' + nfmJob + '/ignore', body);
+        try { sessionStorage.setItem(NOTICE_KEY, '1'); } catch (e) { /* ignore */ }
+        location.reload();
+      } catch (err) { toast(err.message); }
+    });
+  }
+
   // ---------- theme (light by default; dark only when chosen) ----------
   const themeBtn = document.getElementById('theme-toggle');
   const applyTheme = (t) => {

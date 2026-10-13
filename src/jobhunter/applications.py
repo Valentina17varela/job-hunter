@@ -111,6 +111,16 @@ def ignore(conn: sqlite3.Connection, job_id: int, note: str | None = None) -> No
         _event(conn, job_id, job["status"], "ignored", note or "ignored by the person", _now())
 
 
+def dismiss(conn: sqlite3.Connection, job_id: int, reason: str, note: str | None = None) -> None:
+    """*Not for me*: hide a posting and record why. The reason is only counted for suggestions."""
+    from jobhunter.top import REASONS
+
+    if reason not in REASONS:
+        raise TrackingError(f"reason must be one of: {', '.join(REASONS)}")
+    text = f"not for me: {reason}" + (f" | {note.strip()}" if note and note.strip() else "")
+    ignore(conn, job_id, text)
+
+
 def add_interview(
     conn: sqlite3.Connection, job_id: int, kind: str, scheduled_at: str | None = None,
     notes: str | None = None,

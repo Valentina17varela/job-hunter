@@ -1,6 +1,6 @@
 # 22 — Always five best matches: replace what you hide or dislike
 
-**Status:** PLANNED (spec only, not implemented; **needs the author's answers to the open questions before building**)
+**Status:** DONE
 
 ## 1. Problem
 
@@ -16,7 +16,7 @@
 
 ### 3.1 A "Top 5" board
 - A fixed-size section at the top of *Best matches* and on Home: **the five highest-scored open postings** the person has not dismissed, by score, **above the threshold first, then (clearly labelled "below your threshold") the best of the rest** when fewer than five reach it. Status filter: scored postings that are not `ignored`, `rejected`, `closed`, `duplicate` and have no application.
-- Hiding, disliking or applying to one removes it and **the next-best scored posting moves up immediately** (same page, no run needed). This part is pure ranking over data already scored: free and instant.
+- Hiding, disliking or applying to one removes it and **the next-best scored posting moves up immediately** (same page, no run needed); the hide notice offers *Score replacements* when fewer than five scored candidates are left. This part is pure ranking over data already scored: free and instant.
 - `top_matches_count` in config (default 5, editable in Settings → AI & documents).
 
 ### 3.2 "Not for me" (dislike) next to *Hide*
@@ -49,25 +49,31 @@ When fewer than five scored candidates remain, the board shows a card: **"Only 3
 - Nothing runs without the person starting it (no code path calls score from a hide/dislike endpoint).
 - UI: the card text for 3/5, 0 candidates left, below-threshold labelling; reasons are escaped.
 
-## 6. Open questions (author to answer)
+## 6. Decisions (answered by the author)
 
-1. **Below-threshold padding:** if only 3 postings reach 75, should the board show 2 weaker ones (labelled) to reach five, or show 3 and the "score more / loosen a rule" card? *Recommended: show them labelled, so you always have something to look at, with the card on top.*
-2. **Automatic vs one click:** the fill needs LLM calls. Is *one click on the card* acceptable, or should hiding a posting offer "Score replacements?" right in the toast? (Both stay manual; the toast is just faster.) *Recommended: toast with a button, since you are already there.*
-3. **Reasons for *Not for me*:** is the list in 3.2 right? Should a reason ever change the filters automatically (it would break "no silent changes"), or only suggest? *Recommended: suggest only.*
-4. **Does *applied* count?** When you apply, should the posting leave the Top 5 (yes in this draft) and be replaced?
+1. **Below-threshold padding: yes.** When fewer than five reach the threshold, the board is completed with the best of the rest, clearly labelled *below your threshold*, with the "score more / loosen a rule" card on top.
+2. **Re-evaluation trigger: a notice when hiding.** Hiding or rejecting a posting shows a notice ("Hidden. Score N replacements?") with a button that starts the fill run; the card on the board does the same. Still person-started, never automatic.
+3. **Reasons only suggest.** *Not for me* reasons are recorded and counted; they never change filters or the scoring prompt on their own, they only show suggestions.
+4. **Applying removes it from the Top 5** and the next-best takes its place.
 
 ## 7. Tasks
 
-- [ ] Author answers §6.
-- [ ] `top_matches` ranking and `prerank`, with tests.
-- [ ] Top 5 section (Job matches, Home) and the dislike dialog with reasons.
-- [ ] Fill: card/toast, `jobhunter top --fill`, run-whitelist entry, tests with a fake backend.
-- [ ] Config `top_matches_count` and the Settings field; `config.example.yaml`.
-- [ ] README (UI, CLI, config) and this spec marked done.
+- [x] Author answers §6.
+- [x] `top.py`: `top_matches` ranking, `prerank`, `fill_candidates`, `plan`, reasons and suggestions (`tests/test_top.py`).
+- [x] Top section on Job matches and a compact card on Home; *Not for me* dialog with reasons (radio chips, optional note); `applications.dismiss`; `GET /api/top`; the notice after hide / not-for-me / applied (`sessionStorage` flag, read-only plan request).
+- [x] Fill: card and notice start the existing `score` run with the chosen ids; `jobhunter top --fill [--dry-run]`.
+- [x] Config `scoring.top_matches_count` (1-20), Settings field, `config.example.yaml`.
+- [x] README (UI, CLI), spec 07 and this spec marked done; screenshots refreshed.
 
 ## 8. Acceptance criteria
 
-- [ ] Hiding or rejecting a posting from the Top 5 immediately shows the next-best one when any is already scored.
-- [ ] When there are not enough scored postings, one person-started action scores the best unscored candidates and refills the board, within the configured call cap.
-- [ ] No LLM call happens without the person pressing a button or running a command.
-- [ ] The UI never presents a below-threshold posting as an above-threshold match.
+- [x] Hiding or rejecting a posting from the Top 5 immediately shows the next-best one when any is already scored (`test_hiding_one_promotes_the_next_best_immediately`).
+- [x] When there are not enough scored postings, one person-started action scores the best unscored candidates and refills the board, within the configured call cap (`test_filling_scores_only_the_chosen_postings_and_refills_the_board`, `test_fill_never_exceeds_what_the_call_cap_can_score`).
+- [x] No LLM call happens without the person pressing a button or running a command (`test_hiding_updates_the_plan_and_never_starts_a_run_by_itself`).
+- [x] The UI never presents a below-threshold posting as an above-threshold match (`test_a_skip_verdict_is_never_presented_as_a_match_even_with_a_high_score`, the *below your threshold* label).
+
+## 9. Deviations
+
+- The Top board counts every scored, undismissed posting without an application (statuses `scored`, `selected`, `packaged`, `below_threshold`), not only the `selected` ones, so the *Best matches* tab list below it can show fewer rows than the board.
+- The *Hide* button keeps its confirmation; the notice with the replacement offer appears on the next page load (it needs the fresh plan from `GET /api/top`).
+- Reason suggestions need 3 dismissals with the same reason (`SUGGESTION_MIN`).

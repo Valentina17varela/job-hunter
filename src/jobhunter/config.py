@@ -62,6 +62,7 @@ class ScoringConfig(_Strict):
     max_profile_tokens: PositiveInt = 3000
     candidate_context: str = ""
     use_batch: bool = False
+    top_matches_count: int = Field(5, ge=1, le=20)  # how many best matches are always shown
 
 
 class TailoringConfig(_Strict):

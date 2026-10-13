@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
+{% import "_top.html" as top %}
 {% block title %}Job matches{% endblock %}
 {% block content %}
 <header class="page-head">
@@ -7,6 +8,8 @@
   <div class="actions"><button class="btn" data-open-add>{{ m.icon('doc') }} Add a posting</button>
   <button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button></div>
 </header>
+
+{% if plan %}{{ top.top_board(plan, blocked, board_suggestions) }}{% endif %}
 
 <nav class="tabs">
   {% for t in tabs %}<a class="{{ 'on' if f.status == t.key else '' }}" href="/jobs?status={{ t.key }}">{{ t.label }} <span class="count">{{ "{:,}".format(t.n) }}</span></a>{% endfor %}
@@ -25,34 +28,7 @@
 <p class="muted small">{{ "{:,}".format(total) }} postings</p>
 
 {% for r in rows %}
-<article class="job-card">
-  {{ m.avatar(r.company) }}
-  <div class="job-main">
-    <button class="star {{ 'on' if r.is_favorite }}" data-star="{{ r.id }}" aria-pressed="{{ 'true' if r.is_favorite else 'false' }}" title="Favorite">{{ '★' if r.is_favorite else '☆' }}</button>
-    <a class="job-title" href="/jobs/{{ r.id }}">{{ r.title }}</a>
-    <div class="job-sub">{{ r.company }} · {{ r.source }}</div>
-    <div class="chips">
-      <span class="chip">{{ r.location or 'Location not stated' }}</span>
-      {% if r.remote not in (r.location or '')|lower %}<span class="chip">{{ r.remote }}</span>{% endif %}
-      {% if r.salary_max %}<span class="chip pay">{{ r.salary_max|money(r.salary_currency) }}/yr</span>{% endif %}
-      <span class="badge st-{{ r.status }}">{{ STATUS_LABELS.get(r.status, r.status) }}</span>
-      {% if r.source == 'manual' %}<span class="chip">Manual</span>{% endif %}
-      {% if r.is_favorite and r.status == 'closed' %}<span class="badge bad">Closed</span>{% endif %}
-      {% if r.is_favorite and (r.company|norm_company) in blocked %}<span class="badge bad">Blocked company</span>{% endif %}
-      {% if r.stage %}<span class="chip stage-{{ r.stage }}">{{ STAGE_LABELS[r.stage] }}</span>{% endif %}
-    </div>
-    {% if r.favorite_note %}<p class="muted small">★ {{ r.favorite_note }}</p>{% endif %}
-    {% if r.reason %}<p class="job-reason">{% if r.verdict %}<b class="verdict v-{{ r.verdict }}">{{ r.verdict }}</b>{% endif %} {{ r.reason }}</p>{% endif %}
-    {% if r.flags %}<p class="warn-line">{{ m.icon('alert') }} {{ r.flags }} thing{{ 's' if r.flags > 1 }} to verify before applying</p>{% endif %}
-  </div>
-  {{ m.ring(r.score, 52) }}
-  <div class="job-actions">
-    {% if r.has_package %}<a class="btn small primary" href="/jobs/{{ r.id }}#package">View package</a>
-    {% else %}<button class="btn small primary" data-run='{{ {"id": "tailor", "jobs": [r.id]}|tojson|forceescape }}' data-label="Building the package for “{{ r.title|truncate(40) }}”" data-reload>Build package</button>{% endif %}
-    {% if not r.stage %}<button class="btn small" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>I applied</button>
-    {% if r.status != 'ignored' %}<button class="btn small ghost" data-post="/api/jobs/{{ r.id }}/ignore" data-json='{}' data-confirm="Hide this posting for good?">Hide</button>{% endif %}{% endif %}
-  </div>
-</article>
+{{ top.job_card(r, blocked) }}
 {% else %}
 {% call m.empty('target', 'Nothing here yet', 'No postings match this view. Try another tab, or search for new jobs.') %}<button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>Search for new jobs</button>{% endcall %}
 {% endfor %}

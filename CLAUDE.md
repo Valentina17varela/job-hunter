@@ -65,7 +65,8 @@ Never run the real pipeline (`run`, `score`, `tailor`) or the UI against the per
 | `llm.py` | The only place that calls an LLM: backends, budget, retries, call log | 05 |
 | `scoring.py` | Batch scoring, cache, selection, `calibrate` | 05 |
 | `latex.py`, `tailoring.py`, `translate.py` | Master-CV parser/assembler, compile; package building and verification; CV translation | 06 |
-| `applications.py` | Stages, interviews, stats | 02, 09 |
+| `applications.py` | Stages, interviews, stats; `dismiss` (*Not for me*) | 02, 09 |
+| `top.py` | Top matches board: ranking, pre-rank of unscored postings, fill plan, dismissal reasons | 22 |
 | `favorites.py`, `postings.py`, `fetch_url.py` | Stars and notes; postings added by hand; SSRF-safe single-page fetcher | 11, 10 |
 | `doctor.py`, `cli.py` | Environment checks; typer commands (`init`, `demo`, `ui --bind`…) | 07, 19 |
 | `resources.py`, `demo.py` | Bundled examples (config, letter template, sample CV); the fictional demo workspace | 19 |

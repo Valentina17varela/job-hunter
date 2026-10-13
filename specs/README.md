@@ -39,7 +39,7 @@ A spec is **approved** when the author says so in the conversation or the PR; ag
 | 19 | [Open source ready](19-open-source-ready.md) | DONE | `sources/registry.py`, `resources.py`, `demo.py`, `cli.py` (`init`, `demo`, `ui --bind`), `scripts/check_docs.py` | `test_source_contract`, `test_init_demo` |
 | 20 | [OpenAI-compatible backend](20-openai-compatible-backend.md) | PLANNED | — | — |
 | 21 | [Posting quality signals](21-posting-quality.md) | PLANNED | — | — |
-| 22 | [Always five best matches](22-top-matches.md) | PLANNED (needs author answers) | — | — |
+| 22 | [Always five best matches](22-top-matches.md) | DONE | `top.py`, `applications.dismiss`, `web/templates/_top.html` | `test_top` |
 
 Keep this table current when a spec is added or changes status.
 

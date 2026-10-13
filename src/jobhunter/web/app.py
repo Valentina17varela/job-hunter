@@ -18,6 +18,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from jobhunter import applications, config_edit, favorites, fetch_url, latex, postings, tailoring
+from jobhunter import top as top_board
 from jobhunter.config import Config, ConfigError, load_config
 from jobhunter.db import connect
 from jobhunter.doctor import run_checks, source_keys
@@ -202,6 +203,7 @@ def create_app(
     templates.env.filters["norm_company"] = normalize_company
     templates.env.globals.update(
         AGGREGATORS=list(sources_registry.aggregators()),
+        NOT_FOR_ME_REASONS=top_board.REASONS,
         STATUS_LABELS=STATUS_LABELS, STAGE_LABELS=STAGE_LABELS,
         STAGES=applications.STAGES, KINDS=applications.INTERVIEW_KINDS,
         OUTCOMES=applications.INTERVIEW_OUTCOMES,
@@ -241,6 +243,7 @@ def create_app(
             kpis=kpis(conn, data), rule_labels=RULE_LABELS,
             max_calls=config.budget.max_llm_calls_per_run, backend=config.llm.backend,
             running=manager.active(), favorites_open=favorites.count_without_application(conn),
+            plan=top_board.plan(conn, config),
         )  # fmt: skip
 
     @app.get("/jobs")
@@ -316,8 +319,15 @@ def create_app(
         fav_total = conn.execute("SELECT COUNT(*) FROM favorites").fetchone()[0]
         tabs.append({"key": "favorites", "label": "★ Favorites", "n": fav_total})
         sources = [r[0] for r in conn.execute("SELECT DISTINCT source FROM jobs ORDER BY source")]
+        plan = None
+        board_ids: set[int] = set()
+        if status == "best" and page == 1 and not (q or source or mode or fav or score_floor):
+            plan = top_board.plan(conn, config)
+            board_ids = {r["id"] for r in plan["board"]}
+            rows = [r for r in rows if r["id"] not in board_ids]
         return render(
             request, "jobs.html", active="jobs", rows=rows, total=total, page=page,
+            plan=plan, board_suggestions=top_board.suggestions(conn) if plan else [],
             pages=max(1, -(-total // PAGE_SIZE)), counts=counts, sources=sources, tabs=tabs,
             qs=urlencode({k: v for k, v in {"status": status, "source": source, "q": q,
                           "mode": mode, "sort": sort, "min_score": score_floor,
@@ -570,8 +580,22 @@ def create_app(
     @app.post("/api/jobs/{job_id}/ignore")
     async def api_ignore(request: Request, job_id: int) -> Any:
         body = await request.json()
-        applications.ignore(db(cfg()), job_id, body.get("note"))
+        reason = body.get("reason")
+        if reason:  # "Not for me": hide it and record why (only counted, spec 22)
+            applications.dismiss(db(cfg()), job_id, str(reason), body.get("note"))
+        else:
+            applications.ignore(db(cfg()), job_id, body.get("note"))
         return {"ok": True}
+
+    @app.get("/api/top")
+    def api_top() -> Any:
+        """The Top matches plan: how many places are empty and which postings could fill them.
+
+        Read-only. Scoring them is a separate run the person starts (never automatic).
+        """
+        plan = top_board.plan(db(cfg()), cfg())
+        keys = ("target", "need", "above", "below", "fill_ids", "unscored_left")
+        return {k: plan[k] for k in keys} | {"board": [r["id"] for r in plan["board"]]}
 
     @app.post("/api/jobs/{job_id}/notes")
     async def api_notes(request: Request, job_id: int) -> Any:

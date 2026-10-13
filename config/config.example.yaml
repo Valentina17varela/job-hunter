@@ -62,6 +62,7 @@ scoring:
   #  only as an independent contractor (no work visa)."
   candidate_context: ""
   use_batch: false
+  top_matches_count: 5         # the Top matches board always tries to show this many
 
 tailoring:
   model: sonnet                # alias for claude_cli; e.g. claude-sonnet-5-5 for the API
