@@ -164,3 +164,16 @@ def test_compile_finds_custom_style_files_next_to_the_cv(tmp_path):
     with_resources = latex.compile_pdf(tex, "tectonic", 120, resources=tmp_path)
     assert with_resources.ok and with_resources.pages == 1
     (tmp_path / "secret.txt").write_text("not a resource")  # other files are not copied
+
+
+def test_auto_engine_prefers_tectonic_then_latexmk(monkeypatch):
+    import shutil
+
+    monkeypatch.setattr(shutil, "which", lambda name: f"/bin/{name}")
+    assert latex.resolve_engine("auto") == "tectonic"
+    monkeypatch.setattr(shutil, "which", lambda name: "/bin/latexmk" if name == "latexmk" else None)
+    assert latex.resolve_engine("auto") == "latexmk"
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    assert latex.resolve_engine("auto") == "tectonic"
+    assert latex.resolve_engine("latexmk") == "latexmk"
+    assert "not found" in latex.compile_pdf("x", "auto", 5).detail

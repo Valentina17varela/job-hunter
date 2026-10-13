@@ -1,0 +1,55 @@
+% Sample CV for trying Job Hunter. Fictional person; replace it with your own CV.
+% The "% jh:" comments are markers: see the README section "Your LaTeX CV".
+\documentclass[a4paper,10pt]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\pagestyle{empty}
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, topsep=2pt}
+\begin{document}
+
+{\LARGE\bfseries Alex Rivera}\\
+Backend Engineer \quad|\quad alex.rivera@example.com \quad|\quad Remote, Colombia (UTC-5)
+
+% jh:section summary
+\section*{Summary}
+% jh:item summary-1
+Backend engineer with 5 years building event-driven services in Python and Go on AWS.
+% jh:endsection
+
+% jh:section skills
+\section*{Skills}
+% jh:item skills-1 tags=python,go,typescript
+\textbf{Languages:} Python, Go, TypeScript, SQL
+% jh:item skills-2 tags=aws,kubernetes,docker
+\textbf{Platform:} AWS, Kubernetes, Docker, Terraform, PostgreSQL, Redis
+% jh:endsection
+
+% jh:section experience
+\section*{Experience}
+% jh:entry exp-northwind required
+\textbf{Senior Backend Engineer}, Northwind Labs \hfill 2023--Present
+\begin{itemize}
+% jh:item exp-northwind-1 tags=python,aws
+\item Designed an event-driven payments pipeline in Python on AWS processing 2M events per day.
+% jh:item exp-northwind-2 tags=postgresql
+\item Cut p95 query latency by 45\% by reworking indexes and caching hot reads.
+% jh:item exp-northwind-3 tags=kubernetes
+\item Moved 12 services to Kubernetes with zero-downtime deploys.
+\end{itemize}
+% jh:endentry
+% jh:entry exp-cobalt
+\textbf{Backend Engineer}, Cobalt Freight \hfill 2020--2023
+\begin{itemize}
+% jh:item exp-cobalt-1 tags=go
+\item Built route-optimization services in Go used by 300 drivers.
+% jh:item exp-cobalt-2 tags=typescript
+\item Delivered a TypeScript dashboard for dispatchers.
+\end{itemize}
+% jh:endentry
+% jh:endsection
+
+\section*{Education}
+B.Sc. Systems Engineering, Universidad Nacional, 2019.
+
+\end{document}

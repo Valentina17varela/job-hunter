@@ -7,6 +7,7 @@ from typing import Any
 from jobhunter.http import HttpClient
 from jobhunter.models import Job, RemoteMode
 from jobhunter.sources.base import collect, parse_iso
+from jobhunter.sources.registry import SourceInfo, register
 from jobhunter.text import annualize, extract_salary, infer_remote, normalize_text
 
 URL = "https://api.ashbyhq.com/posting-api/job-board/{slug}"
@@ -73,3 +74,16 @@ class AshbySource:
             URL.format(slug=self.target), params={"includeCompensation": "true"}
         )
         return parse(data, self.company)
+
+
+register(
+    SourceInfo(
+        name="ashby",
+        kind="ats",
+        description="Company job boards on Ashby",
+        terms_url="https://developers.ashbyhq.com/docs/public-job-posting-api",
+        fixtures=("ashby.json",),
+        factory=AshbySource,
+        probe_url="https://api.ashbyhq.com/posting-api/job-board/{slug}",
+    )
+)

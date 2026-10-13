@@ -7,6 +7,7 @@ from typing import Any
 from jobhunter.http import HttpClient
 from jobhunter.models import Job, RemoteMode
 from jobhunter.sources.base import collect, from_epoch
+from jobhunter.sources.registry import SourceInfo, register
 from jobhunter.text import annualize, extract_salary, infer_remote, normalize_text
 
 URL = "https://api.lever.co/v0/postings/{slug}"
@@ -65,3 +66,16 @@ class LeverSource:
     async def fetch(self, http: HttpClient) -> list[Job]:
         data = await http.get_json(URL.format(slug=self.target), params={"mode": "json"})
         return parse(data, self.company)
+
+
+register(
+    SourceInfo(
+        name="lever",
+        kind="ats",
+        description="Company postings on Lever",
+        terms_url="https://github.com/lever/postings-api",
+        fixtures=("lever.json",),
+        factory=LeverSource,
+        probe_url="https://api.lever.co/v0/postings/{slug}?mode=json&limit=1",
+    )
+)

@@ -1,6 +1,6 @@
 # 19 — Open source ready: license, contribution flow, install and plug-in sources
 
-**Status:** PLANNED (the MIT `LICENSE` and the `pyproject` license field are done; everything else is spec only)
+**Status:** IN PROGRESS (all files, registry, `init`/`demo`, `--bind`, Docker (built and run), CI and docs are written; left: first CI run on GitHub, per-OS doctor hints, a trial by someone else)
 
 ## 1. Goal
 
@@ -45,8 +45,8 @@ Goal: from nothing to a working UI in a few minutes, with **no clone required**.
 
 - `Dockerfile` (python:3.12-slim, `uv`, tectonic) and `compose.yaml` that mounts the workspace as a volume and publishes the UI **only on `127.0.0.1:8765`**.
 - Inside a container the UI must listen on `0.0.0.0` for the port mapping to work, so `jobhunter ui` gets **`--bind ADDRESS`** (default `127.0.0.1`). The **Host/Origin allow-list does not change**: only `127.0.0.1`/`localhost` host names are accepted, so exposing the port beyond localhost needs an explicit `--allow-host` and prints a warning. Tests cover both.
-- The `claude` CLI is **not** in the image; the container is meant for the OpenAI-compatible or Anthropic API backends (20). Using a subscription through a mounted CLI login is documented as unsupported.
-- tectonic downloads its TeX bundle on first compile: the first PDF needs network; documented.
+- TeX Live (`latexmk`) instead of tectonic in the image, because tectonic has no official arm64 Linux binary. The `claude` CLI is **not** in the image; the container is meant for the OpenAI-compatible or Anthropic API backends (20). Using a subscription through a mounted CLI login is documented as unsupported.
+- PDFs compile offline in the image (TeX Live).
 
 ## 5. Plug-in sources (add a source without touching core code)
 
@@ -75,16 +75,19 @@ Today `build_sources` has a hard-coded `if/elif` per aggregator and `ATS_SOURCES
 ## 8. Tasks
 
 - [x] MIT `LICENSE`, `license` in `pyproject.toml`.
-- [ ] README: license and contributing sections.
-- [ ] `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue and PR templates, `CHANGELOG.md`.
-- [ ] CI workflow (ruff, format check, pytest on 3.12/3.13, Linux/macOS, personal-data check) and `scripts/check_docs.py` (doc-sync checks above).
-- [ ] Source registry, migrate existing sources to it, contract test, `docs/ADDING_A_SOURCE.md`.
-- [ ] Package data + `jobhunter init` + `jobhunter demo`; sample CV.
-- [ ] `jobhunter ui --bind` with the unchanged Host allow-list and tests.
-- [ ] `Dockerfile` and `compose.yaml`.
-- [ ] `docs/SETUP.md`, `docs/FAQ.md`, generated `docs/SUPPORTED_SOURCES.md`; doctor fixes per OS.
-- [ ] Install from a clean machine/container following only the README, fix what breaks.
-- [ ] README and this spec marked done.
+- [x] README: license and contributing sections, install paths (tool, clone, Docker), CLI reference for the new commands.
+- [x] `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1, condensed with attribution), `SECURITY.md`, issue and PR templates, `CHANGELOG.md`.
+- [x] CI workflow (`.github/workflows/ci.yml`: ruff, format check, pytest on 3.12/3.13, Linux/macOS) and `scripts/check_docs.py` (CLI and config documented, specs have a status and are indexed, roadmap links exist, no personal files tracked, generated sources doc current). *Not yet run on GitHub.*
+- [x] Source registry (`sources/registry.py`, auto-import), existing sources migrated, `config.sources.aggregators` and `companies.yaml` `ats` validated against it, Settings reads it, contract test (`tests/test_source_contract.py`), `docs/ADDING_A_SOURCE.md`, generated `docs/SUPPORTED_SOURCES.md`.
+- [x] Bundled examples (`resources.py`, wheel `force-include`), `jobhunter init` (never overwrites, updates `.gitignore`), `jobhunter demo`, fictional sample CV `config/cv.example.tex` (`tests/test_init_demo.py`). Verified by building the wheel and running `init`, `cv check`, `demo` and `doctor` from a clean virtualenv.
+- [x] `jobhunter ui --bind` / `--allow-host`: warning when not loopback, Host allow-list unchanged (tests for foreign, local and extra hosts).
+- [x] `Dockerfile`, `compose.yaml`, `.dockerignore`. *Written and `compose config` validates; the image has not been built yet.*
+- [x] `docs/SETUP.md`, `docs/FAQ.md`.
+- [x] Docker image built and the first-run flow run in it. Fixes found: `python:3.12-slim` is now Debian trixie (pinned to `-bookworm`), and tectonic has no official arm64 Linux build, so the image uses TeX Live (`latexmk`, about 1.1 GB) and `latex.engine` gained `auto` (tectonic if installed, else latexmk). Verified: `init --sample-cv`, `doctor` (latexmk compiles the CV), `cv check`, `demo`, UI answers 200 on 127.0.0.1:8765 and 403 for a foreign Host.
+- [ ] `doctor` hints per OS (macOS / Linux / WSL install commands) and a link to `docs/SETUP.md`.
+- [ ] First CI run on GitHub (and set branch protection and labels, in repository settings).
+- [ ] Someone who has never seen the project follows only the README on macOS and Linux; fix what trips them.
+- [ ] This spec marked done.
 
 ## 9. Not taken from the reviewed projects
 
@@ -94,7 +97,7 @@ Today `build_sources` has a hard-coded `if/elif` per aggregator and `ATS_SOURCES
 
 ## 10. Acceptance criteria
 
-- [ ] A person who has never seen the repository installs it, runs the demo and starts the UI by following only the README, on macOS and Linux.
-- [ ] CI is green on a clean fork; a PR that breaks lint, tests or the source contract is blocked.
-- [ ] A new source can be added by creating one module and one fixture, with no edit to `pipeline.py` or `build_sources`.
-- [ ] The repository contains a license, a code of conduct, a security policy and contribution templates; no personal data is tracked.
+- [ ] (pending the outside trial) A person who has never seen the repository installs it, runs the demo and starts the UI by following only the README, on macOS and Linux.
+- [ ] (pending the first run) CI is green on a clean fork; a PR that breaks lint, tests or the source contract is blocked.
+- [x] A new source can be added by creating one module and one fixture, with no edit to `pipeline.py` or `build_sources` (`tests/test_source_contract.py`; company-board types also add their name to `models.ATS_SOURCES`).
+- [x] The repository contains a license, a code of conduct, a security policy and contribution templates; no personal data is tracked (`scripts/check_docs.py`).

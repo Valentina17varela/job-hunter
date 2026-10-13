@@ -65,7 +65,7 @@
     {% call field('Postings per scoring call') %}{{ number('scoring.batch_size', config.scoring.batch_size, min=1, width='6rem') }}{% endcall %}
     {% call field('Tailoring mode', 'select = reorders your own bullets (safe). rewrite is not available yet.') %}{{ select('tailoring.mode', config.tailoring.mode, [('select', 'select (safe)'), ('rewrite', 'rewrite')]) }}{% endcall %}
     {% call field('Seconds before an AI call times out') %}{{ number('llm.timeout_seconds', config.llm.timeout_seconds, min=10, width='7rem') }}{% endcall %}
-    {% call field('LaTeX engine') %}{{ select('latex.engine', config.latex.engine, [('tectonic', 'tectonic'), ('latexmk', 'latexmk')]) }}{% endcall %}
+    {% call field('LaTeX engine') %}{{ select('latex.engine', config.latex.engine, [('auto', 'automatic'), ('tectonic', 'tectonic'), ('latexmk', 'latexmk')]) }}{% endcall %}
   </div></details>
   <div class="form-actions"><button class="btn primary" data-save-cfg>Save</button><span class="save-state muted small"></span></div>
 </section>
@@ -73,7 +73,7 @@
 <section class="card" id="sources" data-card>
   <h2>{{ m.icon('search') }} Sources</h2>
   <div class="form-grid">
-    {% call field('Job boards to search', 'Company boards (Greenhouse, Lever, Ashby) come from your company list below.') %}{{ checks('sources.aggregators', config.sources.aggregators, ['remotive', 'remoteok', 'weworkremotely', 'arbeitnow', 'jobicy']) }}{% endcall %}
+    {% call field('Job boards to search', 'Company boards (Greenhouse, Lever, Ashby…) come from your company list below.') %}{{ checks('sources.aggregators', config.sources.aggregators, AGGREGATORS) }}{% endcall %}
     {% call field('We Work Remotely categories') %}{{ tags('sources.wwr_categories', config.sources.wwr_categories) }}{% endcall %}
     {% call field('Close a posting after it disappears for (days)') %}{{ number('sources.stale_days', config.sources.stale_days, min=1, width='6rem') }}{% endcall %}
   </div>

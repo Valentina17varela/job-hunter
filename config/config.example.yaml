@@ -36,6 +36,8 @@ llm:
   timeout_seconds: 180
   max_attempts: 3
   effort: low                  # keeps scoring fast and terse (claude --effort)
+  max_thinking_tokens: 0       # 0 disables extended thinking (fast, cheap)
+  # api_prices: {claude-haiku-5-5: [1.0, 5.0]}   # optional USD per million tokens (input, output)
 
 scoring:
   model: haiku                 # alias for claude_cli; e.g. claude-haiku-5-5 for the API
@@ -58,7 +60,7 @@ tailoring:
   max_cv_pages: 1
 
 latex:
-  engine: tectonic
+  engine: auto                 # auto = tectonic if installed, else latexmk
   timeout_seconds: 60
 
 budget:

@@ -8,6 +8,7 @@ from typing import Any
 from jobhunter.http import HttpClient
 from jobhunter.models import Job
 from jobhunter.sources.base import collect, parse_iso
+from jobhunter.sources.registry import SourceInfo, register
 from jobhunter.text import extract_salary, html_to_text, infer_remote
 
 URL = "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs"
@@ -48,3 +49,16 @@ class GreenhouseSource:
     async def fetch(self, http: HttpClient) -> list[Job]:
         data = await http.get_json(URL.format(slug=self.target), params={"content": "true"})
         return parse(data, self.company)
+
+
+register(
+    SourceInfo(
+        name="greenhouse",
+        kind="ats",
+        description="Company job boards on Greenhouse (boards API)",
+        terms_url="https://developers.greenhouse.io/job-board.html",
+        fixtures=("greenhouse.json",),
+        factory=GreenhouseSource,
+        probe_url="https://boards-api.greenhouse.io/v1/boards/{slug}/jobs",
+    )
+)

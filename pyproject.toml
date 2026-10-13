@@ -36,6 +36,14 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/jobhunter"]
 
+# Files the installed tool needs (read through jobhunter.resources); the repo copies in config/
+# stay the single source of truth.
+[tool.hatch.build.targets.wheel.force-include]
+"config/config.example.yaml" = "jobhunter/data/config.example.yaml"
+"config/company_candidates.txt" = "jobhunter/data/company_candidates.txt"
+"config/letter_template.example.tex" = "jobhunter/data/letter_template.example.tex"
+"config/cv.example.tex" = "jobhunter/data/cv.example.tex"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
@@ -46,6 +54,7 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/*" = ["E501"]
+"src/jobhunter/demo.py" = ["E501"]  # fictional postings are long strings
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

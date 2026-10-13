@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [development, main]
+  pull_request:
+
+jobs:
+  test:
+    name: tests (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --python ${{ matrix.python }}
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      # No network and no LLM: the suite uses recorded fixtures and fake backends.
+      - run: uv run pytest -q
+
+  docs:
+    name: docs, specs and personal files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync
+      # CLI/config documented, specs have a status and are indexed, no personal files tracked,
+      # docs/SUPPORTED_SOURCES.md up to date.
+      - run: uv run python scripts/check_docs.py

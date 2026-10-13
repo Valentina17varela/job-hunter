@@ -9,7 +9,7 @@ from typing import Annotated
 
 import typer
 
-from jobhunter import __version__, latex
+from jobhunter import __version__, latex, resources
 from jobhunter.companies import (
     check_companies,
     discover,
@@ -485,13 +485,14 @@ def letter_init(config: ConfigOption = Path("config/config.yaml")) -> None:
 
     cfg = _load(config)
     target = cfg.paths.letter_template
-    example = Path(__file__).resolve().parents[2] / "config" / "letter_template.example.tex"
     if target.exists():
         typer.echo(f"{target} already exists; not overwriting.")
         return
-    if not example.exists():
-        typer.echo(f"error: example template not found at {example}", err=True)
-        raise typer.Exit(code=1)
+    try:
+        example = resources.path("letter_template.example.tex")
+    except FileNotFoundError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(example, target)
     typer.echo(
@@ -611,13 +612,14 @@ def stats(config: ConfigOption = Path("config/config.yaml")) -> None:
     )
 
 
-@app.command()
-def ui(
-    port: Annotated[int, typer.Option(help="Port on 127.0.0.1.")] = 8765,
-    open_browser: Annotated[bool, typer.Option("--open", help="Open the browser.")] = False,
-    config: ConfigOption = Path("config/config.yaml"),
+def serve_ui(
+    config: Path,
+    port: int,
+    open_browser: bool,
+    bind: str = "127.0.0.1",
+    allow_host: str | None = None,
 ) -> None:
-    """Start the local web UI (dashboard, postings, pipeline, manual runs) on 127.0.0.1."""
+    """Run the UI. It only answers requests whose Host is local, whatever the bind address."""
     import threading
     import webbrowser
 
@@ -627,13 +629,116 @@ def ui(
     from jobhunter.web.runner import RunManager
 
     cfg = _load(config)
+    hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+    if allow_host:
+        hosts.add(allow_host if ":" in allow_host else f"{allow_host}:{port}")
+    if bind not in ("127.0.0.1", "localhost", "::1"):
+        typer.echo(
+            f"warning: listening on {bind}. The UI shows your CV and applications and has no "
+            "login; only do this inside a container whose port is published on 127.0.0.1.",
+            err=True,
+        )
     manager = RunManager(config.resolve(), Path.cwd(), log_dir=cfg.paths.db.parent / "runs")
-    web_app = create_app(config, port=port, runner=manager)
+    web_app = create_app(config, port=port, allowed_hosts=hosts, runner=manager)
     url = f"http://127.0.0.1:{port}"
     typer.echo(f"Job Hunter UI on {url}  (Ctrl+C to stop; only reachable from this machine)")
     if open_browser:
         threading.Timer(1.0, webbrowser.open, args=(url,)).start()
-    uvicorn.run(web_app, host="127.0.0.1", port=port, log_level="warning")
+    uvicorn.run(web_app, host=bind, port=port, log_level="warning")
+
+
+@app.command()
+def ui(
+    port: Annotated[int, typer.Option(help="Port.")] = 8765,
+    open_browser: Annotated[bool, typer.Option("--open", help="Open the browser.")] = False,
+    bind: Annotated[
+        str, typer.Option(help="Address to listen on. Only change it inside a container.")
+    ] = "127.0.0.1",
+    allow_host: Annotated[
+        str | None, typer.Option(help="Extra Host header to accept (e.g. a container's name).")
+    ] = None,
+    config: ConfigOption = Path("config/config.yaml"),
+) -> None:
+    """Start the local web UI (dashboard, postings, pipeline, manual runs) on 127.0.0.1."""
+    serve_ui(config, port, open_browser, bind, allow_host)
+
+
+@app.command()
+def demo(
+    folder: Annotated[Path, typer.Argument(help="Where to write the demo workspace.")] = Path(
+        "data/demo"
+    ),
+    port: Annotated[int, typer.Option(help="Port.")] = 8765,
+    open_browser: Annotated[bool, typer.Option("--open", help="Open the browser.")] = False,
+    no_serve: Annotated[
+        bool, typer.Option(help="Only write the files, do not start the UI.")
+    ] = False,
+) -> None:
+    """Create a workspace with fictional data and start the UI on it (touches none of your data)."""
+    from jobhunter.demo import seed
+
+    config = seed(folder)
+    typer.echo(f"demo workspace ready in {folder}")
+    if not no_serve:
+        serve_ui(config, port, open_browser)
+
+
+@app.command()
+def init(
+    folder: Annotated[Path, typer.Argument(help="Workspace folder (default: here).")] = Path("."),
+    sample_cv: Annotated[
+        bool, typer.Option("--sample-cv", help="Also write a fictional sample CV to try things.")
+    ] = False,
+) -> None:
+    """Create config/ in a folder from the bundled examples. Never overwrites a file."""
+    created: list[str] = []
+    skipped: list[str] = []
+
+    def put(relative: str, content: str) -> None:
+        target = folder / relative
+        if target.exists():
+            skipped.append(relative)
+            return
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        created.append(relative)
+
+    try:
+        put("config/config.yaml", resources.read("config.example.yaml"))
+        put("config/company_candidates.txt", resources.read("company_candidates.txt"))
+        put("config/cv/letter_template.tex", resources.read("letter_template.example.tex"))
+        if sample_cv:
+            put("config/cv/master.tex", resources.read("cv.example.tex"))
+    except FileNotFoundError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    ignore = folder / ".gitignore"
+    wanted = ["config/config.yaml", "config/companies.yaml", "config/cv/", "data/", "out/"]
+    have = ignore.read_text(encoding="utf-8").splitlines() if ignore.exists() else []
+    missing = [line for line in wanted if line not in have]
+    if missing:
+        with ignore.open("a", encoding="utf-8") as handle:
+            handle.write(("\n" if have and have[-1] else "") + "\n".join(missing) + "\n")
+        created.append(".gitignore (personal files ignored)")
+
+    for name in created:
+        typer.echo(f"created {name}")
+    for name in skipped:
+        typer.echo(f"kept    {name} (already exists)")
+    where = "" if folder == Path(".") else f"cd {folder} && "
+    typer.echo("\nNext:")
+    steps = []
+    if not sample_cv:
+        steps.append(
+            "put your LaTeX CV at config/cv/master.tex and mark it (see the README), "
+            "or run `jobhunter init --sample-cv` to try with a fictional one"
+        )
+    steps.append(f"{where}jobhunter doctor        # checks Python, config, LaTeX, LLM login")
+    steps.append(f"{where}jobhunter ui --open     # then press Search for new jobs")
+    for number, step in enumerate(steps, start=1):
+        typer.echo(f"  {number}. {step}")
+    typer.echo("  Just looking around? `jobhunter demo --open` needs none of this.")
 
 
 @app.command()

@@ -20,8 +20,7 @@ Everything runs on your machine and **only when you press a button**: nothing is
 
 > 🧪 **Try the UI in one minute with fictional data** (it never touches your real data):
 > ```bash
-> uv sync && uv run python scripts/seed_demo.py
-> uv run jobhunter ui --config data/demo/config.yaml --open
+> uv sync && uv run jobhunter demo --open
 > ```
 
 <br>
@@ -271,18 +270,25 @@ What you can do there:
 
 ## ⚙️ How To Run
 
-Requirements: macOS with [Homebrew](https://brew.sh) (Python 3.12 is installed by `uv`).
+Requirements: macOS or Linux (Windows through WSL), [`uv`](https://docs.astral.sh/uv/) (it installs Python 3.12 for you) and [tectonic](https://tectonic-typesetting.github.io) or a TeX Live with `latexmk` (the LaTeX engine; `brew install uv tectonic` on macOS; `latex.engine: auto` uses whichever is installed). Details per system in [`docs/SETUP.md`](docs/SETUP.md).
 
 ### Setup (once)
 
+**Install it as a tool and create a workspace** (no clone needed):
+
 ```bash
-git clone <repo-url> job-hunter && cd job-hunter
-brew install uv tectonic                          # uv: Python + dependencies, tectonic: LaTeX engine
-uv sync
-cp config/config.example.yaml config/config.yaml # your settings (gitignored)
-uv run jobhunter doctor                           # checks Python, config, LaTeX and the LLM login
-uv run jobhunter companies discover               # builds your company list (optional, recommended)
+uv tool install git+https://github.com/Valentina17varela/job-hunter
+mkdir my-job-search && cd my-job-search
+jobhunter init --sample-cv     # config/, a letter template and (optional) a fictional sample CV
+jobhunter doctor               # checks Python, config, LaTeX and the LLM login
+jobhunter companies discover   # builds your company list (optional, recommended)
 ```
+
+`jobhunter init` never overwrites a file and adds your personal files to `.gitignore`. Without `--sample-cv` you bring your own CV (step 3 below). Everything you create lives in that folder (`config/`, `data/`, `out/`), so commands are run from it.
+
+**Or work from a clone** (to change the code): `git clone https://github.com/Valentina17varela/job-hunter && cd job-hunter && uv sync`, then use `uv run jobhunter …` in the examples. The repository's `config/config.example.yaml` is copied by `jobhunter init`, or by hand to `config/config.yaml`.
+
+**With Docker** (no local Python or LaTeX; use the API or an OpenAI-style backend, the `claude` CLI is not inside the image): see [`docs/SETUP.md`](docs/SETUP.md#docker).
 
 Then:
 
@@ -353,9 +359,14 @@ You can edit all of this **in the UI** (Settings): tag inputs, checkboxes and pl
 <details>
 <summary><b>CLI reference</b></summary>
 
+Every command that reads settings accepts `--config FILE` (default `config/config.yaml`).
+
 | Command | What it does |
 |---|---|
-| `jobhunter ui [--port N] [--open]` | Local web UI on `127.0.0.1` |
+| `jobhunter init [FOLDER] [--sample-cv]` | Create `config/` (config, letter template, optional sample CV) from the bundled examples; never overwrites, updates `.gitignore` |
+| `jobhunter demo [FOLDER] [--port N] [--open] [--no-serve]` | Create a workspace with fictional data and start the UI on it |
+| `jobhunter ui [--port N] [--open] [--bind ADDRESS] [--allow-host HOST]` | Local web UI on `127.0.0.1`. `--bind` and `--allow-host` exist for containers only (a warning is printed); the UI still refuses any other Host |
+| `jobhunter add --title T --company C [--url U] [--location L] [--remote MODE] [--salary-min N] [--salary-max N] [--currency CUR] [--text-file F] [--score] [--package]` | Add a posting you found elsewhere |
 | `jobhunter run [--stage search\|fetch\|filter\|score\|tailor] [--dry-run]` | Run the pipeline or one stage. `search` = fetch + filter |
 | `jobhunter run --stage tailor --job ID [--limit N] [--force]` | Build packages for exactly these postings, whatever their status |
 | `jobhunter refilter` | Re-evaluate every stored posting after changing `search` |
@@ -365,8 +376,8 @@ You can edit all of this **in the UI** (Settings): tag inputs, checkboxes and pl
 | `jobhunter favorite ID [--note TEXT] [--remove]` | Star a posting (any status), optionally with a note, or remove its star |
 | `jobhunter favorites` | List starred postings, newest first |
 | `jobhunter stats` | Funnel, rejections by rule, applications by stage, LLM usage |
-| `jobhunter calibrate` | Say y/n to the AI's verdicts to measure how well it matches your judgement |
-| `jobhunter cv check \| init \| translate` | Validate/compile your CV, propose markers, translate once |
+| `jobhunter calibrate [--count N]` | Say y/n to the AI's verdicts to measure how well it matches your judgement |
+| `jobhunter cv check \| init [--output FILE] \| translate` | Validate/compile your CV, propose markers, translate once |
 | `jobhunter letter init` | Create your cover-letter template from the example |
 | `jobhunter companies discover \| check` | Grow / validate the list of company boards |
 | `jobhunter doctor` | Check Python, config, LLM login and LaTeX |
@@ -381,17 +392,21 @@ config/            config.example.yaml, company_candidates.txt, letter_template.
                    config.yaml, companies.yaml, cv/ (yours, gitignored)
 specs/             design specs (source of truth) and the roadmap
 design/            inputs of the visual identity: palette, logo, project brief
-scripts/           seed_demo.py (fictional workspace for the UI)
-docs/images/       screenshots used in this README
+scripts/           seed_demo.py (same as `jobhunter demo`), check_docs.py (CI: docs, specs, config in sync)
+docs/               SETUP, FAQ, ADDING_A_SOURCE, SUPPORTED_SOURCES (generated), images/ (README screenshots)
+.github/           CI workflow, issue and PR templates
+Dockerfile, compose.yaml   container option (see docs/SETUP.md)
 src/jobhunter/
   cli.py           typer commands
   pipeline.py      fetch and filter stages          filters.py   hard filter rules
-  sources/         greenhouse, lever, ashby, aggregators
+  sources/         one module per source, each registers itself (registry.py)
   scoring.py       batch scoring and selection      tailoring.py CV selection, letter, verification, packages
   llm.py           claude -p / Anthropic API, budget, retries, call log
   latex.py         CV parser/assembler, escape, compile    translate.py, language.py
   applications.py  stages, interviews, stats        store.py     upsert, dedupe, close stale
   favorites.py     stars and notes on postings
+  resources.py     bundled examples (config, letter template, sample CV) for `init`
+  demo.py          the fictional demo workspace
   web/             FastAPI app, run manager, templates, static (tokens.css, style.css, fonts, logo)
 tests/             pytest suite (no network, no LLM)
 ```
@@ -418,6 +433,7 @@ tests/             pytest suite (no network, no LLM)
 ```bash
 uv run pytest             # no network, no LLM; each test runs in an empty temp dir
 uv run ruff check . && uv run ruff format --check .
+uv run python scripts/check_docs.py   # docs, specs, example config and personal files in sync
 ```
 
 The project is built spec-first: [`specs/`](specs/) holds the design (index, status of each spec and a template in [`specs/README.md`](specs/README.md); overview in [`00-overview.md`](specs/00-overview.md)). [`CLAUDE.md`](CLAUDE.md) has the working conventions, the commands and the definition of done; [`AGENTS.md`](AGENTS.md) is the short version for other coding agents.
@@ -433,6 +449,10 @@ The project is built spec-first: [`specs/`](specs/) holds the design (index, sta
 | Too few postings pass | Open the dashboard: the biggest bar in *Why postings were left out* is the rule to loosen |
 | A package says **REVIEW** | Open its `notes.md`: it lists the failed checks; the files are still there to edit by hand |
 | Want to start over | Delete `data/jobhunter.db`; it is recreated on the next run |
+
+## 🤝 Contributing
+
+Contributions are welcome: start with [`CONTRIBUTING.md`](CONTRIBUTING.md) (set-up in three commands, the spec-first flow and what the project does not accept). Adding a job board is one module, one fixture and one test: [`docs/ADDING_A_SOURCE.md`](docs/ADDING_A_SOURCE.md). Questions and the sources that exist: [`docs/FAQ.md`](docs/FAQ.md), [`docs/SUPPORTED_SOURCES.md`](docs/SUPPORTED_SOURCES.md). Security reports: [`SECURITY.md`](SECURITY.md). CI runs lint, tests and `scripts/check_docs.py` (keeps the README, the specs and the example config in sync with the code).
 
 ## 📄 License
 

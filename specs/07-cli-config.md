@@ -4,6 +4,8 @@
 
 ## 1. Commands
 
+Every command that reads settings accepts `--config FILE` (default `config/config.yaml`).
+
 | Command | What it does |
 |---|---|
 | `jobhunter run` | Full pipeline (fetch → filter → score → tailor → export) |
@@ -18,10 +20,13 @@
 | `jobhunter stats` | Funnel (fetched → passed → scored → packaged → applied → replied) and cumulative cost |
 | `jobhunter companies check` | Validates `companies.yaml` slugs (200 vs 404) |
 | `jobhunter companies discover` | Probes names in `company_candidates.txt` and adds boards that exist to `companies.yaml` |
-| `jobhunter calibrate` | Scoring calibration (see 05) |
-| `jobhunter letter init` | Copies `config/letter_template.example.tex` to `config/cv/letter_template.tex`; the person edits the three header lines |
-| `jobhunter ui [--port 8765] [--open]` | Starts the local web UI on `127.0.0.1` (see 09) |
-| `jobhunter cv init` | One-time helper: proposes `jh:` markers and IDs for a plain LaTeX CV (output reviewed by the person) |
+| `jobhunter calibrate [--count N]` | Scoring calibration (see 05) |
+| `jobhunter letter init` | Copies the bundled `letter_template.example.tex` to `config/cv/letter_template.tex`; the person edits the three header lines |
+| `jobhunter ui [--port 8765] [--open] [--bind ADDRESS] [--allow-host HOST]` | Starts the local web UI (see 09). `--bind` and `--allow-host` are for containers: they print a warning and the Host allow-list still only accepts local names plus the one given |
+| `jobhunter demo [FOLDER] [--port N] [--open] [--no-serve]` | Writes a fictional workspace (default `data/demo/`) and starts the UI on it |
+| `jobhunter init [FOLDER] [--sample-cv]` | Creates `config/` from the bundled examples; never overwrites; adds personal paths to `.gitignore` |
+| `jobhunter add --title T --company C [--url] [--location] [--remote] [--salary-min] [--salary-max] [--currency] [--text-file] [--score] [--package]` | Adds a posting found elsewhere (spec 10) |
+| `jobhunter cv init [--output FILE]` | One-time helper: proposes `jh:` markers and IDs for a plain LaTeX CV (output reviewed by the person) |
 | `jobhunter cv check` | Validates `master.tex` markers (unique IDs, balanced sections) and compiles it |
 | `jobhunter cv translate --lang <code>` | One-time translation of the master CV items/labels into `config/cv/translations/<code>.json` for the person to review |
 | `jobhunter doctor` | Checks the LaTeX toolchain, config, and the LLM backend (`claude` logged in, or API key) |
@@ -69,7 +74,7 @@ tailoring:
   max_cv_pages: 1
 
 latex:
-  engine: tectonic                 # tectonic | latexmk
+  engine: auto                     # auto (tectonic, else latexmk) | tectonic | latexmk
   timeout_seconds: 60
 
 budget:

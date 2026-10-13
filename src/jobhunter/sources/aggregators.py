@@ -14,6 +14,7 @@ from typing import Any
 from jobhunter.http import HttpClient
 from jobhunter.models import Job
 from jobhunter.sources.base import collect, from_epoch, parse_iso
+from jobhunter.sources.registry import SourceInfo, register
 from jobhunter.text import annualize, extract_salary, fix_mojibake, html_to_text, infer_remote
 
 
@@ -227,3 +228,55 @@ class JobicySource:
     async def fetch(self, http: HttpClient) -> list[Job]:
         data = await http.get_json("https://jobicy.com/api/v2/remote-jobs", params={"count": 100})
         return parse_jobicy(data)
+
+
+register(
+    SourceInfo(
+        name="remotive",
+        kind="aggregator",
+        description="Remote jobs worldwide (link back required)",
+        terms_url="https://remotive.com/api-documentation",
+        fixtures=("remotive.json",),
+        build=lambda cfg: [RemotiveSource()],
+    )
+)
+register(
+    SourceInfo(
+        name="remoteok",
+        kind="aggregator",
+        description="Remote jobs (link back required; the first feed item is a legal notice)",
+        terms_url="https://remoteok.com/api",
+        fixtures=("remoteok.json",),
+        build=lambda cfg: [RemoteOkSource()],
+    )
+)
+register(
+    SourceInfo(
+        name="weworkremotely",
+        kind="aggregator",
+        description="We Work Remotely RSS feeds, one per category in `sources.wwr_categories`",
+        terms_url="https://weworkremotely.com/remote-job-rss-feed",
+        fixtures=("wwr.rss",),
+        build=lambda cfg: [WeWorkRemotelySource(c) for c in cfg.wwr_categories],
+    )
+)
+register(
+    SourceInfo(
+        name="arbeitnow",
+        kind="aggregator",
+        description="Jobs in Europe, many remote (`sources.arbeitnow_pages` pages)",
+        terms_url="https://documenter.getpostman.com/view/18545278/UVJbJdKh",
+        fixtures=("arbeitnow.json",),
+        build=lambda cfg: [ArbeitnowSource(cfg.arbeitnow_pages)],
+    )
+)
+register(
+    SourceInfo(
+        name="jobicy",
+        kind="aggregator",
+        description="Remote jobs with structured salary (credit and link back requested)",
+        terms_url="https://jobicy.com/jobs-rss-feed",
+        fixtures=("jobicy.json",),
+        build=lambda cfg: [JobicySource()],
+    )
+)

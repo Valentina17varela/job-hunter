@@ -4,6 +4,8 @@
 
 Only sources with a **documented public API or feed**. No login, no browser, no scraping of sites that forbid it.
 
+> A new source is one module that registers itself in the source registry; see `docs/ADDING_A_SOURCE.md` and spec 19 §5.
+
 ## 1. Strategy: breadth first, depth second
 
 The person wants **any posting that matches their criteria, regardless of company**. No free API lists every job on the web, so coverage comes from three layers. The hard filter (04) ignores the company entirely.

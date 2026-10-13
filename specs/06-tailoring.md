@@ -122,7 +122,7 @@ Deterministic checks (no LLM):
 
 ## 6. LaTeX toolchain
 
-- Compiler: `tectonic` (self-contained, auto-fetches packages) preferred; `latexmk -pdf` as fallback. Configurable: `latex.engine`.
+- Compiler: `tectonic` (self-contained, auto-fetches packages) preferred; `latexmk -pdf` as fallback. Configurable: `latex.engine` (`auto` by default: tectonic if installed, else latexmk).
 - Compilation runs in a temp directory with a timeout (60 s) and `-no-shell-escape`; no network needed beyond package fetching.
 - Class, style, font and image files next to `master.tex` (`.cls .sty .bst .bib .png .jpg .pdf .ttf .otf`) are copied into the temp directory, so CVs with custom classes compile as they do in place.
 - `jobhunter doctor` includes a toolchain check (`jobhunter doctor`) that reports which engine is installed and compiles a minimal document.

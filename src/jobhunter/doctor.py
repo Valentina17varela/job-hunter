@@ -55,7 +55,9 @@ def run_checks(config_path: Path) -> list[Check]:
         detail = "ANTHROPIC_API_KEY set" if has_key else "ANTHROPIC_API_KEY not set"
         checks.append(Check("llm (anthropic_api)", has_key, detail, required=False))
 
-    engine = config.latex.engine if config else "tectonic"
+    from jobhunter.latex import resolve_engine
+
+    engine = resolve_engine(config.latex.engine if config else "auto")
     timeout = config.latex.timeout_seconds if config else 60
     with tempfile.TemporaryDirectory() as tmp:
         minimal = Path(tmp) / "minimal.tex"

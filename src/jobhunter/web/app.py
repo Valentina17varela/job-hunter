@@ -22,6 +22,7 @@ from jobhunter.config import Config, ConfigError, load_config
 from jobhunter.db import connect
 from jobhunter.doctor import run_checks
 from jobhunter.filters import JobFilter, job_from_row, normalize_company
+from jobhunter.sources import registry as sources_registry
 from jobhunter.web.runner import RUN_SPECS, Busy, RunError, RunManager
 
 HERE = Path(__file__).parent
@@ -200,6 +201,7 @@ def create_app(
     templates.env.filters["bar_width"] = bar_width
     templates.env.filters["norm_company"] = normalize_company
     templates.env.globals.update(
+        AGGREGATORS=list(sources_registry.aggregators()),
         STATUS_LABELS=STATUS_LABELS, STAGE_LABELS=STAGE_LABELS,
         STAGES=applications.STAGES, KINDS=applications.INTERVIEW_KINDS,
         OUTCOMES=applications.INTERVIEW_OUTCOMES,

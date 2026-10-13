@@ -14,6 +14,7 @@ from pydantic import (
     NonNegativeInt,
     PositiveInt,
     ValidationError,
+    field_validator,
 )
 
 
@@ -73,7 +74,7 @@ class TailoringConfig(_Strict):
 
 
 class LatexConfig(_Strict):
-    engine: Literal["tectonic", "latexmk"] = "tectonic"
+    engine: Literal["auto", "tectonic", "latexmk"] = "auto"  # auto: tectonic, else latexmk
     timeout_seconds: PositiveInt = 60
 
 
@@ -89,11 +90,8 @@ class PathsConfig(_Strict):
     out: Path = Path("out")
 
 
-AggregatorName = Literal["remotive", "remoteok", "weworkremotely", "arbeitnow", "jobicy"]
-
-
 class SourcesConfig(_Strict):
-    aggregators: list[AggregatorName] = [
+    aggregators: list[str] = [
         "remotive",
         "remoteok",
         "weworkremotely",
@@ -112,6 +110,17 @@ class SourcesConfig(_Strict):
     max_concurrency: PositiveInt = 5
     max_per_host: PositiveInt = 2
     stale_days: PositiveInt = 7
+
+    @field_validator("aggregators")
+    @classmethod
+    def _known_aggregators(cls, names: list[str]) -> list[str]:
+        from jobhunter.sources import registry  # lazy: the sources import this module
+
+        known = registry.aggregators()
+        unknown = [n for n in names if n not in known]
+        if unknown:
+            raise ValueError(f"unknown source(s) {unknown}; available: {sorted(known)}")
+        return names
 
 
 class Config(_Strict):

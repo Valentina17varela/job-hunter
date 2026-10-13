@@ -36,3 +36,6 @@ out/
 *.aux
 *.log
 *.synctex.gz
+
+# Docker workspace
+workspace/

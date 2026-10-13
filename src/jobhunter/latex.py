@@ -447,6 +447,18 @@ RESOURCE_SUFFIXES = {
 }
 
 
+def resolve_engine(engine: str) -> str:
+    """`auto` picks tectonic when installed, else latexmk; other values are used as given."""
+    import shutil
+
+    if engine != "auto":
+        return engine
+    for candidate in ("tectonic", "latexmk"):
+        if shutil.which(candidate):
+            return candidate
+    return "tectonic"  # nothing installed: the error message names tectonic
+
+
 def compile_pdf(
     tex: str, engine: str, timeout: int, resources: Path | None = None
 ) -> CompileResult:
@@ -459,6 +471,7 @@ def compile_pdf(
     import subprocess
     import tempfile
 
+    engine = resolve_engine(engine)
     binary = shutil.which(engine)
     if binary is None:
         return CompileResult(False, f"'{engine}' not found in PATH")

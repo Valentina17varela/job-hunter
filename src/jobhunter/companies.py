@@ -10,26 +10,39 @@ import asyncio
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from jobhunter.http import FetchError, HttpClient
 
-Ats = Literal["greenhouse", "lever", "ashby"]
-ATS_ORDER: list[Ats] = ["greenhouse", "lever", "ashby"]
-_PROBE_URLS: dict[str, str] = {
-    "greenhouse": "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs",
-    "lever": "https://api.lever.co/v0/postings/{slug}?mode=json&limit=1",
-    "ashby": "https://api.ashbyhq.com/posting-api/job-board/{slug}",
-}
+ATS_ORDER = ["greenhouse", "lever", "ashby"]  # preferred order when discovering a board
+
+
+def _boards() -> dict[str, str]:
+    """Registered company-board types and their probe URLs (see sources/registry.py)."""
+    from jobhunter.sources import registry
+
+    return {name: info.probe_url or "" for name, info in registry.company_boards().items()}
+
+
+def ats_order() -> list[str]:
+    boards = _boards()
+    return [a for a in ATS_ORDER if a in boards] + sorted(set(boards) - set(ATS_ORDER))
 
 
 class Company(BaseModel):
     name: str
-    ats: Ats
+    ats: str
     slug: str
+
+    @field_validator("ats")
+    @classmethod
+    def _known_ats(cls, value: str) -> str:
+        known = _boards()
+        if value not in known:
+            raise ValueError(f"unknown ats '{value}'; available: {sorted(known)}")
+        return value
 
 
 def load_companies(path: Path) -> list[Company]:
@@ -87,7 +100,7 @@ def _count_jobs(data: object) -> int:
 
 async def probe(http: HttpClient, ats: str, slug: str) -> ProbeResult:
     """Check whether a board exists. 404 → not ok; the job count is only for reporting."""
-    url = _PROBE_URLS[ats].format(slug=slug)
+    url = _boards()[ats].format(slug=slug)
     try:
         data = await http.get_json(url)
     except FetchError as exc:
@@ -105,7 +118,7 @@ async def check_companies(
 async def discover_company(http: HttpClient, name: str) -> list[Company]:
     """Find which ATS boards (if any) exist for a company name."""
     found: list[Company] = []
-    for ats in ATS_ORDER:
+    for ats in ats_order():
         for slug in slug_variants(name):
             result = await probe(http, ats, slug)
             if result.ok and result.jobs > 0:

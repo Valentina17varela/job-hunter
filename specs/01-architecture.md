@@ -94,7 +94,7 @@ class Source(Protocol):
     async def fetch(self, http: HttpClient) -> list[Job]: ...  # raises on failure
 ```
 
-Adding a source = one new file + registration in `sources/__init__.py` (`build_sources`). The rest of the pipeline is unchanged. A self-registering registry and a contract test are planned in [19](19-open-source-ready.md) §5.
+Adding a source = one new file + registration in `sources/__init__.py` (`build_sources`, which reads the registry). The rest of the pipeline is unchanged. Each module registers itself in `sources/registry.py`; a contract test (`tests/test_source_contract.py`) checks every source ([19](19-open-source-ready.md) §5).
 
 ## 5. Error handling
 

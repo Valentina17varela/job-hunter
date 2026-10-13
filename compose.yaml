@@ -1,0 +1,11 @@
+# docker compose run --rm jobhunter jobhunter init --sample-cv     (once)
+# ANTHROPIC_API_KEY=... docker compose up                          (UI on http://127.0.0.1:8765)
+services:
+  jobhunter:
+    build: .
+    ports:
+      - "127.0.0.1:8765:8765"   # localhost only: the UI has no login
+    volumes:
+      - ./workspace:/workspace
+    environment:
+      - ANTHROPIC_API_KEY        # passed through from your shell, never stored in a file

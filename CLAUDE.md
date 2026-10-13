@@ -10,6 +10,7 @@ Local Python "job-search copilot": finds postings on public job boards, filters 
 uv sync                                   # install
 uv run pytest -q                          # all tests (no network, no LLM; each runs in a temp dir)
 uv run ruff check . && uv run ruff format --check .
+uv run python scripts/check_docs.py       # docs/specs/example config/personal files in sync (also in CI)
 uv run python scripts/seed_demo.py        # fictional workspace in data/demo/
 uv run jobhunter ui --config data/demo/config.yaml --open   # UI on 127.0.0.1 with demo data
 uv run jobhunter --help                   # CLI
@@ -58,7 +59,7 @@ Never run the real pipeline (`run`, `score`, `tailor`) or the UI against the per
 |---|---|---|
 | `models.py`, `db.py`, `store.py` | `Job` schema, SQLite + migrations, upsert/dedupe/close stale | 02 |
 | `config.py`, `config_edit.py` | YAML config model; comment-preserving safe edits for the UI | 07, 09 |
-| `http.py`, `sources/` | Polite async client; one module per source (`greenhouse`, `lever`, `ashby`, `aggregators`) | 03 |
+| `http.py`, `sources/` | Polite async client; one self-registering module per source (`registry.py`: `greenhouse`, `lever`, `ashby`, `aggregators`) | 03, 19 |
 | `companies.py`, `pipeline.py` | Company list/discovery; fetch + filter stages | 03, 04 |
 | `filters.py`, `text.py`, `language.py` | Hard filter and `explain`; HTML cleaning, salary/remote inference; language detection | 04 |
 | `llm.py` | The only place that calls an LLM: backends, budget, retries, call log | 05 |
@@ -66,7 +67,8 @@ Never run the real pipeline (`run`, `score`, `tailor`) or the UI against the per
 | `latex.py`, `tailoring.py`, `translate.py` | Master-CV parser/assembler, compile; package building and verification; CV translation | 06 |
 | `applications.py` | Stages, interviews, stats | 02, 09 |
 | `favorites.py`, `postings.py`, `fetch_url.py` | Stars and notes; postings added by hand; SSRF-safe single-page fetcher | 11, 10 |
-| `doctor.py`, `cli.py` | Environment checks; typer commands | 07 |
+| `doctor.py`, `cli.py` | Environment checks; typer commands (`init`, `demo`, `ui --bind`…) | 07, 19 |
+| `resources.py`, `demo.py` | Bundled examples (config, letter template, sample CV); the fictional demo workspace | 19 |
 | `web/` | FastAPI app, run manager (whitelisted subprocess runs), templates, static (`tokens.css`, `style.css`, fonts, logo) | 09, 18 |
 
 Tests mirror modules (`tests/test_<module>.py`); UI and API tests are in `tests/test_web.py`.

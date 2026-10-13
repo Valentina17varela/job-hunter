@@ -1,0 +1,27 @@
+name: Source request
+description: A job board or company-board type that should be supported
+labels: [source]
+body:
+  - type: input
+    id: site
+    attributes:
+      label: Site
+    validations:
+      required: true
+  - type: input
+    id: api
+    attributes:
+      label: Link to its public API, feed or terms
+      description: Only public APIs and feeds. Sources that need a login or defeat bot protection are not accepted.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it useful (region, role types, remote roles)?
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Can you help?
+      options:
+        - label: I can write the adapter following docs/ADDING_A_SOURCE.md
