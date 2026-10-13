@@ -77,3 +77,4 @@ When fewer than five scored candidates remain, the board shows a card: **"Only 3
 - The Top board counts every scored, undismissed posting without an application (statuses `scored`, `selected`, `packaged`, `below_threshold`), not only the `selected` ones, so the *Best matches* tab list below it can show fewer rows than the board.
 - The *Hide* button keeps its confirmation; the notice with the replacement offer appears on the next page load (it needs the fresh plan from `GET /api/top`).
 - Reason suggestions need 3 dismissals with the same reason (`SUGGESTION_MIN`).
+- Layout (after the author's feedback): tabs and filters stay in the same place on every tab so the page never jumps; on *Best matches* the board comes right under the filters, followed by the rest of the list ("N more postings"). When every best match is already in the board, a sentence replaces the empty state. Using a filter or search turns the board off and shows the plain filtered list.

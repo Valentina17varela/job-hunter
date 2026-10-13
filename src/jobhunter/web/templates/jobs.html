@@ -9,8 +9,6 @@
   <button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button></div>
 </header>
 
-{% if plan %}{{ top.top_board(plan, blocked, board_suggestions) }}{% endif %}
-
 <nav class="tabs">
   {% for t in tabs %}<a class="{{ 'on' if f.status == t.key else '' }}" href="/jobs?status={{ t.key }}">{{ t.label }} <span class="count">{{ "{:,}".format(t.n) }}</span></a>{% endfor %}
 </nav>
@@ -18,19 +16,25 @@
 <form class="filters" method="get" action="/jobs">
   <input type="hidden" name="status" value="{{ f.status }}">
   <input type="search" name="q" aria-label="Search by title or company" value="{{ f.q }}" placeholder="Search title or company">
-  <select name="source" aria-label="Source"><option value="">Any source</option>{% for s in sources %}<option value="{{ s }}" {{ 'selected' if f.source == s }}>{{ s }}</option>{% endfor %}</select>
+  <select name="source" aria-label="Source"><option value="">Any source</option>{% for s in sources %}<option value="{{ s.name }}" {{ 'selected' if f.source == s.name }}>{{ s.label }} ({{ "{:,}".format(s.count) if s.count else "none fetched yet" }})</option>{% endfor %}</select>
   <select name="mode" aria-label="Work mode"><option value="">Any work mode</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md }}</option>{% endfor %}</select>
   <label class="check chip-toggle"><input type="checkbox" name="fav" value="1" {{ 'checked' if f.fav }}> ★ Favorites only</label>
   <input type="number" name="min_score" aria-label="Minimum score" min="0" max="100" value="{{ f.min_score if f.min_score is not none else '' }}" placeholder="Min score">
   <select name="sort" aria-label="Sort by">{% for k, label in [('score', 'Best score first'), ('recent', 'Most recent'), ('company', 'Company A–Z'), ('favorites', 'Favorites first')] %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select>
   <button class="btn" type="submit">Filter</button>
 </form>
-<p class="muted small">{{ "{:,}".format(total) }} postings</p>
+
+{% if plan %}{{ top.top_board(plan, blocked, board_suggestions) }}{% endif %}
+{% if plan and not rows %}
+<p class="muted">{{ "Your best match is" if total == 1 else "All " ~ total ~ " best matches are" }} already in your top {{ plan.target }} above. Change the filters or open another tab to see more.</p>
+{% else %}
+<p class="muted small">{{ "{:,}".format(rows|length if plan else total) }} {{ "more " if plan }}postings</p>
+{% endif %}
 
 {% for r in rows %}
 {{ top.job_card(r, blocked) }}
 {% else %}
-{% call m.empty('target', 'Nothing here yet', 'No postings match this view. Try another tab, or search for new jobs.') %}<button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>Search for new jobs</button>{% endcall %}
+{% if not plan %}{% call m.empty('target', 'Nothing here yet', 'No postings match this view. Try another tab, or search for new jobs.') %}<button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>Search for new jobs</button>{% endcall %}{% endif %}
 {% endfor %}
 
 {% if pages > 1 %}

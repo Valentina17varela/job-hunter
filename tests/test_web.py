@@ -680,3 +680,41 @@ def test_settings_shows_key_status_without_the_value(env, monkeypatch):
     monkeypatch.delenv("THEMUSE_API_KEY")
     html = env[0].get("/settings", headers=HOST).text
     assert "not set" in html and "(optional)" in html
+
+
+def test_an_applied_posting_shows_one_applied_label_not_two(env):
+    client, conn, *_ = env
+    apps.set_stage(conn, 3, "applied", None)
+    card = client.get("/jobs?status=applied", headers=HOST).text
+    assert card.count(">Applied<") == 1  # one badge on the card (it used to be two)
+    page = client.get("/jobs/3", headers=HOST).text
+    chips = page.split('<div class="chips">')[1].split("</div>")[0]
+    assert chips.count("Applied") == 1
+    apps.set_stage(conn, 3, "interviewing", None)  # a different stage still gets its own chip
+    chips = (
+        client.get("/jobs/3", headers=HOST).text.split('<div class="chips">')[1].split("</div>")[0]
+    )
+    assert "Interviewing" in chips
+
+
+def test_source_filter_lists_every_enabled_source_even_before_anything_is_fetched(env):
+    client = env[0]
+    html = client.get("/jobs", headers=HOST).text
+    select = html.split('name="source"')[1].split("</select>")[0]
+    for label in ("Get on Board", "Himalayas", "The Muse", "Greenhouse", "Lever", "Ashby"):
+        assert label in select
+    assert "Get on Board (none fetched yet)" in select
+    assert "Greenhouse (1)" in select  # sources with postings show their count
+    filtered = client.get("/jobs?status=all&source=ashby", headers=HOST).text
+    assert "Platform Engineer" in filtered and "Senior Engineer" not in filtered
+
+
+def test_home_points_to_sources_that_exist_but_are_not_enabled(env, tmp_path):
+    client = env[0]
+    html = client.get("/", headers=HOST).text
+    assert "available but not enabled" not in html  # the default config has them all on
+    cfg_path = next(tmp_path.glob("config.yaml"))
+    cfg_path.write_text(cfg_path.read_text() + "  aggregators: [remotive]\n")
+    html = client.get("/", headers=HOST).text
+    assert "available but not enabled" in html and "Get on Board" in html and "Himalayas" in html
+    assert "/settings#sources" in html

@@ -285,3 +285,34 @@ def test_top_command_lists_the_board_and_fills_on_request(tmp_path):
         .fetchone()[0]
     )
     assert nothing == 4  # a dry run scores nothing
+
+
+def test_the_tabs_come_first_and_a_board_that_holds_every_match_shows_no_empty_state(client):
+    http, db = client
+    # every best match is already in the board: no "Nothing here yet" box, a plain sentence instead
+    db.execute("UPDATE jobs SET status = 'selected' WHERE title = 'Engineer 1'")
+    db.execute("UPDATE jobs SET status = 'selected' WHERE title = 'Engineer 2'")
+    db.commit()
+    page = http.get("/jobs", headers=HOST).text
+    # tabs and filters sit in the same place on every tab; the board comes right after them
+    assert page.index('class="tabs"') < page.index('class="filters"') < page.index('id="top-board"')
+    assert "Nothing here yet" not in page
+    assert "already in your top 3 above" in page
+    # other tabs have no board and keep their usual empty state
+    other = http.get("/jobs?status=applied", headers=HOST).text
+    assert 'id="top-board"' not in other and "Nothing here yet" in other
+
+
+def test_extra_best_matches_beyond_the_board_are_listed_under_a_clear_heading(tmp_path):
+    cfg_path = tmp_path / "config.yaml"
+    cfg_path.write_text(
+        f"paths:\n  db: {tmp_path}/t.db\n  out: {tmp_path}/out\n"
+        f"sources:\n  companies_file: {tmp_path}/none.yaml\nscoring:\n  top_matches_count: 2\n"
+    )
+    db = connect(tmp_path / "t.db")
+    add(db, 4)
+    score(db, {f"Engineer {i}": 95 - i for i in range(1, 5)}, status="selected")
+    http = TestClient(create_app(cfg_path, allowed_hosts={"testserver"}))
+    page = http.get("/jobs", headers=HOST).text
+    assert "Browse and filter" not in page and "2 more postings" in page
+    assert page.count('class="job-card"') == 4  # 2 on the board + the 2 that did not fit

@@ -13,7 +13,7 @@
       {% if job.source == 'manual' %}<span class="chip">Manual</span>{% endif %}
       {% if favorite and job.status == 'closed' %}<span class="badge bad">Closed</span>{% endif %}
       {% if blocked %}<span class="badge bad">Blocked company</span>{% endif %}
-      {% if application %}<span class="chip stage-{{ application.stage }}">{{ STAGE_LABELS[application.stage] }}</span>{% endif %}
+      {% if application and STAGE_LABELS[application.stage] != STATUS_LABELS.get(job.status, job.status) %}<span class="chip stage-{{ application.stage }}">{{ STAGE_LABELS[application.stage] }}</span>{% endif %}
       {% if job.salary_max %}<span class="chip pay">{{ job.salary_min|money(job.salary_currency) }} – {{ job.salary_max|money(job.salary_currency) }} / yr</span>{% endif %}
       {% if job.posted_at %}<span class="chip">Posted {{ job.posted_at|dt }}</span>{% endif %}
     </div>

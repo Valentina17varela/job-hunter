@@ -46,6 +46,18 @@ STAGE_LABELS = {
 }  # fmt: skip
 
 
+SOURCE_LABELS = {
+    "getonboard": "Get on Board", "himalayas": "Himalayas", "themuse": "The Muse",
+    "weworkremotely": "We Work Remotely", "remoteok": "RemoteOK", "remotive": "Remotive",
+    "arbeitnow": "Arbeitnow", "jobicy": "Jobicy", "greenhouse": "Greenhouse", "lever": "Lever",
+    "ashby": "Ashby", "manual": "Added by hand",
+}  # fmt: skip
+
+
+def source_label(name: str) -> str:
+    return SOURCE_LABELS.get(name, name)
+
+
 JOB_TABS = (
     ("best", "Best matches", ("selected", "packaged")),
     ("evaluated", "All evaluated",
@@ -99,7 +111,9 @@ def kpis(conn: sqlite3.Connection, data: dict[str, Any]) -> dict[str, int]:
     }  # fmt: skip
 
 
-def build_suggestions(conn: sqlite3.Connection, data: dict[str, Any]) -> list[dict[str, Any]]:
+def build_suggestions(
+    conn: sqlite3.Connection, data: dict[str, Any], config: Config | None = None
+) -> list[dict[str, Any]]:
     """Plain-language 'what to do next' list, most useful first."""
     by = data["by_status"]
     out: list[dict[str, Any]] = []
@@ -155,6 +169,17 @@ def build_suggestions(conn: sqlite3.Connection, data: dict[str, Any]) -> list[di
                 "link": {"href": "/pipeline", "label": "Open pipeline"},
             }
         )
+    if config is not None:
+        off = [n for n in sources_registry.aggregators() if n not in config.sources.aggregators]
+        if off:
+            names = ", ".join(source_label(n) for n in off)
+            out.append(
+                {
+                    "text": f"{plural(len(off), 'source is', 'sources are')} available but not "
+                    f"enabled: {names}. Turn them on to see their postings.",
+                    "link": {"href": "/settings#sources", "label": "Open Settings → Sources"},
+                }
+            )
     last = conn.execute("SELECT MAX(created_at) FROM fetch_log").fetchone()[0]
     if last and datetime.fromisoformat(last) < datetime.now(UTC) - timedelta(days=2):
         out.append(
@@ -204,6 +229,7 @@ def create_app(
     templates.env.globals.update(
         AGGREGATORS=list(sources_registry.aggregators()),
         NOT_FOR_ME_REASONS=top_board.REASONS,
+        source_label=lambda n: SOURCE_LABELS.get(n, n),
         STATUS_LABELS=STATUS_LABELS, STAGE_LABELS=STAGE_LABELS,
         STAGES=applications.STAGES, KINDS=applications.INTERVIEW_KINDS,
         OUTCOMES=applications.INTERVIEW_OUTCOMES,
@@ -238,7 +264,7 @@ def create_app(
         data = applications.stats(conn)
         return render(
             request, "dashboard.html", active="dashboard", stats=data,
-            suggestions=build_suggestions(conn, data),
+            suggestions=build_suggestions(conn, data, config),
             upcoming=applications.upcoming_interviews(conn),
             kpis=kpis(conn, data), rule_labels=RULE_LABELS,
             max_calls=config.budget.max_llm_calls_per_run, backend=config.llm.backend,
@@ -318,7 +344,13 @@ def create_app(
         ]  # fmt: skip
         fav_total = conn.execute("SELECT COUNT(*) FROM favorites").fetchone()[0]
         tabs.append({"key": "favorites", "label": "★ Favorites", "n": fav_total})
-        sources = [r[0] for r in conn.execute("SELECT DISTINCT source FROM jobs ORDER BY source")]
+        per_source = {r[0]: r[1] for r in conn.execute(
+            "SELECT source, COUNT(*) FROM jobs GROUP BY source")}  # fmt: skip
+        enabled = [*config.sources.aggregators, *sources_registry.company_boards()]
+        sources = [
+            {"name": n, "label": source_label(n), "count": per_source.get(n, 0)}
+            for n in dict.fromkeys([*enabled, *sorted(per_source)])
+        ]
         plan = None
         board_ids: set[int] = set()
         if status == "best" and page == 1 and not (q or source or mode or fav or score_floor):

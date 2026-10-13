@@ -5,7 +5,7 @@
   <div class="job-main">
     <button class="star {{ 'on' if r.is_favorite }}" data-star="{{ r.id }}" aria-pressed="{{ 'true' if r.is_favorite else 'false' }}" title="Favorite">{{ '★' if r.is_favorite else '☆' }}</button>
     <a class="job-title" href="/jobs/{{ r.id }}">{{ r.title }}</a>
-    <div class="job-sub">{{ r.company }} · {{ r.source }}</div>
+    <div class="job-sub">{{ r.company }} · {{ source_label(r.source) }}</div>
     <div class="chips">
       <span class="chip">{{ r.location or 'Location not stated' }}</span>
       {% if r.remote not in (r.location or '')|lower %}<span class="chip">{{ r.remote }}</span>{% endif %}
@@ -15,7 +15,7 @@
       {% if r.source == 'manual' %}<span class="chip">Manual</span>{% endif %}
       {% if r.is_favorite and r.status == 'closed' %}<span class="badge bad">Closed</span>{% endif %}
       {% if r.is_favorite and (r.company|norm_company) in blocked %}<span class="badge bad">Blocked company</span>{% endif %}
-      {% if r.stage %}<span class="chip stage-{{ r.stage }}">{{ STAGE_LABELS[r.stage] }}</span>{% endif %}
+      {% if r.stage and STAGE_LABELS[r.stage] != STATUS_LABELS.get(r.status, r.status) %}<span class="chip stage-{{ r.stage }}">{{ STAGE_LABELS[r.stage] }}</span>{% endif %}
     </div>
     {% if r.favorite_note %}<p class="muted small">★ {{ r.favorite_note }}</p>{% endif %}
     {% if r.reason %}<p class="job-reason">{% if r.verdict %}<b class="verdict v-{{ r.verdict }}">{{ r.verdict }}</b>{% endif %} {{ r.reason }}</p>{% endif %}
