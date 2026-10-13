@@ -1,0 +1,495 @@
+{
+ "data": [
+  {
+   "id": "developer-java-bice-vida-santiago",
+   "type": "job",
+   "attributes": {
+    "title": "Developer Java",
+    "description_headline": "\u00bfQu\u00e9 buscamos \ud83d\ude0e?",
+    "description": "<ul><li>Estudios de Ingenier\u00eda Civil o Ingenier\u00eda en Ejecuci\u00f3n, con especializaci\u00f3n en Inform\u00e1tica.</li><li>Al menos 3 a\u00f1os de experiencia en cargos similares, y 2 a\u00f1os desarrollando en lenguaje de programaci\u00f3n Java.</li><li>Conocimientos: en AWS, de Oracle, SQL server y mysql, y de Docker y Kubernetes. Desarrollo de microservicios con sprintboot, de microservicios con quarkus, de frontend con React y/o Angular.</li></ul>",
+    "projects": "<div>En <strong>BICE VIDA</strong> somos l\u00edderes en el rubro de las aseguradoras en Chile y trabajamos para satisfacer las necesidades de <strong>seguridad, prosperidad y protecci\u00f3n</strong> de nuestros clientes. Estamos viviendo un proceso profundo de <strong>transformaci\u00f3n digital</strong>, explorando nuevas formas de hacer negocio, dise\u00f1ar experiencias de alto impacto y responder a un entorno cada vez m\u00e1s exigente y cambiante.</div><div><em>Esta oferta se enmarca en la </em><strong><em>Ley 21",
+    "functions_headline": "\u00bfQu\u00e9 tendr\u00e1s que hacer?",
+    "functions": "<p>En BICE Vida nos encontramos en b\u00fasqueda de un Developer, con experiencia desarrollando en lenguaje de programaci\u00f3n Java, para la Subgerencia de Sistemas Financieros de la gerencia de Sistemas, quien estar\u00e1 encargado de dise\u00f1ar y construir sistemas de Informaci\u00f3n de acuerdo a est\u00e1ndares tecnol\u00f3gicos y de calidad definidos por la Subgerencia.</p><p>En este rol deber\u00e1s:</p><ul><li>Levantar requerimientos con usuarios de negocios y dise\u00f1o de casos de uso.</li><li>Dise\u00f1ar y construir de acuerdo a",
+    "benefits_headline": "\u00bfC\u00f3mo es trabajar en BICE Vida\ud83d\ude3a?",
+    "benefits": "<ul><li>Contamos con la mejor cobertura de la industria y te brindamos un seguro complementario de salud, dental y vida, y adem\u00e1s un seguro catastr\u00f3fico (Para ti y tus cargas legales).</li><li>\ud83c\udfc5Bonos en UF dependiendo de la estaci\u00f3n del a\u00f1o y del tiempo que lleves en nuestra Compa\u00f1\u00eda. \ud83c\udf81</li><li>Salida anticipada los d\u00edas viernes, hasta las 14:00 hrs, lo que te permitir\u00e1 balancear tu vida personal y laboral. \ud83d\ude4c</li><li>Dress code semi-formal, porque privilegiamos la comodidad. \ud83d\udc5f</li><li>Almuerzo g",
+    "desirable_headline": "Ganar\u00e1s puntos si cuentas con:",
+    "desirable": "<ul><li>Deseable conocimiento de python.</li></ul>",
+    "remote": false,
+    "remote_modality": "hybrid",
+    "remote_zone": null,
+    "countries": [
+     "Chile"
+    ],
+    "lang": "es",
+    "category_name": "Programming",
+    "min_salary": null,
+    "max_salary": null,
+    "published_at": 1791927619,
+    "response_time_in_days": {
+     "min": null,
+     "max": null
+    },
+    "applications_count": 8,
+    "location_regions": {
+     "data": []
+    },
+    "location_tenants": {
+     "data": []
+    },
+    "location_cities": {
+     "data": [
+      {
+       "id": 1,
+       "type": "location_city"
+      }
+     ]
+    },
+    "modality": {
+     "data": {
+      "id": 1,
+      "type": "modality"
+     }
+    },
+    "seniority": {
+     "data": {
+      "id": 3,
+      "type": "seniority"
+     }
+    },
+    "tags": {
+     "data": [
+      {
+       "id": 2,
+       "type": "tag"
+      },
+      {
+       "id": 50,
+       "type": "tag"
+      },
+      {
+       "id": 74,
+       "type": "tag"
+      },
+      {
+       "id": 123,
+       "type": "tag"
+      },
+      {
+       "id": 141,
+       "type": "tag"
+      },
+      {
+       "id": 156,
+       "type": "tag"
+      },
+      {
+       "id": 209,
+       "type": "tag"
+      },
+      {
+       "id": 587,
+       "type": "tag"
+      },
+      {
+       "id": 837,
+       "type": "tag"
+      },
+      {
+       "id": 887,
+       "type": "tag"
+      }
+     ]
+    },
+    "company": {
+     "data": {
+      "id": "bice-vida",
+      "type": "company",
+      "attributes": {
+       "name": "BICE VIDA",
+       "description": "L\u00edderes en el negocio de las aseguradoras en Chile, somos una empresa enfocada e",
+       "long_description": "<div>Con m\u00e1s de 30 a\u00f1os de historia, somos unos de los l\u00edderes del rubro de las ",
+       "projects": "<div>En <strong>BICE VIDA</strong> somos l\u00edderes en el rubro de las aseguradoras",
+       "benefits": "<ul><li>Contamos con la mejor cobertura de la industria y te brindamos un seguro",
+       "web": "http://www.bicevida.cl",
+       "twitter": "",
+       "github": "",
+       "facebook": "",
+       "angellist": "",
+       "country": "CL",
+       "response_time_in_days": {
+        "min": 8,
+        "max": 22
+       },
+       "logo": "https://getonbrd-prod.s3.amazonaws.com/uploads/users/logo/7178/bice_vida_logo.jpeg"
+      }
+     }
+    }
+   },
+   "links": {
+    "public_url": "https://www.getonbrd.com/jobs/developer-java-bice-vida-santiago"
+   }
+  },
+  {
+   "id": "desarrollador-a-salesforce-intermedio-ryc-tech-group-santiago",
+   "type": "job",
+   "attributes": {
+    "title": "Desarrollador/a Salesforce Intermedio",
+    "description_headline": "Requisitos Excluyentes",
+    "description": "<p>Buscamos un/a profesional con experiencia comprobable en el ecosistema Salesforce, capaz de combinar desarrollo, configuraci\u00f3n e integraci\u00f3n en un mismo rol.</p><ul><li>Experiencia en desarrollo con Apex (Triggers, Batch, Queueables, REST API).</li><li>Experiencia con Lightning Web Components (LWC) y/o Aura.</li><li>Manejo de Visualforce Pages.</li><li>Experiencia en configuraci\u00f3n de Salesforce: Flows, Permission Sets, roles y validaciones.</li><li>Experiencia en integraciones dentro del ecos",
+    "projects": "En RyC Tech Group construimos soluciones de negocio basadas en tecnolog\u00eda, transformando ideas en realidades mediante la combinaci\u00f3n de negocio, capital humano e innovaci\u00f3n tecnol\u00f3gica. En esta oportunidad, buscamos un/a Desarrollador/a Salesforce Intermedio para integrarse a un equipo que trabaja sobre el ecosistema completo de Salesforce. El foco del proyecto es avanzar de punta a punta en soluciones: desarrollo, configuraci\u00f3n e integraci\u00f3n, trabajando tanto con la plataforma (Flows, objetos y",
+    "functions_headline": "Principales responsabilidades",
+    "functions": "<p>Entre las principales responsabilidades se incluyen:</p><ul><li>Desarrollar soluciones en Salesforce utilizando Apex (Triggers, Batch, Queueables, Futures, Schedulables y REST API).</li><li>Construir interfaces utilizando LWC, Aura y Visualforce Pages.</li><li>Configurar y administrar la plataforma: Flows, Permission Sets, objetos y modelos de datos, jerarqu\u00eda de roles y reglas de validaci\u00f3n.</li><li>Implementar integraciones mediante callouts, Named Credentials, Connected Apps y Bulk API.</l",
+    "benefits_headline": "Beneficios y condiciones",
+    "benefits": "<p>En RyC Tech Group te ofrecemos beneficios orientados al bienestar y la conciliaci\u00f3n:</p><ul><li>Aguinaldos en marzo, septiembre y diciembre.</li><li>Seguro de salud complementario que incluye Plan de Salud, Plan Dental Familiar, Seguro Catastr\u00f3fico y Seguro de Vida.</li><li>Contrato Indefinido </li></ul><p>Adem\u00e1s, el trabajo se realiza en modalidad <strong>h\u00edbrida 3x2</strong>, con ubicaci\u00f3n en <strong>Las Condes (metro El Golf)</strong>.</p>",
+    "desirable_headline": "Perfil que buscamos",
+    "desirable": "<p>Buscamos un perfil t\u00e9cnico completo dentro del ecosistema Salesforce, con capacidad de adaptarse tanto a desarrollo como a configuraci\u00f3n e integraci\u00f3n. Se valorar\u00e1 la autonom\u00eda, la calidad t\u00e9cnica y la capacidad de analizar soluciones antes de implementarlas.</p><p>Como parte del equipo, esperamos que puedas:</p><ul><li>Tomar ownership de tareas t\u00e9cnicas y proponer enfoques, considerando mantenibilidad y escalabilidad.</li><li>Comunicar con claridad el razonamiento detr\u00e1s de decisiones t\u00e9cnic",
+    "remote": false,
+    "remote_modality": "hybrid",
+    "remote_zone": null,
+    "countries": [
+     "Chile"
+    ],
+    "lang": "lang_not_specified",
+    "category_name": "Programming",
+    "min_salary": 1800,
+    "max_salary": 2200,
+    "published_at": 1791914702,
+    "response_time_in_days": {
+     "min": null,
+     "max": null
+    },
+    "applications_count": 3,
+    "location_regions": {
+     "data": []
+    },
+    "location_tenants": {
+     "data": []
+    },
+    "location_cities": {
+     "data": [
+      {
+       "id": 1,
+       "type": "location_city"
+      }
+     ]
+    },
+    "modality": {
+     "data": {
+      "id": 1,
+      "type": "modality"
+     }
+    },
+    "seniority": {
+     "data": {
+      "id": 3,
+      "type": "seniority"
+     }
+    },
+    "tags": {
+     "data": [
+      {
+       "id": 525,
+       "type": "tag"
+      },
+      {
+       "id": 1378,
+       "type": "tag"
+      },
+      {
+       "id": 1696,
+       "type": "tag"
+      },
+      {
+       "id": 4590,
+       "type": "tag"
+      },
+      {
+       "id": 37050,
+       "type": "tag"
+      },
+      {
+       "id": 73204,
+       "type": "tag"
+      },
+      {
+       "id": 73319,
+       "type": "tag"
+      },
+      {
+       "id": 74684,
+       "type": "tag"
+      }
+     ]
+    },
+    "company": {
+     "data": {
+      "id": "ryc-consultores",
+      "type": "company",
+      "attributes": {
+       "name": "RyC Tech Group",
+       "description": "Soluciones de negocio basadas en tecnolog\u00eda",
+       "long_description": "<p>RyC Group es el motor que transforma tus ideas en realidades, combinando tu n",
+       "projects": "<p>Nuestro cliente se encuentra desarrollando una plataforma de factura electr\u00f3n",
+       "benefits": "<ol><li>Aguinaldos en marzo, septiembre y diciembre.</li><li>Seguro de salud com",
+       "web": "https://ryctechgroup.com",
+       "twitter": "",
+       "github": "",
+       "facebook": "",
+       "angellist": "",
+       "country": "CL",
+       "response_time_in_days": {
+        "min": null,
+        "max": null
+       },
+       "logo": "https://getonbrd-prod.s3.amazonaws.com/uploads/users/logo/8958/logo-1.png"
+      }
+     }
+    }
+   },
+   "links": {
+    "public_url": "https://www.getonbrd.com/jobs/desarrollador-a-salesforce-intermedio-ryc-tech-group-santiago"
+   }
+  },
+  {
+   "id": "backend-software-engineer-zaelot-remote-fbc2",
+   "type": "job",
+   "attributes": {
+    "title": "Back-end Software Engineer",
+    "description_headline": "What we\u2019re looking for",
+    "description": "<p>For us, Senior isn\u2019t a matter of years or of how many technologies you know. It\u2019s how you work:</p><ul><li>You understand the problem before you solve it. You ask what the business or user actually needs, and sometimes the right answer is not to build anything.</li><li>You choose the simplest solution that works.</li><li>To you, complexity is a cost.</li><li>You make trade-offs explicit and explain your reasoning.</li><li>You own outcomes, not tasks.</li><li>You surface risks early, say when ",
+    "projects": "<p>At Zaelot, we are a progressive team-building company that specializes in developing scalable solutions for our enterprise clients. Our team consists of over 90 dedicated professionals across 9 different countries, fostering a culture of trust, innovation, and collaboration. We prioritize continuous learning and improvement, ensuring that our employees are equipped with the skills needed to thrive in a rapidly changing tech landscape. Joining us as a Senior QA Analyst means becoming part of a",
+    "functions_headline": "What you\u2019ll do",
+    "functions": "<ul><li>Build product features end to end on the backend, from the API to the database</li><li>Connect the platform with hotel suppliers, booking systems, payment providers and AI services, and keep those connections reliable when the other side isn\u2019t</li><li>Design and run the background jobs that keep bookings, payments and data in sync</li><li>Evolve the database of a live product without interrupting the people who rely on it</li><li>Write short technical proposals before big changes, and re",
+    "benefits_headline": "",
+    "benefits": "",
+    "desirable_headline": "Nice to have",
+    "desirable": "<ul><li>Experience in the travel industry (hotels, airlines, cruises, booking systems)</li><li>Experience with payments or financial flows (Stripe, invoicing, payouts)</li><li>You\u2019ve shipped AI-powered features to real users</li><li>Familiarity with Docker, Kubernetes or AWS</li></ul>",
+    "remote": true,
+    "remote_modality": "fully_remote",
+    "remote_zone": null,
+    "countries": [
+     "Remote"
+    ],
+    "lang": "en",
+    "category_name": "Programming",
+    "min_salary": 4000,
+    "max_salary": 6500,
+    "published_at": 1791378545,
+    "response_time_in_days": {
+     "min": null,
+     "max": null
+    },
+    "applications_count": 322,
+    "location_regions": {
+     "data": []
+    },
+    "location_tenants": {
+     "data": []
+    },
+    "location_cities": {
+     "data": []
+    },
+    "modality": {
+     "data": {
+      "id": 1,
+      "type": "modality"
+     }
+    },
+    "seniority": {
+     "data": {
+      "id": 4,
+      "type": "seniority"
+     }
+    },
+    "tags": {
+     "data": [
+      {
+       "id": 18,
+       "type": "tag"
+      },
+      {
+       "id": 82,
+       "type": "tag"
+      },
+      {
+       "id": 51,
+       "type": "tag"
+      },
+      {
+       "id": 17199,
+       "type": "tag"
+      },
+      {
+       "id": 36809,
+       "type": "tag"
+      },
+      {
+       "id": 19534,
+       "type": "tag"
+      },
+      {
+       "id": 4888,
+       "type": "tag"
+      },
+      {
+       "id": 267,
+       "type": "tag"
+      }
+     ]
+    },
+    "company": {
+     "data": {
+      "id": "zaelot-uy",
+      "type": "company",
+      "attributes": {
+       "name": "Zaelot",
+       "description": "Zaelot is a team-building company focused on developing scalable solutions for e",
+       "long_description": "<div>Our team is composed of top-notch professionals who bring creativity, visio",
+       "projects": "<p>Our team is composed of top-notch professionals who bring creativity, vision,",
+       "benefits": "<ul><li>20 days of paid vacation after completing one year with the company, pro",
+       "web": "http://zaelot.com",
+       "twitter": "",
+       "github": "",
+       "facebook": "",
+       "angellist": "",
+       "country": "UY",
+       "response_time_in_days": {
+        "min": 12,
+        "max": 24
+       },
+       "logo": "https://getonbrd-prod.s3.amazonaws.com/uploads/users/logo/15945/zaelot_logo.jpeg"
+      }
+     }
+    }
+   },
+   "links": {
+    "public_url": "https://www.getonbrd.com/jobs/backend-software-engineer-zaelot-remote-fbc2"
+   }
+  },
+  {
+   "id": "product-builder-comunidadfeliz-remote-a23e",
+   "type": "job",
+   "attributes": {
+    "title": "Product Builder",
+    "description_headline": "\u00bfQu\u00e9 necesitas para postular?",
+    "description": "<ul><li><sup>3 o m\u00e1s a\u00f1os de experiencia como Product Builder o Software Engineer.</sup></li><li><sup>Al menos 2 a\u00f1os desarrollando en Ruby on Rails.</sup></li><li><sup>Experiencia trabajando en startups.</sup></li><li><sup>Experiencia participando activamente en decisiones del producto.</sup></li></ul>",
+    "projects": "<p>ComunidadFeliz es una empresa SaaS para la administraci\u00f3n edificios y condominios.<br>Nos llamamos Comunidad Feliz porque creemos que podemos cambiar la realidad de las comunidades, darles herramientas para tomar decisiones correctas, apoyo para una buena gesti\u00f3n y sana comunicaci\u00f3n entre vecinos, finalmente, crear una Comunidad Feliz</p><p>\u00a1\u00danete a nuestro equipo de tecnolog\u00eda como Product Builder</p><p>En ComunidadFeliz buscamos <strong>Product Builders</strong>: software engineers que no s",
+    "functions_headline": "\u00bfQu\u00e9 desaf\u00edos enfrentar\u00e1s?",
+    "functions": "<ul><li><sup>Experiencia s\u00f3lida y demostrable como Product Builder y/o Software Engineer.</sup></li><li><sup>Dominio y experiencia en tecnolog\u00edas de backend como Ruby y Ruby on Rails.</sup></li><li><sup>Experiencia escribiendo pruebas automatizadas con RSpec, incluyendo pruebas unitarias, de integraci\u00f3n y pruebas para controladores o servicios en aplicaciones Ruby on Rails.</sup></li><li><sup>Experiencia trabajando con bases de datos relacionales y/o no relacionales (ej. PostgreSQL, MySQL, Mongo",
+    "benefits_headline": "Beneficios",
+    "benefits": "<p><strong>Trabajo Remoto \ud83c\udfe0</strong>: Tenemos una cultura remota que prioriza los valores y herramientas remotas.</p><p><strong>Excelente Cultura \ud83c\udf89</strong>: Mensualmente fomentamos la cultura mediante 2 eventos digitales a nivel empresa y 1 evento a nivel de equipo.</p><p><strong>D\u00eda Libre el D\u00eda de tu Cumplea\u00f1os \ud83c\udf82</strong>.</p><p><strong>Viernes Corto \ud83d\udd54</strong>: \u00a1Los d\u00edas viernes se sale a las 17:00 hrs!</p><p><strong>15 D\u00edas de Vacaciones al A\u00f1o \ud83c\udf34</strong>.</p><p><strong>Desarrollo de Carrer",
+    "desirable_headline": "",
+    "desirable": "",
+    "remote": true,
+    "remote_modality": "remote_local",
+    "remote_zone": null,
+    "countries": [
+     "Remote"
+    ],
+    "lang": "es",
+    "category_name": "Programming",
+    "min_salary": 1400,
+    "max_salary": 2000,
+    "published_at": 1791495734,
+    "response_time_in_days": {
+     "min": null,
+     "max": null
+    },
+    "applications_count": 44,
+    "location_regions": {
+     "data": []
+    },
+    "location_tenants": {
+     "data": [
+      {
+       "id": 1,
+       "type": "location_tenant"
+      }
+     ]
+    },
+    "location_cities": {
+     "data": []
+    },
+    "modality": {
+     "data": {
+      "id": 1,
+      "type": "modality"
+     }
+    },
+    "seniority": {
+     "data": {
+      "id": 3,
+      "type": "seniority"
+     }
+    },
+    "tags": {
+     "data": [
+      {
+       "id": 4,
+       "type": "tag"
+      },
+      {
+       "id": 3,
+       "type": "tag"
+      },
+      {
+       "id": 5210,
+       "type": "tag"
+      },
+      {
+       "id": 225,
+       "type": "tag"
+      },
+      {
+       "id": 2536,
+       "type": "tag"
+      },
+      {
+       "id": 1608,
+       "type": "tag"
+      }
+     ]
+    },
+    "company": {
+     "data": {
+      "id": "comunidadfeliz-cl",
+      "type": "company",
+      "attributes": {
+       "name": "ComunidadFeliz",
+       "description": "Te est\u00e1bamos esperando.\n\u00a1Somos la comunidad de gente talentosa, rara y con ganas",
+       "long_description": "<p>Somos un socio de las y los administradores, una herramienta de transparencia",
+       "projects": "<p>&nbsp;ComunidadFeliz es una empresa SaaS para la administraci\u00f3n edificios y c",
+       "benefits": "<h3><h3><br></h3><h3><br></h3><h3><strong>Beneficios<br></strong><br></h3></h3><",
+       "web": "http://www.comunidadfeliz.com/",
+       "twitter": "comunidadfeliz",
+       "github": "",
+       "facebook": "comunidadfeliz.cl",
+       "angellist": "",
+       "country": "CL",
+       "response_time_in_days": {
+        "min": 15,
+        "max": 29
+       },
+       "logo": "https://getonbrd-prod.s3.amazonaws.com/uploads/users/logo/3329/Isotipo.png"
+      }
+     }
+    }
+   },
+   "links": {
+    "public_url": "https://www.getonbrd.com/jobs/product-builder-comunidadfeliz-remote-a23e"
+   }
+  },
+  {
+   "id": "broken",
+   "type": "job",
+   "attributes": {
+    "title": "No company"
+   }
+  }
+ ],
+ "meta": {
+  "page": 1,
+  "per_page": 5,
+  "total_pages": 3
+ }
+}

@@ -291,3 +291,103 @@ def test_redact_removes_query_credentials_and_env_values(monkeypatch):
     out = redact(text)
     assert "SECRET" not in out and "abcd1234efgh" not in out and "page=1" in out
     assert "app_id=***" in out and "app_key=***" in out
+
+
+# --- Get on Board -----------------------------------------------------------------------
+
+GOB = "https://www.getonbrd.com/api/v0/categories/programming/jobs"
+
+
+def test_getonboard_parse_maps_mode_location_salary_and_link(fixture_json):
+    from jobhunter.sources import getonboard
+
+    jobs = getonboard.parse(fixture_json("getonboard.json"))
+    assert len(jobs) == 4  # the item without a company is skipped, not fatal
+    assert_valid(jobs, "getonboard", count=4)
+    by_title = {j.title: j for j in jobs}
+    hybrid = by_title["Developer Java"]
+    assert hybrid.remote == "hybrid" and hybrid.location == "Chile" and hybrid.salary_min is None
+    assert hybrid.url.startswith("https://www.getonbrd.com/jobs/")
+    assert hybrid.posted_at is not None
+    remote = by_title["Back-end Software Engineer"]
+    assert remote.remote == "remote" and remote.location == "Remote"
+    # monthly USD is annualized (4000-6500 a month)
+    assert (remote.salary_min, remote.salary_max, remote.salary_currency) == (48000, 78000, "USD")
+    local = by_title["Product Builder"]
+    assert local.remote == "remote" and "specific countries" in local.location
+    assert "Developer" in hybrid.description  # headline + sections are joined
+
+
+@respx.mock
+def test_getonboard_walks_pages_and_reports_the_cap(fixture_json):
+    from jobhunter.sources.getonboard import GetOnBoardSource
+
+    def page(n, total):
+        data = fixture_json("getonboard.json")
+        data["meta"] = {"page": n, "per_page": 100, "total_pages": total}
+        return httpx.Response(200, json=data)
+
+    route = respx.get(GOB).mock(side_effect=[page(1, 5), page(2, 5)])
+    source = GetOnBoardSource("programming", max_pages=2)
+    assert len(fetch(source)) == 8 and route.call_count == 2
+    params = route.calls[0].request.url.params
+    assert params["per_page"] == "100" and params["page"] == "1" and "company" in params["expand"]
+    assert "max_pages=2 of 5" in source.note
+
+
+# --- Himalayas --------------------------------------------------------------------------
+
+HIM = "https://himalayas.app/jobs/api/search"
+
+
+def test_himalayas_parse_maps_worldwide_salary_period_and_skips_the_broken(fixture_json):
+    from jobhunter.sources import himalayas
+
+    data = fixture_json("himalayas.json")
+    for job in data["jobs"]:
+        job.pop("expiryDate", None)  # the recorded postings may have expired by now
+    jobs = himalayas.parse(data)
+    assert len(jobs) == 4  # the item without a company and link is skipped
+    assert_valid(jobs, "himalayas", count=4)
+    by_title = {j.title: j for j in jobs}
+    assert all(j.remote == "remote" for j in jobs)
+    worldwide = by_title["Senior Software Engineer"]
+    assert worldwide.location == "Worldwide" and worldwide.salary_min is None
+    hourly = by_title["CFD Engineer - AI Trainer"]
+    assert hourly.salary_min == 50 * 2080 and hourly.salary_currency == "USD"  # hourly annualized
+    annual = by_title["AI Innovation Engineer"]
+    assert (annual.salary_min, annual.salary_max) == (135000, 210000)
+    assert by_title["People Team Business Partner (East Coast)"].location == "United States"
+
+
+def test_himalayas_drops_expired_postings_and_salary_without_currency():
+    from jobhunter.sources import himalayas
+
+    base = {"title": "T", "companyName": "C", "guid": "https://himalayas.app/x", "description": "d"}
+    expired = {**base, "guid": "https://himalayas.app/y", "expiryDate": 1}
+    no_currency = {**base, "minSalary": 100, "maxSalary": 200, "salaryPeriod": "annual"}
+    jobs = himalayas.parse({"jobs": [expired, no_currency]})
+    assert len(jobs) == 1 and jobs[0].salary_min is None
+
+
+@respx.mock
+def test_himalayas_searches_each_seniority_separately_and_dedupes(fixture_json):
+    from jobhunter.sources.himalayas import HimalayasSource
+
+    data = fixture_json("himalayas.json")
+    for job in data["jobs"]:
+        job.pop("expiryDate", None)
+    empty = {"jobs": []}
+
+    def answer(request):
+        page = request.url.params["page"]
+        return httpx.Response(200, json=data if page == "1" else empty)
+
+    route = respx.get(HIM).mock(side_effect=answer)
+    source = HimalayasSource("backend engineer", ["Mid-level", "Senior"], max_pages=3)
+    jobs = fetch(source)
+    assert len(jobs) == 4  # the same postings under both levels are stored once
+    levels = [c.request.url.params.get("seniority") for c in route.calls]
+    assert levels == ["Mid-level", "Mid-level", "Senior", "Senior"]  # stops at the empty page
+    first = route.calls[0].request.url.params
+    assert first["q"] == "backend engineer" and first["sort"] == "recent"

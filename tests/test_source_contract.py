@@ -103,3 +103,12 @@ def test_the_muse_is_on_by_default_and_works_without_a_key(monkeypatch):
     cfg = Config.model_validate({})
     muse = [s for s in build_sources(cfg, []) if s.name == "themuse"]
     assert [s.target for s in muse] == ["Software Engineering"]
+
+
+def test_new_sources_are_on_by_default_and_build_one_instance_per_query(monkeypatch):
+    cfg = Config.model_validate({})
+    built = build_sources(cfg, [])
+    gob = [s.target for s in built if s.name == "getonboard"]
+    him = [s.target for s in built if s.name == "himalayas"]
+    assert gob == ["programming", "sysadmin-devops-qa"]
+    assert him == ["software engineer", "backend engineer"]

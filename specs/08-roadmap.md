@@ -19,6 +19,7 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 - [x] Favorites and company block list — [11](11-favorites-and-blocklist.md)
 - [x] Add a posting by hand (URL or pasted text), scored and packaged on its own — [10](10-manual-postings.md)
 - [x] Frontend redesign: Kinetic Horizon tokens, self-hosted font, mascot, restyled pages, optional dark theme — [18](18-frontend-redesign.md)
+- [x] Get on Board and Himalayas sources (keyless; verified live, 8 matches on the author's criteria) — [14 §7.1](14-new-sources-api-keys.md)
 - [x] The Muse as a new source (keyless, optional key, rate-limit aware) and credential redaction for keyed sources — [14](14-new-sources-api-keys.md)
 - [x] Open source ready: MIT license, CI, contribution files, source registry, `jobhunter init`/`demo`, Docker, user docs, `doctor` fix hints — [19](19-open-source-ready.md)
 - [x] Agent-ready repository: `CLAUDE.md` (commands, definition of done, code map), `AGENTS.md`, `specs/README.md` (index, statuses, template); specs 00-09 brought up to date
@@ -28,7 +29,7 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 
 Suggested order: small and independent first, those that gain from more data later, the ones needed late in a process last.
 
-- [ ] **Get on Board and Himalayas sources** (keyless, LATAM-friendly remote) — [14 §7](14-new-sources-api-keys.md)
+- [ ] **Always five best matches**: hide or reject one and the next-best takes its place; score more postings on one click when there are not enough — [22](22-top-matches.md) · **waiting for the author's answers** to the open questions in §6
 - [ ] **Posting quality**: ghost-job, repost and scam signals; "is it still open?" check — [21](21-posting-quality.md)
 - [ ] **CV importer**: any CV to a marked LaTeX master — [16](16-cv-importer.md)
 - [ ] **First-run setup wizard** in the UI (uses the importer for its CV step) — [15](15-onboarding-wizard.md) · after the importer, or first with the "I have a marked CV / skip" paths

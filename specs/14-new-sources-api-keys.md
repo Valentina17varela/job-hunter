@@ -1,6 +1,6 @@
 # 14 — New sources with free API keys (The Muse first)
 
-**Status:** IN PROGRESS (The Muse and the key handling are done; Adzuna, Jooble and the keyless sources of §7 are not)
+**Status:** IN PROGRESS (The Muse, Get on Board, Himalayas and the key handling are done; Adzuna, Jooble and the other keyless sources of §7 are not)
 
 ## 1. Goal
 
@@ -96,8 +96,8 @@ Not verifiable here (both answer 400/403 without credentials); the facts below c
 
 | Source | Type | Why it is interesting | Endpoint as reported |
 |---|---|---|---|
-| Get on Board | JSON:API | LATAM-heavy tech roles, salaries often published | `https://www.getonbrd.com/api/v0/categories/<category>/jobs` (paginated) |
-| Himalayas | JSON | Remote-first, worldwide | `https://himalayas.app/jobs/api?limit=50` |
+| Get on Board | JSON:API | LATAM-heavy tech roles, salaries often published | **Built** (§7.1) |
+| Himalayas | JSON | Remote-first, worldwide | **Built** (§7.1) |
 | Landing.jobs | JSON | Tech, Europe, relocation | `https://landing.jobs/api/v1/jobs` |
 | JustJoin.it | JSON | Polish/EU tech with salary ranges | `https://justjoin.it/api/candidate-api/offers` |
 | 4 Day Week | JSON | Reduced-hours roles | `https://4dayweek.io/api/jobs` |
@@ -110,3 +110,16 @@ More **company-board ATS** (they register as `ats` values for `companies.yaml`, 
 Order: The Muse (§2), Get on Board, Himalayas, then the rest by value after reading the real data. Each source is its own small task; none is added without checking its terms. Boards that answered with bot protection or were retired in the reviewed project are not attempted.
 
 Task list additions: one task per adapter above; `docs/SUPPORTED_SOURCES.md` row and README sources table updated with each.
+
+### 7.1 Get on Board and Himalayas (built, verified live 2026-10-13)
+
+**Get on Board** — `GET https://www.getonbrd.com/api/v0/categories/{category}/jobs?per_page=100&page=N&expand=["company"]` (JSON:API; `meta.total_pages`; `per_page` up to 100 works; no rate-limit headers seen). Item: `id` (slug), `attributes{title, description/functions/desirable/benefits (+ *_headline), remote, remote_modality (`fully_remote`, `remote_local`, `hybrid`, `no_remote`), countries, min_salary, max_salary, published_at (epoch), lang, company.data.attributes.name}`, `links.public_url`.
+- Mapping: `fully_remote`/`remote_local` → `remote`, `hybrid` → `hybrid`, `no_remote` → `onsite`; location is the country list, `Remote` for fully remote, `Remote, <countries>` or *Remote (specific countries)* for `remote_local`; description joins the headline and section texts; salary is **monthly USD** and is annualized (×12); `posted_at` from `published_at`.
+- Config: `sources.getonboard.categories` (default `programming`, `sysadmin-devops-qa`), `max_pages` (10, 100 postings per page). Postings are often in Spanish.
+
+**Himalayas** — the general feed `https://himalayas.app/jobs/api` has **125,000+** postings (cursor pagination), too many to fetch, so the adapter uses `GET https://himalayas.app/jobs/api/search?q=…&seniority=…&sort=recent&page=N` (20 per page, `limit` is ignored, `totalCount` capped at 5,000). **Only one `seniority` value is honoured per request** (a second one replaces the first), so each level is its own request set. No rate-limit headers seen.
+- Item: `title, companyName, minSalary, maxSalary, salaryPeriod (annual|hourly), currency, seniority[], locationRestrictions[] (empty = worldwide), description, pubDate, expiryDate, applicationLink, guid`.
+- Mapping: always `remote`; location is the restriction list or *Worldwide*; salary annualized by period and **dropped when no currency is given**; expired postings (`expiryDate` in the past) are skipped.
+- Config: `sources.himalayas.queries` (default `software engineer`, `backend engineer`), `seniority` (`Mid-level`, `Senior`), `max_pages` (5 per query and level).
+
+**Real run** (author's criteria, temp workspace, no keys): 4 source instances, ~30 requests, **732 postings in 8 s** (671 new after dedupe): Get on Board 416 (5 pass), Himalayas 255 (3 pass), **8 pass the filter in total** (The Muse: 0). Salary published in 36 % of Get on Board and 38 % of Himalayas postings. Overlap with the other sources: 1 posting. Rejections: age 259, title 236 + 59, location 86, work mode 14, seniority 6.

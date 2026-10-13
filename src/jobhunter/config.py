@@ -97,6 +97,17 @@ class TheMuseConfig(_Strict):
     max_pages: PositiveInt = 60  # per category, safety cap (20 postings per page)
 
 
+class GetOnBoardConfig(_Strict):
+    categories: list[str] = ["programming", "sysadmin-devops-qa"]
+    max_pages: PositiveInt = 10  # per category, 100 postings per page
+
+
+class HimalayasConfig(_Strict):
+    queries: list[str] = ["software engineer", "backend engineer"]
+    seniority: list[str] = ["Mid-level", "Senior"]  # one request set per level
+    max_pages: PositiveInt = 5  # per query and level, 20 postings per page
+
+
 class SourcesConfig(_Strict):
     aggregators: list[str] = [
         "remotive",
@@ -105,8 +116,12 @@ class SourcesConfig(_Strict):
         "arbeitnow",
         "jobicy",
         "themuse",
+        "getonboard",
+        "himalayas",
     ]
     themuse: TheMuseConfig = TheMuseConfig()
+    getonboard: GetOnBoardConfig = GetOnBoardConfig()
+    himalayas: HimalayasConfig = HimalayasConfig()
     wwr_categories: list[str] = [
         "remote-programming-jobs",
         "remote-back-end-programming-jobs",

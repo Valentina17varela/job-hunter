@@ -1,12 +1,19 @@
 # Default configuration. Personal values (search criteria, salary, tone) are filled in
 # when the feature that uses them is set up; see specs/04-filtering.md and specs/07-cli-config.md.
 sources:
-  aggregators: [remotive, remoteok, weworkremotely, arbeitnow, jobicy, themuse]
+  aggregators: [remotive, remoteok, weworkremotely, arbeitnow, jobicy, themuse, getonboard, himalayas]
   themuse:                     # works without a key; THEMUSE_API_KEY (optional) raises the limit
     categories: ["Software Engineering"]
     levels: ["Mid Level", "Senior Level"]
     locations: ["Flexible / Remote"]
     max_pages: 60              # per category, 20 postings per page
+  getonboard:                  # LATAM-heavy tech roles; salaries are monthly USD
+    categories: ["programming", "sysadmin-devops-qa"]
+    max_pages: 10              # per category, 100 postings per page
+  himalayas:                   # remote jobs worldwide, searched by query and seniority
+    queries: ["software engineer", "backend engineer"]
+    seniority: ["Mid-level", "Senior"]
+    max_pages: 5               # per query and level, 20 postings per page
   wwr_categories:
     - remote-programming-jobs
     - remote-back-end-programming-jobs
