@@ -20,7 +20,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from jobhunter import applications, config_edit, favorites, fetch_url, latex, postings, tailoring
 from jobhunter.config import Config, ConfigError, load_config
 from jobhunter.db import connect
-from jobhunter.doctor import run_checks
+from jobhunter.doctor import run_checks, source_keys
 from jobhunter.filters import JobFilter, job_from_row, normalize_company
 from jobhunter.sources import registry as sources_registry
 from jobhunter.web.runner import RUN_SPECS, Busy, RunError, RunManager
@@ -411,7 +411,7 @@ def create_app(
                 cv = str(exc)
         return render(
             request, "settings.html", active="settings", config=config.model_dump(mode="json"),
-            config_path=str(config_path), cv=cv,
+            config_path=str(config_path), cv=cv, source_keys=source_keys(config),
         )  # fmt: skip
 
     # -- files -----------------------------------------------------------------------------

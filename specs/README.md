@@ -31,7 +31,7 @@ A spec is **approved** when the author says so in the conversation or the PR; ag
 | 11 | [Favorites and block list](11-favorites-and-blocklist.md) | DONE | `favorites.py`, `filters.py` | `test_favorites` |
 | 12 | [Interview prep kit](12-interview-prep.md) | PLANNED | — | — |
 | 13 | [Market insights](13-market-insights.md) | PLANNED | — | — |
-| 14 | [New sources and API keys](14-new-sources-api-keys.md) | PLANNED | — | — |
+| 14 | [New sources and API keys](14-new-sources-api-keys.md) | IN PROGRESS | `sources/themuse.py`, `http.py` (`redact`), `doctor.py` | `test_sources`, `test_source_contract` |
 | 15 | [First-run setup wizard](15-onboarding-wizard.md) | PLANNED | — | — |
 | 16 | [CV importer](16-cv-importer.md) | PLANNED | — | — |
 | 17 | [Offer negotiation helper](17-offer-negotiation.md) | PLANNED | — | — |

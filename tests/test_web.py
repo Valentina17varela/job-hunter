@@ -670,3 +670,13 @@ def test_light_is_the_default_theme(env):
     css = client.get("/static/tokens.css", headers=HOST).text
     assert "prefers-color-scheme" not in css and 'data-theme="dark"' in css
     assert 'data-theme="dark"' not in client.get("/", headers=HOST).text
+
+
+def test_settings_shows_key_status_without_the_value(env, monkeypatch):
+    monkeypatch.setenv("THEMUSE_API_KEY", "super-secret-value")
+    html = env[0].get("/settings", headers=HOST).text
+    assert "THEMUSE_API_KEY" in html and "<b>set</b>" in html
+    assert "super-secret-value" not in html
+    monkeypatch.delenv("THEMUSE_API_KEY")
+    html = env[0].get("/settings", headers=HOST).text
+    assert "not set" in html and "(optional)" in html

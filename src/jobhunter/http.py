@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import re
 from collections import defaultdict
 from types import TracebackType
 from typing import Any
@@ -11,6 +13,22 @@ from urllib.parse import urlparse
 import httpx
 
 USER_AGENT = "jobhunter/0.1 (personal use)"
+
+# Names of environment variables that hold credentials; sources register theirs (spec 14 §3).
+SECRET_ENV_NAMES: set[str] = set()
+_SECRET_PARAM = re.compile(
+    r"(?i)\b(api_key|app_id|app_key|apikey|key|token|access_token)=[^&\s'\"]+"
+)
+
+
+def redact(text: str) -> str:
+    """Remove credentials from text that may be logged or shown: query values and env values."""
+    text = _SECRET_PARAM.sub(r"\1=***", text)
+    for name in SECRET_ENV_NAMES:
+        value = os.environ.get(name)
+        if value and len(value) >= 4:
+            text = text.replace(value, "***")
+    return text
 
 
 class FetchError(Exception):
@@ -64,24 +82,26 @@ class HttpClient:
                 try:
                     response = await self._client.get(url, params=params)
                 except httpx.HTTPError as exc:
-                    last_error = f"{type(exc).__name__}: {exc}"
+                    last_error = redact(f"{type(exc).__name__}: {exc}")
                 else:
                     if response.status_code < 400:
                         return response
                     last_error = f"HTTP {response.status_code}"
                     retryable = response.status_code == 429 or response.status_code >= 500
                     if not retryable:
-                        raise FetchError(f"{last_error} for {url}", status=response.status_code)
+                        raise FetchError(
+                            redact(f"{last_error} for {url}"), status=response.status_code
+                        )
             if attempt < self._retries - 1:
                 await asyncio.sleep(self._backoff * 2**attempt)
-        raise FetchError(f"{last_error} for {url} after {self._retries} attempts")
+        raise FetchError(redact(f"{last_error} for {url} after {self._retries} attempts"))
 
     async def get_json(self, url: str, params: dict[str, Any] | None = None) -> Any:
         response = await self.get(url, params)
         try:
             return response.json()
         except ValueError as exc:
-            raise FetchError(f"Invalid JSON from {url}: {exc}") from exc
+            raise FetchError(redact(f"Invalid JSON from {url}: {exc}")) from exc
 
     async def get_text(self, url: str, params: dict[str, Any] | None = None) -> str:
         return (await self.get(url, params)).text

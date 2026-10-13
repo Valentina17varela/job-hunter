@@ -90,6 +90,13 @@ class PathsConfig(_Strict):
     out: Path = Path("out")
 
 
+class TheMuseConfig(_Strict):
+    categories: list[str] = ["Software Engineering"]
+    levels: list[str] = ["Mid Level", "Senior Level"]
+    locations: list[str] = ["Flexible / Remote"]
+    max_pages: PositiveInt = 60  # per category, safety cap (20 postings per page)
+
+
 class SourcesConfig(_Strict):
     aggregators: list[str] = [
         "remotive",
@@ -97,7 +104,9 @@ class SourcesConfig(_Strict):
         "weworkremotely",
         "arbeitnow",
         "jobicy",
+        "themuse",
     ]
+    themuse: TheMuseConfig = TheMuseConfig()
     wwr_categories: list[str] = [
         "remote-programming-jobs",
         "remote-back-end-programming-jobs",

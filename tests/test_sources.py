@@ -196,3 +196,98 @@ def test_aggregator_fetch_endpoints(fixture_json, fixture_text):
     assert len(fetch(agg.RemoteOkSource())) == 3
     assert len(fetch(agg.JobicySource())) == 3
     assert len(fetch(agg.WeWorkRemotelySource("remote-programming-jobs"))) == 3
+
+
+# --- The Muse ---------------------------------------------------------------------------
+
+MUSE = "https://www.themuse.com/api/public/jobs"
+
+
+def muse_page(fixture_json, page, page_count, remaining="499"):
+    data = fixture_json("themuse.json")
+    data["page"], data["page_count"] = page, page_count
+    return httpx.Response(200, json=data, headers={"x-ratelimit-remaining": remaining})
+
+
+def test_themuse_parse_maps_remote_location_company_and_link(fixture_json):
+    from jobhunter.sources import themuse
+
+    jobs = themuse.parse(fixture_json("themuse.json"))
+    assert len(jobs) == 4  # the malformed item (no company) is skipped, not fatal
+    first = jobs[0]
+    assert first.source == "themuse" and first.remote == "remote"
+    assert first.location == "Flexible / Remote; Mexico City, Mexico"
+    assert first.url.startswith("https://www.themuse.com/jobs/")
+    assert first.posted_at is not None and first.company and first.description
+    assert all(j.remote == "remote" for j in jobs)  # every fixture item lists Flexible / Remote
+    assert_valid(jobs, "themuse", count=4)
+
+
+@respx.mock
+def test_themuse_walks_pages_with_the_configured_filters(fixture_json, monkeypatch):
+    from jobhunter.sources.themuse import TheMuseSource
+
+    monkeypatch.delenv("THEMUSE_API_KEY", raising=False)
+    route = respx.get(MUSE).mock(
+        side_effect=[muse_page(fixture_json, 1, 2), muse_page(fixture_json, 2, 2)]
+    )
+    source = TheMuseSource(
+        "Software Engineering", ["Mid Level", "Senior Level"], ["Flexible / Remote"]
+    )
+    jobs = fetch(source)
+    assert len(jobs) == 8 and source.note is None
+    first = route.calls[0].request.url.params
+    assert first["category"] == "Software Engineering" and first["page"] == "1"
+    assert first.get_list("level") == ["Mid Level", "Senior Level"]
+    assert first.get_list("location") == ["Flexible / Remote"]
+    assert "api_key" not in first and route.calls[1].request.url.params["page"] == "2"
+
+
+@respx.mock
+def test_themuse_stops_at_max_pages_and_says_so(fixture_json):
+    from jobhunter.sources.themuse import TheMuseSource
+
+    respx.get(MUSE).mock(side_effect=lambda r: muse_page(fixture_json, 1, 50))
+    source = TheMuseSource("Software Engineering", [], [], max_pages=3)
+    assert len(fetch(source)) == 12
+    assert "max_pages=3" in source.note
+
+
+@respx.mock
+def test_themuse_stops_cleanly_when_the_rate_limit_is_nearly_used_up(fixture_json):
+    from jobhunter.sources.themuse import TheMuseSource
+
+    route = respx.get(MUSE).mock(
+        side_effect=[muse_page(fixture_json, 1, 5, remaining="500"),
+                     muse_page(fixture_json, 2, 5, remaining="12"),
+                     muse_page(fixture_json, 3, 5, remaining="11")]
+    )  # fmt: skip
+    source = TheMuseSource("Software Engineering", [], [])
+    jobs = fetch(source)
+    assert len(jobs) == 8 and route.call_count == 2  # nothing lost, no further requests
+    assert "12 requests" in source.note and "next run" in source.note
+
+
+@respx.mock
+def test_themuse_key_is_optional_and_never_leaks(fixture_json, monkeypatch):
+    from jobhunter.http import FetchError
+    from jobhunter.sources.themuse import TheMuseSource
+
+    monkeypatch.setenv("THEMUSE_API_KEY", "secret-muse-key-123")
+    route = respx.get(MUSE).mock(return_value=httpx.Response(401))
+    try:
+        fetch(TheMuseSource("Software Engineering", [], []))
+        raise AssertionError("expected a FetchError")
+    except FetchError as exc:
+        assert "secret-muse-key-123" not in str(exc)
+    assert route.calls[0].request.url.params["api_key"] == "secret-muse-key-123"
+
+
+def test_redact_removes_query_credentials_and_env_values(monkeypatch):
+    from jobhunter.http import redact
+
+    monkeypatch.setenv("THEMUSE_API_KEY", "abcd1234efgh")
+    text = "GET https://x.test/a?page=1&api_key=SECRET&app_id=1&app_key=2 failed: abcd1234efgh"
+    out = redact(text)
+    assert "SECRET" not in out and "abcd1234efgh" not in out and "page=1" in out
+    assert "app_id=***" in out and "app_key=***" in out

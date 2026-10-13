@@ -97,6 +97,44 @@ def config_hint(missing: bool) -> str:
     )
 
 
+def source_keys(config: Config) -> list[tuple[str, str, bool, bool]]:
+    """(source, ENV_VAR, is_set, optional) for the enabled sources that read a key.
+
+    Only whether the variable is set is ever reported, never its value (spec 14 §3).
+    """
+    from jobhunter.sources import registry
+
+    found = []
+    for name in config.sources.aggregators:
+        info = registry.aggregators().get(name)
+        for env in info.env_keys if info else ():
+            found.append((name, env, bool(os.environ.get(env)), info.key_optional))
+    return found
+
+
+def source_key_checks(config: Config) -> list[Check]:
+    from jobhunter.sources import registry
+
+    checks = []
+    for name, env, is_set, optional in source_keys(config):
+        if is_set:
+            detail = "set"
+        elif optional:
+            detail = "not set (optional: a free key raises the rate limit)"
+        else:
+            detail = "not set (the source is skipped until you set it)"
+        hint = (
+            ""
+            if is_set
+            else (
+                f"Optional: request a free key (see {registry.aggregators()[name].terms_url}) "
+                f"and `export {env}=...` in your shell. Never put it in a file."
+            )
+        )
+        checks.append(Check(f"{name} key", is_set, f"{env} {detail}", required=False, hint=hint))
+    return checks
+
+
 def compile_tex(tex_path: Path, engine: str, timeout: int) -> tuple[bool, str]:
     """Compile a .tex file; returns (ok, detail). Shell escape stays disabled."""
     result = compile_pdf(tex_path.read_text(), engine, timeout, resources=tex_path.parent)
@@ -152,6 +190,7 @@ def run_checks(config_path: Path) -> list[Check]:
     checks.append(Check(f"latex ({engine})", ok, detail, hint=hint))
 
     if config is not None:
+        checks.extend(source_key_checks(config))
         master = config.paths.cv_master
         if master.exists():
             ok, detail = compile_tex(master, engine, timeout)

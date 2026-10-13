@@ -143,3 +143,19 @@ def test_doctor_checks_carry_hints_only_when_failing(tmp_path):
     checks = doctor.run_checks(tmp_path / "missing.yaml")
     for check in checks:
         assert (check.hint != "") == (not check.ok), check.name
+
+
+def test_doctor_reports_whether_the_muse_key_is_set_but_never_its_value(tmp_path, monkeypatch):
+    from jobhunter import doctor
+    from jobhunter.config import Config
+
+    cfg = Config.model_validate({})
+    monkeypatch.delenv("THEMUSE_API_KEY", raising=False)
+    (check,) = doctor.source_key_checks(cfg)
+    assert not check.ok and "optional" in check.detail and "THEMUSE_API_KEY" in check.hint
+    monkeypatch.setenv("THEMUSE_API_KEY", "super-secret-value")
+    (check,) = doctor.source_key_checks(cfg)
+    assert check.ok and check.detail == "THEMUSE_API_KEY set"
+    assert "super-secret-value" not in repr(check)
+    no_muse = Config.model_validate({"sources": {"aggregators": ["remotive"]}})
+    assert doctor.source_key_checks(no_muse) == []

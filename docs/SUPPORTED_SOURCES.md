@@ -12,3 +12,4 @@ Generated from the source registry by `scripts/check_docs.py --write`; do not ed
 | `ashby` | company board (`ats:` in companies.yaml) | Company job boards on Ashby | [link](https://developers.ashbyhq.com/docs/public-job-posting-api) | none |
 | `greenhouse` | company board (`ats:` in companies.yaml) | Company job boards on Greenhouse (boards API) | [link](https://developers.greenhouse.io/job-board.html) | none |
 | `lever` | company board (`ats:` in companies.yaml) | Company postings on Lever | [link](https://github.com/lever/postings-api) | none |
+| `themuse` | aggregator | Jobs from The Muse, filtered by category, level and remote (optional key) | [link](https://www.themuse.com/developers/api/v2) | `THEMUSE_API_KEY` |

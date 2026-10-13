@@ -74,6 +74,8 @@
   <h2>{{ m.icon('search') }} Sources</h2>
   <div class="form-grid">
     {% call field('Job boards to search', 'Company boards (Greenhouse, Lever, Ashby…) come from your company list below.') %}{{ checks('sources.aggregators', config.sources.aggregators, AGGREGATORS) }}{% endcall %}
+    {% if source_keys %}<p class="hint">Keys read from your environment (only “set / not set” is shown, never the value):
+      {% for name, env, is_set, optional in source_keys %}<code>{{ env }}</code> for {{ name }}: <b>{{ 'set' if is_set else 'not set' }}</b>{{ ' (optional)' if optional and not is_set }}{{ '; ' if not loop.last }}{% endfor %}</p>{% endif %}
     {% call field('We Work Remotely categories') %}{{ tags('sources.wwr_categories', config.sources.wwr_categories) }}{% endcall %}
     {% call field('Close a posting after it disappears for (days)') %}{{ number('sources.stale_days', config.sources.stale_days, min=1, width='6rem') }}{% endcall %}
   </div>

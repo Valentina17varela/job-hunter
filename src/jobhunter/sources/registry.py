@@ -11,6 +11,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
+from jobhunter.http import SECRET_ENV_NAMES
+
 if TYPE_CHECKING:
     from jobhunter.config import SourcesConfig
     from jobhunter.sources.base import Source
@@ -28,7 +30,8 @@ class SourceInfo:
     # company boards: builds one instance for a company name and board slug
     factory: Callable[[str, str], Source] | None = None
     probe_url: str | None = None  # company boards: URL template with {slug}, used by check/discover
-    env_keys: tuple[str, ...] = ()  # environment variables the source needs (spec 14)
+    env_keys: tuple[str, ...] = ()  # environment variables the source reads (spec 14 §3)
+    key_optional: bool = False  # True: works without the key (it only raises a limit)
 
 
 _REGISTRY: dict[str, SourceInfo] = {}
@@ -42,6 +45,7 @@ def register(info: SourceInfo) -> SourceInfo:
     if info.kind == "ats" and (info.factory is None or not info.probe_url):
         raise ValueError(f"company board '{info.name}' needs a factory and a probe_url")
     _REGISTRY[info.name] = info
+    SECRET_ENV_NAMES.update(info.env_keys)
     return info
 
 

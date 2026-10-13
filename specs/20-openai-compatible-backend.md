@@ -1,6 +1,6 @@
 # 20 — OpenAI-compatible LLM backend (Ollama, LM Studio, OpenRouter, OpenAI, Groq, Gemini…)
 
-**Status:** PLANNED (spec only, not implemented)
+**Status:** PLANNED (spec only, not implemented). **Scheduled last** by the author: the project runs on Claude (`claude_cli` or `anthropic_api`) until the rest of the roadmap is done; this opens it to other and local models afterwards.
 
 ## 1. Problem
 

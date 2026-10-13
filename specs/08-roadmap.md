@@ -19,6 +19,7 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 - [x] Favorites and company block list — [11](11-favorites-and-blocklist.md)
 - [x] Add a posting by hand (URL or pasted text), scored and packaged on its own — [10](10-manual-postings.md)
 - [x] Frontend redesign: Kinetic Horizon tokens, self-hosted font, mascot, restyled pages, optional dark theme — [18](18-frontend-redesign.md)
+- [x] The Muse as a new source (keyless, optional key, rate-limit aware) and credential redaction for keyed sources — [14](14-new-sources-api-keys.md)
 - [x] Open source ready: MIT license, CI, contribution files, source registry, `jobhunter init`/`demo`, Docker, user docs, `doctor` fix hints — [19](19-open-source-ready.md)
 - [x] Agent-ready repository: `CLAUDE.md` (commands, definition of done, code map), `AGENTS.md`, `specs/README.md` (index, statuses, template); specs 00-09 brought up to date
 - [x] Demo workspace (`scripts/seed_demo.py`) and README
@@ -27,8 +28,6 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 
 Suggested order: small and independent first, those that gain from more data later, the ones needed late in a process last.
 
-- [ ] **OpenAI-compatible LLM backend** (Ollama, LM Studio, OpenRouter, OpenAI, Groq, Gemini) — [20](20-openai-compatible-backend.md) · lets anyone run it without a Claude plan
-- [ ] **The Muse as a new source** (works without a key) — [14](14-new-sources-api-keys.md)
 - [ ] **Get on Board and Himalayas sources** (keyless, LATAM-friendly remote) — [14 §7](14-new-sources-api-keys.md)
 - [ ] **Posting quality**: ghost-job, repost and scam signals; "is it still open?" check — [21](21-posting-quality.md)
 - [ ] **CV importer**: any CV to a marked LaTeX master — [16](16-cv-importer.md)
@@ -41,6 +40,7 @@ Suggested order: small and independent first, those that gain from more data lat
 - [ ] **Interview story bank** (reusable STAR+R stories traceable to the CV) — [12 §12](12-interview-prep.md) · after the interview kit
 - [ ] **Funnel patterns**: which sources and companies advance or ghost you — [13 §12](13-market-insights.md) · needs weeks of real data
 - [ ] **Adzuna and Jooble sources**, once there are keys — [14](14-new-sources-api-keys.md)
+- [ ] **OpenAI-compatible LLM backend** (Ollama, LM Studio, OpenRouter, OpenAI, Groq, Gemini) — [20](20-openai-compatible-backend.md) · deliberately last: the project stays on Claude (subscription or API) until everything else is done, then opens to other models
 
 ## Not specified yet
 

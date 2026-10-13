@@ -1,6 +1,6 @@
 # 14 — New sources with free API keys (The Muse first)
 
-**Status:** PLANNED (spec only, not implemented)
+**Status:** IN PROGRESS (The Muse and the key handling are done; Adzuna, Jooble and the keyless sources of §7 are not)
 
 ## 1. Goal
 
@@ -71,19 +71,24 @@ Not verifiable here (both answer 400/403 without credentials); the facts below c
 
 ## 6. Tasks
 
-- [ ] `sources/themuse.py` adapter, config model, registry entry, fixture + tests.
-- [ ] Rate-limit awareness in `HttpClient` (expose response headers) and early-stop.
-- [ ] Credential redaction in `HttpClient`/`fetch_log` + tests; `doctor` and Settings "key set / not set".
+- [x] `sources/themuse.py` adapter, `sources.themuse` config model (default on), registry entry, trimmed real fixture + tests (`tests/test_sources.py`, `tests/test_source_contract.py`).
+- [x] Rate-limit awareness: the adapter reads `x-ratelimit-remaining` from the response headers and stops cleanly below 20 left, saying so in `fetch_log` (the `error` column of an `ok` row carries the note; nothing is lost, the next run continues); `max_pages` stop is noted the same way.
+- [x] Credential redaction (`http.redact`, applied to every `FetchError`, the pipeline's error text and `fetch_log`); sources register the env names they read; `doctor` and Settings → Sources show "set / not set" only; a source with a required key is skipped with a warning (`tests/test_cli_doctor.py`, `tests/test_web.py`, `tests/test_sources.py`).
 - [ ] Optional seniority hint from `levels`.
-- [ ] Real run: compare matches from The Muse against existing sources and record the findings in this spec.
+- [x] Real run (2026-10-12, temp workspace with the author's `search` criteria, no keys): 43 requests, ~15 s, **813 postings** (the live API had ~833 for remote Software Engineering, mid+senior). Findings below.
 - [ ] Adzuna and Jooble adapters (after keys exist), then update this spec with the verified facts.
-- [ ] README (sources table, env vars, config) and this spec marked done.
+- [x] README (Sources section, env var, config) and generated `docs/SUPPORTED_SOURCES.md`.
 
-## 7. Acceptance criteria
+### 6.1 Findings from the real run (The Muse, author's criteria)
 
-- [ ] `jobhunter run --stage search` includes The Muse and finishes within its keyless hourly limit.
-- [ ] Without any key the tool still works; with a key set the key never appears anywhere visible.
-- [ ] A decision recorded here: does The Muse add enough new matches to keep it enabled?
+- **0 of 813 pass the author's filter.** Rejected by: age 497 (`max_age_days: 30`), title not matching `titles_include` 183, `titles_exclude` 75, `locations_allowed` 34, seniority 24. Re-running the filter with **no age limit** still passes **0**: 479 titles do not match the wanted roles (the *Software Engineering* category includes hardware, security, systems and solutions roles), 185 hit `titles_exclude`, 103 name locations outside the allowed list, 46 fail seniority.
+- **Dates are unreliable**: the median `publication_date` is 42 days old, 135 postings are over a year old (evergreen listings), so the age rule discards 61 % of the feed. They are not necessarily closed; whether to treat The Muse like a company board (open while listed, no age limit) is an open question.
+- **Overlap**: about 10 % (78) of the postings also exist in the other sources (same normalized company and title) and are marked duplicate by the existing rule.
+- Conclusion: The Muse is correct and cheap, but **adds little for this criteria set** (US-centred, many non-backend roles). It stays on by default because it costs one request per 20 postings and costs nothing otherwise; the person can switch it off in Settings → Sources. A narrower `categories` list (e.g. add *Data and Analytics*, drop none) or other sources (Get on Board, Himalayas) are likelier to help.
+
+## Open question
+
+- Should The Muse postings skip `max_age_days` (like company boards)? Left as is until the author decides.
 
 ## 7. More keyless sources (from reviewing career-ops)
 

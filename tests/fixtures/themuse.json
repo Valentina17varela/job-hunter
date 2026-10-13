@@ -1,0 +1,171 @@
+{
+ "page": 1,
+ "page_count": 42,
+ "items_per_page": 20,
+ "took": 8,
+ "timed_out": false,
+ "total": 833,
+ "results": [
+  {
+   "contents": "<p><b>About the team</b><br><br>As a Senior Systems Engineer within Zillow Rentals, you'll help design, build, and operate the core infrastructure that powers the Zillow Rentals experience.  Our team owns shared cloud platform infrastructure and cross-cloud networking that supports more than 150 engineers across the Rentals organization. You'll partner closely with backend, frontend, and data teams to provide secure, reliable, and scalable foundations for customer-facing products.<br><br><b>About the role</b><br><br>In this role, you'll be a hands-on contributor to infrastructure and developer",
+   "name": "Senior Systems Engineer",
+   "type": "external",
+   "publication_date": "2026-07-07T18:29:34Z",
+   "short_name": "senior-systems-engineer",
+   "model_type": "jobs",
+   "id": 21527730,
+   "locations": [
+    {
+     "name": "Flexible / Remote"
+    },
+    {
+     "name": "Mexico City, Mexico"
+    }
+   ],
+   "categories": [
+    {
+     "name": "Software Engineering"
+    }
+   ],
+   "levels": [
+    {
+     "name": "Senior Level",
+     "short_name": "senior"
+    }
+   ],
+   "tags": [
+    {
+     "name": "Fast Growing Companies",
+     "short_name": "fast-growing-companies"
+    }
+   ],
+   "refs": {
+    "landing_page": "https://www.themuse.com/jobs/zillow/senior-systems-engineer"
+   },
+   "company": {
+    "id": 15000601,
+    "short_name": "zillow",
+    "name": "Zillow"
+   }
+  },
+  {
+   "contents": "<p><b>Description</b><br><br><b>Looking for an opportunity to make an impact?</b><br><br>At Leidos, we deliver innovative solutions through the efforts of our diverse and talented people who are<br><br>dedicated to our customers' success. We empower our teams, contribute to our communities, and operate sustainable. Everything we do is built on a dedication to do the right thing for our customers, our people, and our community. Our Mission, Vision, and Values guide the way we do business.<br><br>If this sounds like the type of environment where you can thrive, keep reading!<br><br>The Force Pro",
+   "name": "Sensor Integration Engineer",
+   "type": "external",
+   "publication_date": "2026-07-15T19:18:43Z",
+   "short_name": "sensor-integration-engineer",
+   "model_type": "jobs",
+   "id": 21950974,
+   "locations": [
+    {
+     "name": "Flexible / Remote"
+    }
+   ],
+   "categories": [
+    {
+     "name": "Software Engineering"
+    }
+   ],
+   "levels": [
+    {
+     "name": "Senior Level",
+     "short_name": "senior"
+    }
+   ],
+   "tags": [],
+   "refs": {
+    "landing_page": "https://www.themuse.com/jobs/leidos/sensor-integration-engineer"
+   },
+   "company": {
+    "id": 15000275,
+    "short_name": "leidos",
+    "name": "Leidos"
+   }
+  },
+  {
+   "contents": "<p><b>Description</b><br><br><strong> About Us </strong>  <br>  <br> We're on a mission to build the world's most advanced self-driving vehicles to safely connect people to the places, things, and experiences they care about. At GM's Autonomous Vehicle (AV) organization, we're combining cutting-edge research, robust engineering, and large-scale systems to make this future a reality. Our team is developing national-scale, next-generation mapping systems from the ground up-combining robust backend infrastructure with intuitive, performant user interfaces.<br><br><strong> The Role </strong>  <br>",
+   "name": "Senior Fullstack/Frontend Engineer",
+   "type": "external",
+   "publication_date": "2026-09-29T22:06:56Z",
+   "short_name": "senior-fullstackfrontend-engineer",
+   "model_type": "jobs",
+   "id": 21310513,
+   "locations": [
+    {
+     "name": "Austin, TX"
+    },
+    {
+     "name": "Flexible / Remote"
+    },
+    {
+     "name": "Mountain View, CA"
+    },
+    {
+     "name": "Sunnyvale, CA"
+    }
+   ],
+   "categories": [
+    {
+     "name": "Software Engineering"
+    }
+   ],
+   "levels": [
+    {
+     "name": "Senior Level",
+     "short_name": "senior"
+    }
+   ],
+   "tags": [],
+   "refs": {
+    "landing_page": "https://www.themuse.com/jobs/generalmotors/senior-fullstackfrontend-engineer"
+   },
+   "company": {
+    "id": 15000069,
+    "short_name": "generalmotors",
+    "name": "General Motors"
+   }
+  },
+  {
+   "contents": "<div><p>GitLab is the intelligent orchestration platform for DevSecOps. GitLab enables organizations to increase developer productivity, improve operational efficiency, reduce security and compliance risk, and accelerate digital transformation. More than 50 million registered users and more than 50% of the Fortune 100* trust GitLab to ship better, more secure software faster.</p>\n<p>The same principles built into our products are reflected in how our team works: we embrace AI as a core productivity multiplier, with all team members expected to incorporate AI into their daily workflows to drive",
+   "name": "Backend Engineer (Ruby), AI Engineering: Agent Foundations",
+   "type": "external",
+   "publication_date": "2026-10-01T18:39:13Z",
+   "short_name": "backend-engineer-ruby-ai-engineering-agent-foundations",
+   "model_type": "jobs",
+   "id": 21928534,
+   "locations": [
+    {
+     "name": "Flexible / Remote"
+    }
+   ],
+   "categories": [
+    {
+     "name": "Software Engineering"
+    }
+   ],
+   "levels": [
+    {
+     "name": "Mid Level",
+     "short_name": "mid"
+    }
+   ],
+   "tags": [],
+   "refs": {
+    "landing_page": "https://www.themuse.com/jobs/gitlab/backend-engineer-ruby-ai-engineering-agent-foundations"
+   },
+   "company": {
+    "id": 15000088,
+    "short_name": "gitlab",
+    "name": "GitLab"
+   }
+  },
+  {
+   "id": 1,
+   "name": "No company here",
+   "locations": [],
+   "contents": "x",
+   "refs": {}
+  }
+ ],
+ "aggregations": []
+}

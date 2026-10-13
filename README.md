@@ -73,7 +73,7 @@ You can also build a package **by hand for any posting** you like, whatever its 
 graph TD
     subgraph Sources["Public job boards"]
         ATS["Company boards<br/>Greenhouse · Lever · Ashby"]
-        AGG["Aggregators<br/>Remotive · RemoteOK · WWR<br/>Arbeitnow · Jobicy"]
+        AGG["Aggregators<br/>Remotive · RemoteOK · WWR<br/>Arbeitnow · Jobicy · The Muse"]
     end
 
     subgraph You["You (CLI or web UI)"]
@@ -381,6 +381,21 @@ Every command that reads settings accepts `--config FILE` (default `config/confi
 | `jobhunter letter init` | Create your cover-letter template from the example |
 | `jobhunter companies discover \| check` | Grow / validate the list of company boards |
 | `jobhunter doctor` | Check Python, config, LLM login and LaTeX; under each problem it prints a `fix:` line for your system (macOS, Linux, WSL, Windows, Docker) |
+
+</details>
+
+<details>
+<summary><b>Sources</b></summary>
+
+Only public APIs and feeds (the full table with terms links is [`docs/SUPPORTED_SOURCES.md`](docs/SUPPORTED_SOURCES.md)).
+
+| Source | Notes |
+|---|---|
+| Greenhouse, Lever, Ashby | Company boards from your company list (`companies discover`) |
+| Remotive, RemoteOK, We Work Remotely, Arbeitnow, Jobicy | Remote and EU aggregators; no keys |
+| **The Muse** | Works without a key (500 requests/hour). Configure `sources.themuse` (`categories`, `levels`, `locations`, `max_pages`); a full remote Software Engineering fetch is about 43 requests. An optional free key in the environment variable `THEMUSE_API_KEY` raises the limit. The fetch stops cleanly when few requests are left and says so in the run log; the next run continues |
+
+**Keys** are read only from environment variables, never from `config.yaml`, the database or the UI. `jobhunter doctor` and Settings → Sources show only whether each key is *set* or *not set*, and credentials are removed from error messages and logs. A source that requires a key is skipped with a warning when it is missing.
 
 </details>
 

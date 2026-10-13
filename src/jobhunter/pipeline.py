@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from jobhunter.filters import JobFilter, job_from_row
-from jobhunter.http import HttpClient
+from jobhunter.http import HttpClient, redact
 from jobhunter.models import Job
 from jobhunter.sources.base import Source
 from jobhunter.store import UpsertResult, close_stale, log_fetch, mark_duplicates, upsert_jobs
@@ -33,7 +33,7 @@ async def _fetch_one(source: Source, http: HttpClient) -> tuple[Source, list[Job
     try:
         return source, await source.fetch(http), ""
     except Exception as exc:  # noqa: BLE001 - one failing source must never stop the others
-        return source, None, f"{type(exc).__name__}: {exc}"
+        return source, None, redact(f"{type(exc).__name__}: {exc}")
 
 
 async def fetch_stage(
@@ -58,7 +58,7 @@ async def fetch_stage(
         summary.sources_ok += 1
         summary.jobs_found += len(jobs)
         ok_by_kind[source.name] += 1
-        log_fetch(conn, source.name, source.target, "ok", len(jobs))
+        log_fetch(conn, source.name, source.target, "ok", len(jobs), getattr(source, "note", None))
         fresh = []
         for job in jobs:
             key = (job.source, job.external_id)

@@ -74,3 +74,32 @@ def test_double_registration_is_an_error():
     info = next(iter(ALL.values()))
     with pytest.raises(ValueError, match="twice"):
         registry.register(info)
+
+
+def test_a_source_with_a_required_key_is_skipped_without_it(monkeypatch, caplog):
+    from jobhunter.sources.registry import SourceInfo
+
+    class Fake:
+        name, target = "keyed", ""
+
+        async def fetch(self, http):
+            return []
+
+    info = SourceInfo(
+        name="keyed", kind="aggregator", description="x", terms_url="https://x.test",
+        fixtures=("themuse.json",), build=lambda cfg: [Fake()], env_keys=("KEYED_API_KEY",),
+    )  # fmt: skip
+    monkeypatch.setitem(registry._REGISTRY, "keyed", info)
+    cfg = Config.model_validate({"sources": {"aggregators": ["keyed"]}})
+    monkeypatch.delenv("KEYED_API_KEY", raising=False)
+    assert build_sources(cfg, []) == []
+    assert "KEYED_API_KEY not set" in caplog.text
+    monkeypatch.setenv("KEYED_API_KEY", "x")
+    assert len(build_sources(cfg, [])) == 1
+
+
+def test_the_muse_is_on_by_default_and_works_without_a_key(monkeypatch):
+    monkeypatch.delenv("THEMUSE_API_KEY", raising=False)
+    cfg = Config.model_validate({})
+    muse = [s for s in build_sources(cfg, []) if s.name == "themuse"]
+    assert [s.target for s in muse] == ["Software Engineering"]
