@@ -40,6 +40,7 @@ A spec is **approved** when the author says so in the conversation or the PR; ag
 | 20 | [OpenAI-compatible backend](20-openai-compatible-backend.md) | PLANNED | — | — |
 | 21 | [Posting quality signals](21-posting-quality.md) | PLANNED | — | — |
 | 22 | [Always five best matches](22-top-matches.md) | DONE | `top.py`, `applications.dismiss`, `web/templates/_top.html` | `test_top` |
+| 23 | [Job matches filters: freshness and live filtering](23-job-matches-filters.md) | DONE | `web/app.py` (`/jobs`), `web/static/app.js` | `test_web` |
 
 Keep this table current when a spec is added or changes status.
 

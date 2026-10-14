@@ -295,7 +295,9 @@ def test_the_tabs_come_first_and_a_board_that_holds_every_match_shows_no_empty_s
     db.commit()
     page = http.get("/jobs", headers=HOST).text
     # tabs and filters sit in the same place on every tab; the board comes right after them
-    assert page.index('class="tabs"') < page.index('class="filters"') < page.index('id="top-board"')
+    assert (
+        page.index('class="tabs"') < page.index('class="filterbar"') < page.index('id="top-board"')
+    )
     assert "Nothing here yet" not in page
     assert "already in your top 3 above" in page
     # other tabs have no board and keep their usual empty state

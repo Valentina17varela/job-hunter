@@ -718,3 +718,93 @@ def test_home_points_to_sources_that_exist_but_are_not_enabled(env, tmp_path):
     html = client.get("/", headers=HOST).text
     assert "available but not enabled" in html and "Get on Board" in html and "Himalayas" in html
     assert "/settings#sources" in html
+
+
+# --- freshness filter and live filtering (spec 23) -------------------------------------------
+
+
+def _date_postings(conn):
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC)
+    for job_id, days in ((1, 2), (3, 20)):  # Senior Engineer 2 days old, Platform Engineer 20
+        conn.execute(
+            "UPDATE jobs SET posted_at = ? WHERE id = ?",
+            ((now - timedelta(days=days)).isoformat(), job_id),
+        )
+    conn.execute("UPDATE jobs SET posted_at = NULL WHERE id = 2")  # Sales Manager: undated
+    conn.commit()
+
+
+def test_fresh_filter_keeps_recent_and_undated_postings_and_drops_older_ones(env):
+    client, conn, *_ = env
+    _date_postings(conn)
+    week = client.get("/jobs?status=all&fresh=7", headers=HOST).text
+    assert "Senior Engineer" in week and "Sales Manager" in week  # recent + undated
+    assert "Platform Engineer" not in week  # 20 days old
+    month = client.get("/jobs?status=all&fresh=30", headers=HOST).text
+    assert "Platform Engineer" in month
+    for bad in ("0", "-3", "abc", "99999", ""):
+        page = client.get(f"/jobs?status=all&fresh={bad}", headers=HOST).text
+        assert "Platform Engineer" in page, bad  # an invalid value is ignored, not an error
+
+
+def test_fresh_filter_combines_with_other_filters_and_turns_the_board_off(env):
+    client, conn, *_ = env
+    _date_postings(conn)
+    page = client.get("/jobs?status=all&fresh=30&source=lever", headers=HOST).text
+    assert "Sales Manager" in page and "Senior Engineer" not in page
+    best = client.get("/jobs?status=best", headers=HOST).text
+    filtered = client.get("/jobs?status=best&fresh=7", headers=HOST).text
+    assert 'id="top-board"' in best and 'id="top-board"' not in filtered
+
+
+def test_posted_control_lists_the_options_and_marks_the_configured_rule(env):
+    client = env[0]
+    html = client.get("/jobs?fresh=14", headers=HOST).text
+    select = html.split('name="fresh"')[1].split("</select>")[0]
+    assert "Any time" in select and "last 7 days" in select
+    assert "last 30 days (your rule)" in select  # max_age_days defaults to 30
+    assert select.count("last 30 days") == 1  # no duplicate when the rule is a standard option
+    assert 'value="14" selected' in select
+
+
+def test_filters_form_one_connected_bar_that_applies_live(env):
+    client = env[0]
+    html = client.get("/jobs", headers=HOST).text
+    form = html.split('<form class="filterbar"')[1].split("</form>")[0]
+    for label in ("Source", "Posted", "Score", "Mode", "Sort", "Favorites"):
+        assert label in form, label
+    assert "<noscript>" in form and "Filter</button>" not in form  # no Filter button any more
+    assert 'id="jobs-results"' in html
+    js = client.get("/static/app.js", headers=HOST).text
+    assert "jobs-results" in js and "setTimeout(refresh, 300)" in js and "replaceState" in js
+    assert "data-clear" in js
+    assert "form.filterbar" in js  # the script must target the form the template renders
+
+
+def test_static_files_are_versioned_so_a_cached_script_cannot_hide_the_new_behaviour(env):
+    import re
+
+    html = env[0].get("/jobs", headers=HOST).text
+    for name in ("app.js", "style.css", "tokens.css"):
+        assert re.search(rf"/static/{re.escape(name)}\?v=\d+", html), name
+
+
+def test_active_filters_are_shown_as_removable_chips_and_score_is_a_choice(env):
+    client = env[0]
+    url = "/jobs?status=all&source=ashby&fresh=7&min_score=75&q=platform"
+    page = client.get(url, headers=HOST).text
+    chips = page.split('class="active-filters"')[1].split("</div>")[0]
+    for text in ("Source: Ashby", "Posted: last 7 days", "Score 75+", "“platform”"):
+        assert text in chips
+    assert chips.count("data-clear=") == 4 and "data-clear-all" in chips
+    assert "75+ (your threshold)" in page  # the threshold is one of the options
+    assert 'class="active-filters"' not in client.get("/jobs?status=all", headers=HOST).text
+    # the score control makes no sense on the filtered-out tab, which has no scores
+    assert 'name="min_score"' not in client.get("/jobs?status=filtered", headers=HOST).text
+
+
+def test_settings_points_to_the_posted_filter(env):
+    html = env[0].get("/settings", headers=HOST).text
+    assert "Posted</b> filter" in html

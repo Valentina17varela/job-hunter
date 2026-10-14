@@ -19,6 +19,7 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 - [x] Favorites and company block list — [11](11-favorites-and-blocklist.md)
 - [x] Add a posting by hand (URL or pasted text), scored and packaged on its own — [10](10-manual-postings.md)
 - [x] Frontend redesign: Kinetic Horizon tokens, self-hosted font, mascot, restyled pages, optional dark theme — [18](18-frontend-redesign.md)
+- [x] Job matches: *Posted* (freshness) filter and filters that apply as you choose — [23](23-job-matches-filters.md)
 - [x] Always five best matches: Top matches board, *Not for me* with suggestion-only reasons, one-click fill — [22](22-top-matches.md)
 - [x] Get on Board and Himalayas sources (keyless; verified live, 8 matches on the author's criteria) — [14 §7.1](14-new-sources-api-keys.md)
 - [x] The Muse as a new source (keyless, optional key, rate-limit aware) and credential redaction for keyed sources — [14](14-new-sources-api-keys.md)

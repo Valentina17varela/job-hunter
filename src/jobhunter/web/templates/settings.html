@@ -37,7 +37,8 @@
     {% call field('Postings without a published salary') %}{{ select('search.salary.on_missing', s.salary.on_missing, [('pass', 'Keep them'), ('reject', 'Drop them')]) }}{% endcall %}
     {% call field('Freshness (days)', 'Aggregator postings older than this are dropped. For company boards a posting still listed is open, so leave it empty unless you want a limit.') %}
       <div class="row">{{ number('search.max_age_days', s.max_age_days, min=1, width='7rem') }} <span class="muted small">aggregators</span>
-      {{ number('search.max_age_days_ats', s.max_age_days_ats, nullable=true, min=1, width='7rem') }} <span class="muted small">company boards</span></div>{% endcall %}
+      {{ number('search.max_age_days_ats', s.max_age_days_ats, nullable=true, min=1, width='7rem') }} <span class="muted small">company boards</span></div>
+      <p class="hint">This is what the search keeps. To narrow only what you see, use the <b>Posted</b> filter in <a href="/jobs">Job matches</a>.</p>{% endcall %}
   </div>
   <div class="form-actions">
     <button class="btn" data-save-cfg>Save</button>

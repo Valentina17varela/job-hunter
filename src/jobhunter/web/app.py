@@ -54,6 +54,57 @@ SOURCE_LABELS = {
 }  # fmt: skip
 
 
+def score_options(current: int | None, threshold: int) -> list[dict[str, Any]]:
+    values = sorted({*SCORE_FLOORS, threshold, *([current] if current is not None else [])})
+    return [{"value": v, "label": f"{v}+" + (" (your threshold)" if v == threshold else "")}
+            for v in values]  # fmt: skip
+
+
+def active_filters(
+    q: str, source: str, mode: str, fav: bool, days: int | None, score: int | None
+) -> list[dict[str, str]]:
+    """What the person has narrowed the list by, as removable chips (name = form control)."""
+    chips = []
+    if q:
+        chips.append({"name": "q", "label": f"“{q}”"})
+    if source:
+        chips.append({"name": "source", "label": f"Source: {source_label(source)}"})
+    if days is not None:
+        chips.append(
+            {"name": "fresh", "label": f"Posted: last {days} day{'s' if days != 1 else ''}"}
+        )
+    if score is not None:
+        chips.append({"name": "min_score", "label": f"Score {score}+"})
+    if mode:
+        chips.append({"name": "mode", "label": f"Mode: {mode}"})
+    if fav:
+        chips.append({"name": "fav", "label": "★ Favorites only"})
+    return chips
+
+
+def asset_url(name: str) -> str:
+    """`/static/<name>?v=<mtime>`: a changed file is never served from the browser cache."""
+    try:
+        version = int((HERE / "static" / name).stat().st_mtime)
+    except OSError:
+        version = 0
+    return f"/static/{name}?v={version}"
+
+
+FRESH_DAYS = (1, 3, 7, 14, 30, 60, 90)
+SCORE_FLOORS = (50, 60, 70, 75, 80, 90)
+
+
+def fresh_options(rule_days: int) -> list[dict[str, Any]]:
+    """Choices for the *Posted* filter; the configured rule is included and marked."""
+    days = sorted({*FRESH_DAYS, rule_days})
+    return [
+        {"days": d, "label": f"last {d} day{'s' if d != 1 else ''}"
+         + (" (your rule)" if d == rule_days else "")}
+        for d in days
+    ]  # fmt: skip
+
+
 def source_label(name: str) -> str:
     return SOURCE_LABELS.get(name, name)
 
@@ -229,6 +280,7 @@ def create_app(
     templates.env.globals.update(
         AGGREGATORS=list(sources_registry.aggregators()),
         NOT_FOR_ME_REASONS=top_board.REASONS,
+        asset=asset_url,
         source_label=lambda n: SOURCE_LABELS.get(n, n),
         STATUS_LABELS=STATUS_LABELS, STAGE_LABELS=STAGE_LABELS,
         STAGES=applications.STAGES, KINDS=applications.INTERVIEW_KINDS,
@@ -276,10 +328,11 @@ def create_app(
     def jobs_page(
         request: Request, status: str = "best", source: str = "", q: str = "",
         min_score: str = "", mode: str = "", sort: str = "score", page: int = 1,
-        fav: str = "",
+        fav: str = "", fresh: str = "",
     ) -> Any:  # fmt: skip
         config = cfg()
         conn = db(config)
+        days = int(fresh) if fresh.strip().isdigit() and 0 < int(fresh) <= 3650 else None
         score_floor = int(min_score) if min_score.strip().lstrip("-").isdigit() else None
         where, params = ["1=1"], []
         tab_statuses = {key: sts for key, _, sts in JOB_TABS}
@@ -306,6 +359,10 @@ def create_app(
             escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             where.append("(j.title LIKE ? ESCAPE '\\' OR j.company LIKE ? ESCAPE '\\')")
             params += [f"%{escaped}%", f"%{escaped}%"]
+        if days is not None:  # undated postings stay: a still-listed company posting is open
+            cutoff = (datetime.now(UTC) - timedelta(days=days)).replace(microsecond=0)
+            where.append("(j.posted_at IS NULL OR j.posted_at >= ?)")
+            params.append(cutoff.isoformat())
         if score_floor is not None:
             where.append("s.score >= ?")
             params.append(score_floor)
@@ -353,7 +410,11 @@ def create_app(
         ]
         plan = None
         board_ids: set[int] = set()
-        if status == "best" and page == 1 and not (q or source or mode or fav or score_floor):
+        if (
+            status == "best"
+            and page == 1
+            and not (q or source or mode or fav or days or score_floor is not None)
+        ):
             plan = top_board.plan(conn, config)
             board_ids = {r["id"] for r in plan["board"]}
             rows = [r for r in rows if r["id"] not in board_ids]
@@ -363,10 +424,13 @@ def create_app(
             pages=max(1, -(-total // PAGE_SIZE)), counts=counts, sources=sources, tabs=tabs,
             qs=urlencode({k: v for k, v in {"status": status, "source": source, "q": q,
                           "mode": mode, "sort": sort, "min_score": score_floor,
-                          "fav": "1" if fav == "1" else ""}.items()
+                          "fresh": days, "fav": "1" if fav == "1" else ""}.items()
                           if v not in ("", None)}),
             f={"status": status, "source": source, "q": q, "min_score": score_floor,
-               "mode": mode, "sort": sort, "fav": fav == "1"},
+               "mode": mode, "sort": sort, "fav": fav == "1", "fresh": days},
+            fresh_options=fresh_options(config.search.max_age_days),
+            score_options=score_options(score_floor, config.scoring.score_threshold),
+            active_filters=active_filters(q, source, mode, fav == "1", days, score_floor),
             blocked=blocked_set(config),
         )  # fmt: skip
 

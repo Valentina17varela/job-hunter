@@ -7,8 +7,8 @@
   <link rel="icon" href="/static/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/img/icon-32.png">
   <link rel="apple-touch-icon" href="/static/img/icon-180.png">
-  <link rel="stylesheet" href="/static/tokens.css">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="{{ asset('tokens.css') }}">
+  <link rel="stylesheet" href="{{ asset('style.css') }}">
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -73,6 +73,6 @@
     </footer>
   </section>
 
-  <script src="/static/app.js"></script>
+  <script src="{{ asset('app.js') }}"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 - Pipeline: public sources (Greenhouse, Lever, Ashby and five aggregators), hard filter, LLM scoring, tailored LaTeX CV and cover letter with verification, application tracking.
 - Local web UI with settings editor, favorites, block list, postings added by hand, and the Kinetic Horizon visual identity (optional dark theme).
 - `jobhunter init`, `jobhunter demo`, a source registry with a contract test, MIT license, CI, contribution files and a Docker image.
+- *Posted* filter and live filters in Job matches.
 - Top matches board (always your best 5), *Not for me* reasons, `jobhunter top --fill`.
 - Get on Board and Himalayas as sources (no key needed).
 - The Muse as a source (no key needed), credential redaction, key status in `doctor` and Settings.

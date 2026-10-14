@@ -259,6 +259,70 @@
     a.classList.add('on');
   }));
 
+  // ---------- Job matches: filters apply as you choose (spec 23) ----------
+  const filterForm = document.querySelector('form.filterbar');
+  const resultsBox = document.getElementById('jobs-results');
+  if (filterForm && resultsBox) {
+    let timer = null;
+    let inflight = null;
+    const refresh = async () => {
+      const params = new URLSearchParams(new FormData(filterForm));
+      Array.from(params.keys()).forEach((k) => { if (params.get(k) === '') params.delete(k); });
+      const url = '/jobs?' + params.toString();
+      if (inflight) inflight.abort();
+      inflight = new AbortController();
+      resultsBox.classList.add('loading');
+      try {
+        const res = await fetch(url, { signal: inflight.signal });
+        if (!res.ok) throw new Error('bad response');
+        const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+        const fresh = doc.getElementById('jobs-results');
+        if (!fresh) throw new Error('no results area');
+        resultsBox.innerHTML = fresh.innerHTML;
+        history.replaceState(null, '', url);
+      } catch (err) {
+        if (err.name !== 'AbortError') location.href = url; // fall back to a normal page load
+      } finally {
+        resultsBox.classList.remove('loading');
+      }
+    };
+    const syncActive = () => {
+      filterForm.querySelectorAll('.fb-sel').forEach((l) => {
+        const sel = l.querySelector('select');
+        if (sel && !l.classList.contains('fb-sort')) l.classList.toggle('on', sel.value !== '');
+      });
+      filterForm.querySelectorAll('.fb-chip').forEach((l) => {
+        l.classList.toggle('on', l.querySelector('input').checked);
+      });
+    };
+    const clearControl = (name) => {
+      const el = filterForm.elements[name];
+      if (!el) return;
+      if (el.type === 'checkbox') el.checked = false; else el.value = '';
+    };
+    document.addEventListener('click', (ev) => {
+      const one = ev.target.closest('[data-clear]');
+      const all = ev.target.closest('[data-clear-all]');
+      if (!one && !all) return;
+      (all ? ['q', 'source', 'fresh', 'min_score', 'mode', 'fav'] : [one.dataset.clear]).forEach(clearControl);
+      syncActive();
+      clearTimeout(timer);
+      refresh();
+    });
+    filterForm.addEventListener('submit', (ev) => { ev.preventDefault(); clearTimeout(timer); refresh(); });
+    filterForm.addEventListener('change', (ev) => {
+      syncActive();
+      if (ev.target.matches('input[type=search], input[type=number]')) return; // handled while typing
+      clearTimeout(timer);
+      refresh();
+    });
+    filterForm.addEventListener('input', (ev) => {
+      if (!ev.target.matches('input[type=search], input[type=number]')) return;
+      clearTimeout(timer);
+      timer = setTimeout(refresh, 300);
+    });
+  }
+
   // ---------- top matches: notice after hiding / not-for-me / applying (spec 22) ----------
   const NOTICE_KEY = 'jh_top_check';
   const notice = document.getElementById('top-notice');
