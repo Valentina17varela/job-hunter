@@ -8,7 +8,7 @@
     <div class="job-sub">{{ r.company }} · {{ source_label(r.source) }}</div>
     <div class="chips">
       <span class="chip">{{ r.location or 'Location not stated' }}</span>
-      {% if r.remote not in (r.location or '')|lower %}<span class="chip">{{ r.remote }}</span>{% endif %}
+      {% if r.remote not in (r.location or '')|lower %}<span class="chip">{{ r.remote|mode_label }}</span>{% endif %}
       {% if r.salary_max %}<span class="chip pay">{{ r.salary_max|money(r.salary_currency) }}/yr</span>{% endif %}
       {% if r.status not in ('scored', 'selected') %}<span class="badge st-{{ r.status }}">{{ STATUS_LABELS.get(r.status, r.status) }}</span>{% endif %}
       {% if below and r.status != 'below_threshold' %}<span class="badge warn">below your threshold</span>{% endif %}
@@ -30,7 +30,7 @@
       <summary class="icon-btn" aria-label="More actions for {{ r.title }}">{{ m.icon('more') }}</summary>
       <div class="menu">
         {% if not r.has_package and not visible %}<button type="button" data-run='{{ {"id": "tailor", "jobs": [r.id]}|tojson|forceescape }}' data-label="Building the package for “{{ r.title|truncate(40) }}”" data-reload>Build package</button>{% endif %}
-        {% if not r.stage %}<button type="button" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}' data-top-check>I applied</button>
+        {% if not r.stage %}<button type="button" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}' data-top-check>Mark as applied</button>
         {% if r.status != 'ignored' %}<button type="button" data-not-for-me="{{ r.id }}" data-title="{{ r.title }}" data-company="{{ r.company }}">Not for me</button>{% endif %}{% endif %}
       </div>
     </details>

@@ -14,7 +14,7 @@
 {% macro tags(path, value, label='', id='', desc='') -%}<div class="tags" data-input-id="{{ id }}" data-desc="{{ desc }}" data-label="{{ label }}" data-cfg="{{ path }}" data-type="tags" data-value='{{ value|tojson|forceescape }}'></div>{%- endmacro %}
 {% macro number(path, value, nullable=false, min=0, width='9rem', id='', desc='', label='') -%}<input type="number"{% if id %} id="{{ id }}"{% endif %}{% if desc %} aria-describedby="{{ desc }}"{% endif %}{% if label %} aria-label="{{ label }}"{% endif %} min="{{ min }}" style="width:{{ width }}" data-cfg="{{ path }}" data-type="number" {{ 'data-nullable' if nullable }} value="{{ value if value is not none else '' }}" placeholder="{{ 'no limit' if nullable else '' }}">{%- endmacro %}
 {% macro select(path, value, options, id='', desc='') -%}<select{% if id %} id="{{ id }}"{% endif %}{% if desc %} aria-describedby="{{ desc }}"{% endif %} data-cfg="{{ path }}" data-type="text">{% for v, label in options %}<option value="{{ v }}" {{ 'selected' if value == v }}>{{ label }}</option>{% endfor %}</select>{%- endmacro %}
-{% macro checks(path, value, options) -%}<div class="checks" data-cfg="{{ path }}" data-type="checks">{% for v in options %}<label class="check"><input type="checkbox" value="{{ v }}" {{ 'checked' if v in value }}> {{ v }}</label>{% endfor %}</div>{%- endmacro %}
+{% macro checks(path, value, options, kind='') -%}<div class="checks" data-cfg="{{ path }}" data-type="checks">{% for v in options %}<label class="check"><input type="checkbox" value="{{ v }}" {{ 'checked' if v in value }}> {{ v|mode_label if kind == 'plain' else source_label(v) if kind == 'source' else v }}</label>{% endfor %}</div>{%- endmacro %}
 {% macro text(path, value, width='100%', id='', desc='') -%}<input type="text"{% if id %} id="{{ id }}"{% endif %}{% if desc %} aria-describedby="{{ desc }}"{% endif %} style="width:{{ width }}" data-cfg="{{ path }}" data-type="text" value="{{ value or '' }}">{%- endmacro %}
 {% macro area(path, value, rows=4, id='', desc='') -%}<textarea{% if id %} id="{{ id }}"{% endif %}{% if desc %} aria-describedby="{{ desc }}"{% endif %} rows="{{ rows }}" data-cfg="{{ path }}" data-type="text">{{ value or '' }}</textarea>{%- endmacro %}
 
@@ -24,20 +24,20 @@
   <p class="muted">Saved to <code>{{ config_path }}</code>: your comments are kept and the previous version stays as <code>.bak</code>. No restart needed.</p></div></header>
 
 <nav class="tabs" id="settings-tabs" aria-label="Settings sections">
-  <a href="#looking" class="on">What I'm looking for</a><a href="#ai">AI &amp; documents</a><a href="#sources">Sources</a><a href="#files">My CV &amp; letter</a><a href="#system">System</a>
+  <a href="#looking" class="on">What you're looking for</a><a href="#ai">AI &amp; documents</a><a href="#sources">Sources</a><a href="#files">Your CV &amp; letter</a><a href="#system">System</a>
 </nav>
 
 <section class="card" id="looking" data-card tabindex="-1">
-  <h2>{{ m.icon('target') }} What I'm looking for</h2>
+  <h2>{{ m.icon('target') }} What you're looking for</h2>
   <p class="muted">A posting is kept only if it passes all of these. <b>Save &amp; re-filter</b> applies them to everything already downloaded.</p>
   <div class="form-grid">
-    {% call(fid, hid, lbl) field('Roles I want', 'The title must contain at least one of these words or phrases (case-insensitive, whole words).') %}{{ tags('search.titles_include', s.titles_include, label=lbl, id=fid, desc=hid) }}{% endcall %}
-    {% call(fid, hid, lbl) field('Words I do not want in the title', 'Any match drops the posting, e.g. frontend, mobile, qa, junior.') %}{{ tags('search.titles_exclude', s.titles_exclude, label=lbl, id=fid, desc=hid) }}{% endcall %}
-    {% call(fid, hid, lbl) field_group('Seniority', 'Guessed from the title: staff/principal/lead = lead, senior/sr = senior, junior/intern = junior, otherwise mid.') %}{{ checks('search.seniority', s.seniority, ['junior', 'mid', 'senior', 'lead']) }}{% endcall %}
-    {% call(fid, hid, lbl) field_group('Work mode') %}{{ checks('search.work_mode', s.work_mode, ['remote', 'hybrid', 'onsite']) }}{% endcall %}
-    {% call(fid, hid, lbl) field('Where I can work', 'A posting that names a place must name one of these (LATAM also matches “Latin America”). Empty accepts anywhere.') %}{{ tags('search.locations_allowed', s.locations_allowed, label=lbl, id=fid, desc=hid) }}{% endcall %}
-    {% call(fid, hid, lbl) field('Companies I never want to see', 'Whole company names: “Meta” never blocks “Metamask”. You can also block one from its posting page.') %}{{ tags('search.companies_exclude', s.companies_exclude, label=lbl, id=fid, desc=hid) }}{% endcall %}
-    {% call(fid, hid, lbl) field('Technologies I want to see', 'At least one must appear in the title or description.') %}{{ tags('search.keywords_include', s.keywords_include, label=lbl, id=fid, desc=hid) }}{% endcall %}
+    {% call(fid, hid, lbl) field('Roles you want', 'The title must contain at least one of these words or phrases (case-insensitive, whole words).') %}{{ tags('search.titles_include', s.titles_include, label=lbl, id=fid, desc=hid) }}{% endcall %}
+    {% call(fid, hid, lbl) field('Words you do not want in the title', 'Any match drops the posting, e.g. frontend, mobile, qa, junior.') %}{{ tags('search.titles_exclude', s.titles_exclude, label=lbl, id=fid, desc=hid) }}{% endcall %}
+    {% call(fid, hid, lbl) field_group('Seniority', 'Guessed from the title: staff/principal/lead = lead, senior/sr = senior, junior/intern = junior, otherwise mid.') %}{{ checks('search.seniority', s.seniority, ['junior', 'mid', 'senior', 'lead'], 'plain') }}{% endcall %}
+    {% call(fid, hid, lbl) field_group('Work mode') %}{{ checks('search.work_mode', s.work_mode, ['remote', 'hybrid', 'onsite'], 'plain') }}{% endcall %}
+    {% call(fid, hid, lbl) field('Where you can work', 'A posting that names a place must name one of these (LATAM also matches “Latin America”). Empty accepts anywhere.') %}{{ tags('search.locations_allowed', s.locations_allowed, label=lbl, id=fid, desc=hid) }}{% endcall %}
+    {% call(fid, hid, lbl) field('Companies you never want to see', 'Whole company names: “Meta” never blocks “Metamask”. You can also block one from its posting page.') %}{{ tags('search.companies_exclude', s.companies_exclude, label=lbl, id=fid, desc=hid) }}{% endcall %}
+    {% call(fid, hid, lbl) field('Technologies you want to see', 'At least one must appear in the title or description.') %}{{ tags('search.keywords_include', s.keywords_include, label=lbl, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Things that rule a posting out', 'e.g. security clearance, US citizen.') %}{{ tags('search.keywords_exclude', s.keywords_exclude, label=lbl, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Minimum yearly pay (USD)', 'Compared with the top of the published range. Monthly pay × 12. 0 turns it off.') %}{{ number('search.salary.min_usd', s.salary.min_usd, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Postings without a published salary') %}{{ select('search.salary.on_missing', s.salary.on_missing, [('pass', 'Keep them'), ('reject', 'Drop them')], id=fid, desc=hid) }}{% endcall %}
@@ -51,8 +51,8 @@
 <section class="card" id="ai" data-card tabindex="-1">
   <h2>{{ m.icon('doc') }} AI &amp; documents</h2>
   <div class="form-grid">
-    {% call(fid, hid, lbl) field('AI engine', 'Your Claude subscription (run “claude auth login” once) or an Anthropic API key.') %}{{ select('llm.backend', config.llm.backend, [('claude_cli', 'My Claude subscription'), ('anthropic_api', 'Anthropic API key')], id=fid, desc=hid) }}{% endcall %}
-    {% call(fid, hid, lbl) field('What the AI should know about me', 'Where you live and what is a deal-breaker. The AI reads this when scoring and writing.') %}{{ area('scoring.candidate_context', config.scoring.candidate_context, 5, id=fid, desc=hid) }}{% endcall %}
+    {% call(fid, hid, lbl) field('AI engine', 'Your Claude subscription (run “claude auth login” once) or an Anthropic API key.') %}{{ select('llm.backend', config.llm.backend, [('claude_cli', 'Your Claude subscription'), ('anthropic_api', 'Anthropic API key')], id=fid, desc=hid) }}{% endcall %}
+    {% call(fid, hid, lbl) field('What the AI should know about you', 'Where you live and what is a deal-breaker. The AI reads this when scoring and writing.') %}{{ area('scoring.candidate_context', config.scoring.candidate_context, 5, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Best-match threshold', 'Postings scoring at or above this (0-100) become best matches.') %}{{ number('scoring.score_threshold', config.scoring.score_threshold, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Top matches to always show', 'The Top matches board tries to keep this many (1-20). When fewer are scored you are offered to score replacements.') %}{{ number('scoring.top_matches_count', config.scoring.top_matches_count, min=1, width='6rem', id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Packages per run', 'At most this many best matches are marked ready for packaging at once.') %}{{ number('tailoring.max_packages_per_day', config.tailoring.max_packages_per_day, id=fid, desc=hid) }}{% endcall %}
@@ -75,7 +75,7 @@
 <section class="card" id="sources" data-card tabindex="-1">
   <h2>{{ m.icon('search') }} Sources</h2>
   <div class="form-grid">
-    {% call(fid, hid, lbl) field_group('Job boards to search', 'Company boards (Greenhouse, Lever, Ashby…) come from your company list below.') %}{{ checks('sources.aggregators', config.sources.aggregators, AGGREGATORS) }}{% endcall %}
+    {% call(fid, hid, lbl) field_group('Job boards to search', 'Company boards (Greenhouse, Lever, Ashby…) come from your company list below.') %}{{ checks('sources.aggregators', config.sources.aggregators, AGGREGATORS, 'source') }}{% endcall %}
     {% if source_keys %}<p class="hint">Keys read from your environment (only “set / not set” is shown, never the value):
       {% for name, env, is_set, optional in source_keys %}<code>{{ env }}</code> for {{ name }}: <b>{{ 'set' if is_set else 'not set' }}</b>{{ ' (optional)' if optional and not is_set }}{{ '; ' if not loop.last }}{% endfor %}</p>{% endif %}
     {% call(fid, hid, lbl) field('We Work Remotely categories') %}{{ tags('sources.wwr_categories', config.sources.wwr_categories, label=lbl, id=fid, desc=hid) }}{% endcall %}
@@ -92,12 +92,12 @@
 </section>
 
 <section class="card" id="files" tabindex="-1">
-  <h2>{{ m.icon('doc') }} My CV and cover letter</h2>
+  <h2>{{ m.icon('doc') }} Your CV and cover letter</h2>
   <p class="muted">The LaTeX files the tool reads. Your header (name, contact) is never sent to the AI.</p>
   <h3>CV <code>{{ config.paths.cv_master }}</code></h3>
   <textarea class="code" rows="16" aria-label="Master CV (LaTeX)" data-file="cv" spellcheck="false"></textarea>
   <div class="form-actions"><button class="btn primary" data-save-file="cv">Save CV</button>
-    <button class="btn" data-run='{"id":"cv-check"}' data-label="Checking and compiling my CV">Check &amp; compile</button><span class="save-state muted small" role="status" aria-live="polite"></span></div>
+    <button class="btn" data-run='{"id":"cv-check"}' data-label="Checking and compiling your CV">Check &amp; compile</button><span class="save-state muted small" role="status" aria-live="polite"></span></div>
   <h3>Cover letter template <code>{{ config.paths.letter_template }}</code></h3>
   <textarea class="code" rows="14" aria-label="Cover letter template (LaTeX)" data-file="letter" spellcheck="false"></textarea>
   <div class="form-actions"><button class="btn primary" data-save-file="letter">Save template</button><span class="save-state muted small" role="status" aria-live="polite"></span></div>

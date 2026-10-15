@@ -25,7 +25,7 @@ from jobhunter.db import connect
 from jobhunter.doctor import run_checks, source_keys
 from jobhunter.filters import JobFilter, job_from_row, normalize_company
 from jobhunter.sources import registry as sources_registry
-from jobhunter.web.runner import RUN_SPECS, Busy, RunError, RunManager
+from jobhunter.web.runner import RUN_SPECS, RUN_VERBS, Busy, RunError, RunManager
 
 HERE = Path(__file__).parent
 PAGE_SIZE = 50
@@ -47,6 +47,7 @@ STAGE_LABELS = {
 }  # fmt: skip
 
 
+MODE_LABELS = {"remote": "Remote", "hybrid": "Hybrid", "onsite": "On-site", "unknown": "Not stated"}
 SOURCE_LABELS = {
     "getonboard": "Get on Board", "himalayas": "Himalayas", "themuse": "The Muse",
     "weworkremotely": "We Work Remotely", "remoteok": "RemoteOK", "remotive": "Remotive",
@@ -77,7 +78,7 @@ def active_filters(
     if score is not None:
         chips.append({"name": "min_score", "label": f"Score {score}+"})
     if mode:
-        chips.append({"name": "mode", "label": f"Mode: {mode}"})
+        chips.append({"name": "mode", "label": f"Mode: {MODE_LABELS.get(mode, mode)}"})
     if fav:
         chips.append({"name": "fav", "label": "Favorites only"})
     return chips
@@ -299,6 +300,13 @@ def create_app(
     manager = runner or RunManager(config_path, Path.cwd(), log_dir=None)
     templates.env.filters["dt"] = fmt_dt
     templates.env.filters["ago"] = ago
+    templates.env.filters["mode_label"] = lambda v: MODE_LABELS.get(v, str(v).capitalize())
+    templates.env.filters["run_label"] = lambda v: next(
+        (s.label for s in RUN_SPECS if s.id == v), v
+    )
+    templates.env.filters["state_label"] = lambda v: (
+        STATUS_LABELS.get(v) or STAGE_LABELS.get(v) or v or "—"
+    )
     templates.env.filters["money"] = money
     templates.env.filters["bar_width"] = bar_width
     templates.env.filters["norm_company"] = normalize_company
@@ -306,6 +314,8 @@ def create_app(
         AGGREGATORS=list(sources_registry.aggregators()),
         NOT_FOR_ME_REASONS=top_board.REASONS,
         asset=asset_url,
+        run_verb=lambda i: RUN_VERBS.get(i, "Run"),
+        MODE_LABELS=MODE_LABELS,
         source_label=lambda n: SOURCE_LABELS.get(n, n),
         STATUS_LABELS=STATUS_LABELS, STAGE_LABELS=STAGE_LABELS,
         STAGES=applications.STAGES, KINDS=applications.INTERVIEW_KINDS,

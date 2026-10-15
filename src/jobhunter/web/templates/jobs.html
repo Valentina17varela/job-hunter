@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
 {% import "_top.html" as top %}
-{% block title %}Job matches{% endblock %}
+{% block title %}Matches{% endblock %}
 {% block content %}
 <header class="page-head">
-  <div><h1>Job matches</h1><p class="muted">Roles that passed your criteria, rated against your CV. Open one to see why it fits and what to double-check.</p></div>
+  <div><h1>Matches</h1><p class="muted">Roles that passed your criteria, rated against your CV. Open one to see why it fits and what to double-check.</p></div>
   <div class="actions"><button class="btn" data-open-add>{{ m.icon('doc') }} Add a posting</button>
   <button class="btn" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button></div>
 </header>
@@ -19,7 +19,7 @@
   <label class="fb-sel {{ 'on' if f.source }}"><span>Source</span><select name="source" aria-label="Source"><option value="">All</option>{% for s in sources %}<option value="{{ s.name }}" {{ 'selected' if f.source == s.name }}>{{ s.label }} ({{ "{:,}".format(s.count) if s.count else "none fetched yet" }})</option>{% endfor %}</select></label>
   <label class="fb-sel {{ 'on' if f.fresh }}" title="Postings without a date are always kept"><span>Posted</span><select name="fresh" aria-label="Posted within"><option value="">Any time</option>{% for o in fresh_options %}<option value="{{ o.days }}" {{ 'selected' if f.fresh == o.days }}>{{ o.label }}</option>{% endfor %}</select></label>
   {% if f.status not in ('filtered',) %}<label class="fb-sel {{ 'on' if f.min_score is not none }}"><span>Score</span><select name="min_score" aria-label="Minimum score"><option value="">Any</option>{% for o in score_options %}<option value="{{ o.value }}" {{ 'selected' if f.min_score == o.value }}>{{ o.label }}</option>{% endfor %}</select></label>{% endif %}
-  <label class="fb-sel {{ 'on' if f.mode }}"><span>Mode</span><select name="mode" aria-label="Work mode"><option value="">Any</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md }}</option>{% endfor %}</select></label>
+  <label class="fb-sel {{ 'on' if f.mode }}"><span>Mode</span><select name="mode" aria-label="Work mode"><option value="">Any</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md|mode_label }}</option>{% endfor %}</select></label>
   <label class="fb-chip {{ 'on' if f.fav }}"><input type="checkbox" name="fav" value="1" {{ 'checked' if f.fav }}> {{ m.icon('star') }} Favorites</label>
   <label class="fb-sel fb-sort"><span>Sort</span><select name="sort" aria-label="Sort by">{% for k, label in [('score', 'Best score'), ('recent', 'Most recent'), ('company', 'Company A–Z'), ('favorites', 'Favorites first')] %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select></label>
   <noscript><button class="btn" type="submit">Apply</button></noscript>

@@ -25,6 +25,13 @@ class RunSpec:
     supports_job_ids: bool = False  # accepts --job only (score)
 
 
+RUN_VERBS = {
+    "search": "Search", "fetch": "Fetch", "filter": "Filter", "refilter": "Re-filter",
+    "score": "Score", "tailor": "Build packages", "all": "Run everything",
+    "companies-check": "Check boards", "companies-discover": "Find boards",
+    "cv-check": "Check your CV", "doctor": "Check setup", "stats": "Show stats",
+}  # fmt: skip
+
 RUN_SPECS: tuple[RunSpec, ...] = (
     RunSpec("search", "Search for new jobs", ("run", "--stage", "search"),
             "Download new postings from all sources and keep the ones that match your criteria. "
@@ -36,25 +43,25 @@ RUN_SPECS: tuple[RunSpec, ...] = (
             "Apply your search criteria to postings that are still new. No cost.",
             supports_dry_run=True),
     RunSpec("refilter", "Re-filter everything", ("refilter",),
-            "Re-evaluate all stored postings after changing `search` in config.yaml. No network."),
-    RunSpec("score", "Score with the LLM", ("run", "--stage", "score"),
-            "Rate postings that passed the filter against your CV, in batches. Uses your Claude "
-            "plan (or API) up to budget.max_llm_calls_per_run.", llm=True, supports_dry_run=True,
+            "Check every stored posting again after you change what you look for. No network."),
+    RunSpec("score", "Score postings with AI", ("run", "--stage", "score"),
+            "Rate postings that passed your criteria against your CV, in batches. Uses your Claude "
+            "plan or API key, up to your per-run call limit.", llm=True, supports_dry_run=True,
             supports_job_ids=True),
     RunSpec("tailor", "Build application packages", ("run", "--stage", "tailor"),
             "For selected postings, pick CV bullets, write the cover letter and compile the PDFs. "
-            "One LLM call per posting.", llm=True, supports_dry_run=True, supports_jobs=True),
+            "One AI call per posting.", llm=True, supports_dry_run=True, supports_jobs=True),
     RunSpec("all", "Run everything", ("run",),
-            "fetch → filter → score → tailor, in one go.", llm=True, supports_dry_run=True),
+            "Search, score and build packages in one go.", llm=True, supports_dry_run=True),
     RunSpec("companies-check", "Check company boards", ("companies", "check"),
-            "Verify every company board slug still exists (200 vs 404)."),
+            "Check that every company job board you follow still exists."),
     RunSpec("companies-discover", "Discover company boards", ("companies", "discover"),
-            "Probe config/company_candidates.txt and add boards that exist."),
-    RunSpec("cv-check", "Check my LaTeX CV", ("cv", "check"),
-            "Validate the `% jh:` markers of master.tex and compile it."),
+            "Look for job boards of the companies on your list and add the ones found."),
+    RunSpec("cv-check", "Check your LaTeX CV", ("cv", "check"),
+            "Check your CV's structure markers and compile it."),
     RunSpec("doctor", "Check the environment", ("doctor",),
-            "Python, config, LLM login, LaTeX engine."),
-    RunSpec("stats", "Show stats", ("stats",), "Funnel and LLM usage as text."),
+            "Python, your config, your AI login and the LaTeX engine."),
+    RunSpec("stats", "Show stats", ("stats",), "Your funnel and AI usage as text."),
 )  # fmt: skip
 SPECS_BY_ID = {s.id: s for s in RUN_SPECS}
 

@@ -15,7 +15,7 @@
   {% else %}<button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>{% endif %}
 </header>
 
-{% if running %}<div class="notice">{{ m.icon('play') }} A run is in progress: <b>{{ running.spec_id }}</b>. Its log is in the panel at the bottom right.</div>{% endif %}
+{% if running %}<div class="notice">{{ m.icon('play') }} A run is in progress: <b>{{ running.spec_id|run_label }}</b>. Its log is in the panel at the bottom right.</div>{% endif %}
 
 <section class="kpis">
   <a class="kpi" href="/jobs?status=best"><b>{{ kpis.matches }}</b><span>Matches worth a look</span></a>
@@ -41,7 +41,7 @@
     {% for i in upcoming %}
     <a class="todo plain" href="/jobs/{{ i.job_id }}">
       <span class="todo-ic cal">{{ m.icon('cal') }}</span>
-      <p><b>{{ i.kind.replace('_', ' ')|capitalize }}</b> · {{ i.title }}<br><span class="muted">{{ i.company }} · {{ i.scheduled_at.replace('T', ' ') if i.scheduled_at else 'date not set' }}</span></p>
+      <p><b>{{ i.kind.replace('_', ' ')|capitalize }}</b> · {{ i.title }}<br><span class="muted">{{ i.company }} · {{ i.scheduled_at|dt if i.scheduled_at else 'date not set' }}</span></p>
     </a>
     {% else %}<p class="muted">No interviews yet. Add one from an application's page.</p>{% endfor %}
     {% if stats.stages %}

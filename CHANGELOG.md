@@ -13,6 +13,7 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 - Home as a cockpit: slim header with the one next action ("Score 12 postings"), inline KPI strip, "what to do next" first, a three-step pipeline list, system check only when something required fails.
 - Quieter job cards and posting page: one visible button per row plus a ⋯ menu, *Hide* merged into *Not for me*, one filled primary per page area, "Build N packages for your top 5" at the board's head, posting text beside the package.
 - Applications board fits 1280 px (ready strip + four columns, "applied N days ago", undo on stage change); Settings shows one tab at a time with a single save bar that enables itself when something changed.
+- One voice: you/your everywhere, "Matches" in the nav, buttons that carry their verb (Search, Score, Build packages… instead of thirteen "Run"), readable work modes, dates and statuses instead of raw tokens.
 - Interaction polish: focus and scroll position survive actions that reload the page, one transition token, pressed states, page cross-fades, long-lived caching for versioned assets and a preloaded font.
 - *Posted* filter and live filters in Job matches.
 - Top matches board (always your best 5), *Not for me* reasons, `jobhunter top --fill`.

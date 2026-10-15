@@ -76,7 +76,8 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 - [x] Slice 5 — Home as a cockpit (see §14).
 - [x] Slice 6 — Posting page and job cards (see §15).
 - [x] Slice 7 — Applications and Settings (see §16).
-- [ ] Slices 8 and 9 of §4, each ticked here when shipped.
+- [x] Slice 8 — Voice (see §17).
+- [ ] Slice 9 of §4, each ticked here when shipped.
 - [ ] README (UI section) and screenshots, `DESIGN.md`, `PRODUCT.md`, `design/README.md` and this spec marked done.
 
 ## 9. Acceptance criteria
@@ -181,3 +182,15 @@ Not done in this slice (belongs to later ones): page reload after every action (
 **Trimmed hints.** The intro and the longest hints lost their repeated sentences (the `.orig` mention, the "Acme, Inc." example, the aggregator/company-board duplication).
 
 **Tests.** `test_settings_has_one_save_bar_and_real_tabs`, `test_applications_board_has_four_stage_columns_and_a_ready_strip`, `test_ago_filter` (478 total). Checked in a real browser: 1280 px board, tab switching, dirty on/off, validation error on the right tab, stage change and undo.
+
+## 17. Slice 8 — Voice (done)
+
+**You, not I.** Settings labels and tabs ("What you're looking for", "Roles you want", "Where you can work", "Your CV and cover letter", "What the AI should know about you", "Your Claude subscription"), the posting page ("Your application") and the *Not for me* suggestions in `top.py` speak to the reader. Buttons that state a fact become verbs: *I applied* → **Mark as applied** (rows, Applications, posting page). *Not for me* stays: it is the name of the decision (spec 22).
+
+**Names.** The nav and the page are **Matches** (was "Job matches"); the crumb says "← Matches".
+
+**Buttons carry their verb.** The thirteen *Run* buttons on Actions say what they do (*Search*, *Fetch*, *Filter*, *Re-filter*, *Score*, *Build packages*, *Run everything*, *Check boards*, *Find boards*, *Check your CV*, *Check setup*, *Show stats*) through `RUN_VERBS`; labels lost "LLM" ("Score postings with AI").
+
+**No raw tokens.** Work modes read *Remote / Hybrid / On-site / Not stated* (chips, filter, active-filter chip, Settings checkboxes; `mode_label` filter); sources use their names on the posting page and in Settings; interview times use the readable date format instead of ISO strings; interview kinds and outcomes are capitalised; the History table shows status labels instead of ids; Actions history and the Home "a run is in progress" notice show the action's name, not `spec_id`; run status reads Done / Failed / Running; the Actions descriptions lost config keys, backticks and file paths ("up to your per-run call limit", "Your Claude subscription · up to 60 AI calls per run").
+
+**Tests.** `test_voice_you_and_no_raw_tokens` (no first-person labels, no ISO timestamps or raw tokens on six pages, no bare "Run"), `test_actions_page_has_no_config_keys_or_backticks` (480 total). README terms updated (Matches, Mark as applied) and all seven screenshots regenerated (they showed the old nav).

@@ -2,12 +2,12 @@
 {% import "_macros.html" as m %}
 {% block title %}{{ job.title }}{% endblock %}
 {% block content %}
-<p class="crumb"><a href="/jobs">← Job matches</a></p>
+<p class="crumb"><a href="/jobs">← Matches</a></p>
 <header class="job-head card">
   {{ m.avatar(job.company, 64) }}
   <div class="grow">
     <h1>{{ job.title }}</h1>
-    <p class="muted">{{ job.company }} · {{ job.location or 'location not stated' }} · {{ job.remote }} · {{ job.source }}</p>
+    <p class="muted">{{ job.company }} · {{ job.location or 'location not stated' }} · {{ job.remote|mode_label }} · {{ source_label(job.source) }}</p>
     <div class="chips">
       <span class="badge st-{{ job.status }}">{{ STATUS_LABELS.get(job.status, job.status) }}</span>
       {% if job.source == 'manual' %}<span class="chip">Manual</span>{% endif %}
@@ -32,7 +32,7 @@
         <summary class="icon-btn" aria-label="More actions for this posting">{{ m.icon('more') }}</summary>
         <div class="menu">
           {% if not blocked %}<button type="button" data-block-company="{{ job.company }}" data-blocked='{{ config_blocked|tojson|forceescape }}'>Block this company</button>{% endif %}
-          {% if not application and job.status != 'ignored' %}<button type="button" data-post="/api/jobs/{{ job.id }}/ignore" data-json='{}' data-confirm="Hide this posting for good?">Not for me</button>{% endif %}
+          {% if not application and job.status != 'ignored' %}<button type="button" data-post="/api/jobs/{{ job.id }}/ignore" data-json='{}' data-confirm="Mark this posting as not for you? It will not come back.">Not for me</button>{% endif %}
         </div>
       </details>
     </div>
@@ -96,7 +96,7 @@
 </div>
 
 <section class="card">
-  <h2>{{ m.icon('send') }} My application</h2>
+  <h2>{{ m.icon('send') }} Your application</h2>
   {% if application %}
     <div class="row">
       <label>Stage
@@ -110,23 +110,23 @@
     <h3>Interviews</h3>
     {% for i in interviews %}
     <div class="interview" data-interview="{{ i.id }}">
-      <select data-field="kind" aria-label="Interview {{ loop.index }}: kind">{% for k in KINDS %}<option value="{{ k }}" {{ 'selected' if i.kind == k }}>{{ k.replace('_', ' ') }}</option>{% endfor %}</select>
+      <select data-field="kind" aria-label="Interview {{ loop.index }}: kind">{% for k in KINDS %}<option value="{{ k }}" {{ 'selected' if i.kind == k }}>{{ k.replace('_', ' ')|capitalize }}</option>{% endfor %}</select>
       <input type="datetime-local" data-field="scheduled_at" aria-label="Interview {{ loop.index }}: date and time" value="{{ i.scheduled_at or '' }}">
-      <select data-field="outcome" aria-label="Interview {{ loop.index }}: outcome">{% for o in OUTCOMES %}<option value="{{ o }}" {{ 'selected' if i.outcome == o }}>{{ o }}</option>{% endfor %}</select>
+      <select data-field="outcome" aria-label="Interview {{ loop.index }}: outcome">{% for o in OUTCOMES %}<option value="{{ o }}" {{ 'selected' if i.outcome == o }}>{{ o|capitalize }}</option>{% endfor %}</select>
       <input type="text" data-field="notes" value="{{ i.notes or '' }}" placeholder="Notes" aria-label="Interview {{ loop.index }}: notes">
       <button class="btn small" data-save-interview>Save</button>
       <button class="btn small danger" data-post="/api/interviews/{{ i.id }}/delete" data-json='{}' data-confirm="Delete this interview?">Delete</button>
     </div>
     {% else %}<p class="muted">No interviews yet.</p>{% endfor %}
     <form class="interview add" data-new-interview="{{ job.id }}">
-      <select name="kind" aria-label="New interview: kind">{% for k in KINDS %}<option value="{{ k }}">{{ k.replace('_', ' ') }}</option>{% endfor %}</select>
+      <select name="kind" aria-label="New interview: kind">{% for k in KINDS %}<option value="{{ k }}">{{ k.replace('_', ' ')|capitalize }}</option>{% endfor %}</select>
       <input type="datetime-local" name="scheduled_at" aria-label="New interview: date and time">
       <input type="text" name="notes" placeholder="Notes" aria-label="New interview: notes">
       <button class="btn small" type="submit">Add interview</button>
     </form>
   {% else %}
     <p class="muted">You have not marked this posting as applied. Job Hunter never applies for you: apply on the company site, then record it here to track it.</p>
-    <button class="btn" data-post="/api/jobs/{{ job.id }}/stage" data-json='{"stage": "applied"}'>I applied to this posting</button>
+    <button class="btn" data-post="/api/jobs/{{ job.id }}/stage" data-json='{"stage": "applied"}'>Mark as applied</button>
   {% endif %}
 </section>
 
@@ -134,7 +134,7 @@
 <section class="card">
   <h2>History</h2>
   <table class="compact"><tbody>
-  {% for e in events %}<tr><td class="muted nowrap">{{ e.created_at|dt }}</td><td class="nowrap">{{ e.from_status or '—' }} → {{ e.to_status }}</td><td class="muted">{{ e.note }}</td></tr>{% endfor %}
+  {% for e in events %}<tr><td class="muted nowrap">{{ e.created_at|dt }}</td><td class="nowrap">{{ e.from_status|state_label }} → {{ e.to_status|state_label }}</td><td class="muted">{{ e.note }}</td></tr>{% endfor %}
   </tbody></table>
 </section>
 {% endblock %}

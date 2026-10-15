@@ -6,7 +6,7 @@
   <div class="kcard-top">{{ m.avatar(c.company, 34) }}<div class="grow"><a class="ktitle" href="/jobs/{{ c.job_id }}">{{ c.title }}</a><div class="muted small">{{ c.company }}</div></div></div>
   {% if c.interviews %}
     {% set nxt = c.interviews|selectattr('outcome', 'equalto', 'pending')|list|first %}
-    {% if nxt %}<div class="chip warn">{{ m.icon('cal') }} {{ nxt.kind.replace('_', ' ') }}{% if nxt.scheduled_at %} · {{ nxt.scheduled_at.replace('T', ' ') }}{% endif %}</div>{% endif %}
+    {% if nxt %}<div class="chip warn">{{ m.icon('cal') }} {{ nxt.kind.replace('_', ' ')|capitalize }}{% if nxt.scheduled_at %} · {{ nxt.scheduled_at|dt }}{% endif %}</div>{% endif %}
     <div class="muted small">{{ c.interviews|length }} interview(s)</div>
   {% endif %}
   <div class="muted small">applied {{ c.applied_at|ago }}</div>
@@ -26,7 +26,7 @@
     {% for r in ready %}
     <article class="kcard">
       <div class="kcard-top">{{ m.ring(r.score, 40) }}<div class="grow"><a class="ktitle" href="/jobs/{{ r.id }}">{{ r.title }}</a><div class="muted small">{{ r.company }}</div></div></div>
-      <button class="btn small" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>I applied</button>
+      <button class="btn small" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>Mark as applied</button>
     </article>
     {% endfor %}
   </div>

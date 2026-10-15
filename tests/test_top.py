@@ -193,7 +193,7 @@ def test_not_for_me_records_a_reason_hides_it_and_only_suggests(conn):
     assert conn.execute("SELECT COUNT(*) FROM jobs WHERE status = 'ignored'").fetchone()[0] == 4
     assert top.reason_counts(conn) == {"location": 3, "pay": 1}
     (hint,) = top.suggestions(conn)  # only the reason repeated 3 times
-    assert "3 postings" in hint and "location" in hint and "Where I can work" in hint
+    assert "3 postings" in hint and "location" in hint and "Where you can work" in hint
     note = conn.execute("SELECT note FROM events WHERE note LIKE '%US residency%'").fetchone()
     assert note and note[0].startswith("not for me: location |")
     with pytest.raises(applications.TrackingError):

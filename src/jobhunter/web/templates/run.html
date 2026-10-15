@@ -25,8 +25,8 @@
         <label class="opt-check"><input type="checkbox" data-opt="force"> Rebuild ones already done</label>{% endif %}
       {% endif %}
     </div>
-    <button class="btn" data-runcard="{{ s.id }}" data-label="{{ s.label }}">{{ m.icon('play') }} Run</button>
-    {% if s.llm %}<p class="muted small">{{ backend }} backend · up to {{ max_calls }} AI calls per run</p>{% endif %}
+    <button class="btn" data-runcard="{{ s.id }}" data-label="{{ s.label }}">{{ m.icon('play') }} {{ run_verb(s.id) }}</button>
+    {% if s.llm %}<p class="muted small">{{ 'Your Claude subscription' if backend == 'claude_cli' else 'Your Anthropic API key' }} · up to {{ max_calls }} AI calls per run</p>{% endif %}
   </section>
   {% endfor %}
 </div>
@@ -36,7 +36,7 @@
   <div class="card-head"><h2>Recent actions</h2></div>
   <table class="compact"><thead><tr><th scope="col">Action</th><th scope="col">Result</th><th scope="col">Started</th></tr></thead><tbody>
   {% for r in history %}
-    <tr><td>{{ r.spec_id }}</td><td><span class="badge {{ 'good' if r.status == 'ok' else ('bad' if r.status == 'failed' else '') }}">{{ r.status }}</span></td>
+    <tr><td>{{ r.spec_id|run_label }}</td><td><span class="badge {{ 'good' if r.status == 'ok' else ('bad' if r.status == 'failed' else '') }}">{{ {'ok': 'Done', 'failed': 'Failed', 'running': 'Running'}.get(r.status, r.status) }}</span></td>
         <td class="muted">{{ r.started_at|dt }}</td></tr>
   {% else %}<tr><td colspan="3" class="muted">Nothing run since the UI started.</td></tr>{% endfor %}
   </tbody></table>

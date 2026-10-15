@@ -331,9 +331,9 @@ def test_health_endpoint_reports_checks(env):
 
 def test_settings_shows_search_criteria_and_cv_tree(env):
     html = env[0].get("/settings", headers=HOST).text
-    assert "What I&#39;m looking for" in html or "What I'm looking for" in html
+    assert "What you&#39;re looking for" in html or "What you're looking for" in html
     assert 'data-cfg="search.titles_include"' in html and "engineer" in html and "s-1" in html
-    assert "titles_include" in html and "Roles I want" in html  # editable, with plain labels
+    assert "titles_include" in html and "Roles you want" in html  # editable, with plain labels
 
 
 # --- regressions found in review ---------------------------------------------------------------
@@ -483,7 +483,7 @@ def test_upcoming_interviews_appear_on_the_dashboard(env):
         json={"kind": "system_design", "scheduled_at": "2026-10-22T09:30"},
     )
     html = client.get("/", headers=HOST).text
-    assert "System design" in html and "2026-10-22 09:30" in html
+    assert "System design" in html and "Oct 22, 2026 09:30" in html
 
 
 def test_search_is_a_whitelisted_run_that_needs_no_ai(env):
@@ -849,7 +849,7 @@ def test_page_chrome_has_skip_link_landmarks_and_current_page(env):
     assert 'class="skip-link" href="#main"' in html and '<main id="main"' in html
     assert '<nav aria-label="Main">' in html and 'aria-label="Job Hunter"' in html
     assert html.count('aria-current="page"') == 1
-    assert ">Job matches" in html.split('aria-current="page"')[1][:300]
+    assert ">Matches" in html.split('aria-current="page"')[1][:300]
     assert 'id="theme-toggle"' in html and 'aria-pressed="false"' in html
 
 
@@ -958,3 +958,23 @@ def test_ago_filter():
     assert ago((now - timedelta(days=1)).isoformat()) == "yesterday"
     assert ago((now - timedelta(days=5)).isoformat()) == "5 days ago"
     assert ago(None) == "—"
+
+
+def test_voice_you_and_no_raw_tokens(env):
+    client = env[0]
+    for url in ("/", "/jobs?status=all", "/jobs/1", "/pipeline", "/run", "/settings"):
+        html = client.get(url, headers=HOST).text
+        text = re.sub(r"<(script|style)\b.*?</\1>", "", html, flags=re.S)
+        visible = re.sub(r"<[^>]+>", " ", text)
+        for phrase in ("What I", "Roles I want", "My application", "My CV", "I applied"):
+            assert phrase not in visible, (url, phrase)
+        assert not re.search(r">\s*(onsite|spec_id)\s*<", html), url
+        assert not re.search(r"\b20\d\d-\d\d-\d\dT\d\d", visible), url  # no ISO timestamps
+    run = client.get("/run", headers=HOST).text
+    assert run.count(">Run<") == 0 and "Search</button>" in run  # buttons carry their verb
+
+
+def test_actions_page_has_no_config_keys_or_backticks(env):
+    html = env[0].get("/run", headers=HOST).text
+    for raw in ("budget.max_llm", "config.yaml", "`", "claude_cli backend", "LLM"):
+        assert raw not in html, raw

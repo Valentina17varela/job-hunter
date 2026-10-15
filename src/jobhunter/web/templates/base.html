@@ -50,7 +50,7 @@
     </div>
     <nav aria-label="Main">
       {% for key, label, href, icon in [
-        ('dashboard', 'Home', '/', 'home'), ('jobs', 'Job matches', '/jobs', 'target'),
+        ('dashboard', 'Home', '/', 'home'), ('jobs', 'Matches', '/jobs', 'target'),
         ('pipeline', 'Applications', '/pipeline', 'board'), ('packages', 'Documents', '/packages', 'doc'),
         ('run', 'Actions', '/run', 'play'), ('settings', 'Settings', '/settings', 'gear')] %}
       <a href="{{ href }}" class="{{ 'on' if active == key else '' }}"{% if active == key %} aria-current="page"{% endif %}><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-{{ icon }}"/></svg>{{ label }}</a>
