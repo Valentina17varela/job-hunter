@@ -10,7 +10,7 @@
       <span class="chip">{{ r.location or 'Location not stated' }}</span>
       {% if r.remote not in (r.location or '')|lower %}<span class="chip">{{ r.remote }}</span>{% endif %}
       {% if r.salary_max %}<span class="chip pay">{{ r.salary_max|money(r.salary_currency) }}/yr</span>{% endif %}
-      <span class="badge st-{{ r.status }}">{{ STATUS_LABELS.get(r.status, r.status) }}</span>
+      {% if r.status not in ('scored', 'selected') %}<span class="badge st-{{ r.status }}">{{ STATUS_LABELS.get(r.status, r.status) }}</span>{% endif %}
       {% if below and r.status != 'below_threshold' %}<span class="badge warn">below your threshold</span>{% endif %}
       {% if r.source == 'manual' %}<span class="chip">Manual</span>{% endif %}
       {% if r.is_favorite and r.status == 'closed' %}<span class="badge bad">Closed</span>{% endif %}
@@ -23,11 +23,17 @@
   </div>
   {{ m.ring(r.score, 52) }}
   <div class="job-actions">
-    {% if r.has_package %}<a class="btn small primary" href="/jobs/{{ r.id }}#package">View package</a>
-    {% else %}<button class="btn small primary" data-run='{{ {"id": "tailor", "jobs": [r.id]}|tojson|forceescape }}' data-label="Building the package for “{{ r.title|truncate(40) }}”" data-reload>Build package</button>{% endif %}
-    {% if not r.stage %}<button class="btn small" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}' data-top-check>I applied</button>
-    {% if r.status != 'ignored' %}<button class="btn small ghost" data-post="/api/jobs/{{ r.id }}/ignore" data-json='{}' data-confirm="Hide this posting for good?" data-top-check>Hide</button>
-    <button class="btn small ghost" data-not-for-me="{{ r.id }}" data-title="{{ r.title }}" data-company="{{ r.company }}">Not for me</button>{% endif %}{% endif %}
+    {% set visible = r.has_package or r.status in ('scored', 'selected', 'packaged', 'below_threshold') %}
+    {% if r.has_package %}<a class="btn small" href="/jobs/{{ r.id }}#package">View package</a>
+    {% elif visible %}<button class="btn small" data-run='{{ {"id": "tailor", "jobs": [r.id]}|tojson|forceescape }}' data-label="Building the package for “{{ r.title|truncate(40) }}”" data-reload>Build package</button>{% endif %}
+    <details class="more">
+      <summary class="icon-btn" aria-label="More actions for {{ r.title }}">{{ m.icon('more') }}</summary>
+      <div class="menu">
+        {% if not r.has_package and not visible %}<button type="button" data-run='{{ {"id": "tailor", "jobs": [r.id]}|tojson|forceescape }}' data-label="Building the package for “{{ r.title|truncate(40) }}”" data-reload>Build package</button>{% endif %}
+        {% if not r.stage %}<button type="button" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}' data-top-check>I applied</button>
+        {% if r.status != 'ignored' %}<button type="button" data-not-for-me="{{ r.id }}" data-title="{{ r.title }}" data-company="{{ r.company }}">Not for me</button>{% endif %}{% endif %}
+      </div>
+    </details>
   </div>
 </article>
 {% endmacro %}
@@ -50,7 +56,9 @@
 <section class="card top-board" id="top-board" data-top-target="{{ plan.target }}">
   <div class="card-head"><h2>{{ m.icon('target') }} Your top {{ plan.target }}</h2>
     <p class="muted small">The best fits you have not dismissed. Hide one, or say it is not for you, and the next best takes its place.</p></div>
-  {{ top_fill(plan) }}
+  {% set todo = plan.board|rejectattr('has_package')|list %}
+  {% if todo %}<div class="board-head-action"><button class="btn primary" data-run='{{ {"id": "tailor", "jobs": todo|map(attribute="id")|list}|tojson|forceescape }}' data-label="Building {{ todo|length }} package{{ 's' if todo|length != 1 }}" data-reload>{{ m.icon('spark') }} Build {{ todo|length }} package{{ 's' if todo|length != 1 }} for your top {{ plan.target }}</button></div>{% endif %}
+  {{ top_fill(plan, not todo) }}
   {% if plan.below %}<p class="callout warn"><b>{{ m.icon('alert') }} {{ plan.below }} of these {{ 'is' if plan.below == 1 else 'are' }} below your score threshold.</b> They are the best of what is scored, not strong matches.</p>{% endif %}
   {% for r in plan.board %}{{ job_card(r, blocked, r.below_threshold) }}{% else %}<p class="muted">Nothing scored yet. Score your matches from Home.</p>{% endfor %}
   {% for text in suggestions %}<p class="hint">{{ m.icon('info') }} {{ text }}</p>{% endfor %}

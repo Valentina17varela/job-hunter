@@ -418,7 +418,7 @@ def test_empty_or_invalid_numeric_filters_do_not_break_the_page(env):
 def test_any_posting_can_be_packaged_by_hand_from_its_page(env):
     client = env[0]
     below = client.get("/jobs/2", headers=HOST).text  # filtered-out posting
-    assert "Build package for this posting" in below
+    assert "Build package</button>" in below and "No package yet" in below
     assert "&#34;jobs&#34;: [2]" in below or '"jobs": [2]' in below  # runs only this posting
     assert "/run?tailor" not in below  # runs in place, no navigation to the Actions page
     assert 'id="dock"' in below  # the live log panel exists on every page
@@ -585,7 +585,7 @@ def test_add_posting_api_and_pages(env):
     assert res.status_code == 200 and res.json()["created"]
     url = res.json()["url"]
     page = client.get(url, headers=HOST).text
-    assert "Manual" in page and "Score this posting with AI" in page
+    assert "Manual" in page and "Score this posting</button>" in page
     assert "Manual" in client.get("/jobs?status=all", headers=HOST).text
     again = client.post("/api/postings", json=body, headers=HOST).json()
     assert not again["created"]
@@ -916,3 +916,18 @@ def test_reload_keeps_place():
     js = (Path(__file__).parents[1] / "src/jobhunter/web/static/app.js").read_text()
     assert js.count("location.reload()") == 1  # only inside reloadHere
     assert "jh_place" in js
+
+
+def test_job_cards_are_quiet_and_dismissal_is_one_action(env):
+    html = env[0].get("/jobs?status=best", headers=HOST).text
+    assert ">Hide<" not in html and "data-not-for-me" in html  # Hide merged into Not for me
+    assert 'class="more"' in html  # secondary actions live in an overflow menu
+    assert len(re.findall(r'btn small primary" (?:data-run|href)', html)) == 0  # none per card
+
+
+def test_posting_page_has_one_primary_and_a_workspace(env):
+    page = env[0].get("/jobs/3", headers=HOST).text
+    assert len(re.findall(r'class="btn primary" (?:data-run|href)', page)) == 1
+    assert 'class="more"' in page and "workspace" in page
+    h1 = re.search(r"<h1>(.*?)</h1>", page, re.S).group(1)
+    assert "star" not in h1  # the star left the title

@@ -25,7 +25,7 @@
         <label class="opt-check"><input type="checkbox" data-opt="force"> Rebuild ones already done</label>{% endif %}
       {% endif %}
     </div>
-    <button class="btn primary" data-runcard="{{ s.id }}" data-label="{{ s.label }}">{{ m.icon('play') }} Run</button>
+    <button class="btn" data-runcard="{{ s.id }}" data-label="{{ s.label }}">{{ m.icon('play') }} Run</button>
     {% if s.llm %}<p class="muted small">{{ backend }} backend · up to {{ max_calls }} AI calls per run</p>{% endif %}
   </section>
   {% endfor %}

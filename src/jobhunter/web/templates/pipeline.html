@@ -25,7 +25,7 @@
     {% for r in ready %}
     <article class="kcard">
       <div class="kcard-top">{{ m.ring(r.score, 40) }}<div class="grow"><a class="ktitle" href="/jobs/{{ r.id }}">{{ r.title }}</a><div class="muted small">{{ r.company }}</div></div></div>
-      <button class="btn small primary" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>I applied</button>
+      <button class="btn small" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>I applied</button>
     </article>
     {% else %}<p class="muted small">Nothing waiting. Build packages for your best matches.</p>{% endfor %}
   </section>

@@ -53,7 +53,7 @@
   --space-5: 1.5rem; --space-6: 2rem; --space-7: 3rem; --space-8: 4rem;
 
   /* layers */
-  --z-raise: 1; --z-sticky: 2; --z-dock: 50; --z-toast: 60; --z-notice: 70;
+  --z-raise: 1; --z-sticky: 2; --z-menu: 5; --z-dock: 50; --z-toast: 60; --z-notice: 70;
 
   --side: 248px;
 }

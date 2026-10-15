@@ -20,7 +20,7 @@
   {% if it.pkg %}
   {% if it.pkg.meta.get('problems') %}<ul class="flags">{% for p in it.pkg.meta.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
   <div class="chips mt">
-    {% for file in it.pkg.files if file.name.endswith('.pdf') %}<a class="btn small primary" href="{{ file.url }}" target="_blank" rel="noopener">{{ m.icon('doc') }} {{ 'CV' if file.name == 'cv.pdf' else 'Cover letter' }}</a>{% endfor %}
+    {% for file in it.pkg.files if file.name.endswith('.pdf') %}<a class="btn small" href="{{ file.url }}" target="_blank" rel="noopener">{{ m.icon('doc') }} {{ 'CV' if file.name == 'cv.pdf' else 'Cover letter' }}</a>{% endfor %}
     {% for file in it.pkg.files if not file.name.endswith('.pdf') %}<a class="chip link" href="{{ file.url }}" target="_blank" rel="noopener">{{ file.name }}</a>{% endfor %}
   </div>
   {% else %}<p class="muted">The files for this package are no longer on disk.</p>{% endif %}

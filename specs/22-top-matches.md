@@ -20,6 +20,7 @@
 - `top_matches_count` in config (default 5, editable in Settings → AI & documents).
 
 ### 3.2 "Not for me" (dislike) next to *Hide*
+> Update (spec 24, slice 6): the *Hide* button is gone; *Not for me* is the only dismissal and it hides the posting for good (the reason is optional).
 - *Hide* = I'm not interested right now; *Not for me* = a signal, with an optional one-click reason: *wrong role*, *location/visa*, *pay*, *company*, *seniority*, *other*. Stored in the existing `events` (or a small `feedback` table), status becomes `ignored` as with Hide.
 - *Company* offers *Block this company* (spec 11) in the same dialog.
 - The reasons are only **recorded and counted** in this spec. Using them to adjust filters or the scoring prompt is a separate, later task (it changes scores, so it needs its own spec); the Settings page can show "You marked 6 postings as *location*: tighten `locations_allowed`?" as a suggestion only.

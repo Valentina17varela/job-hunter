@@ -74,7 +74,8 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 - [x] Slice 3 — Surface language (see §12).
 - [x] Slice 4 — Interaction (see §13).
 - [x] Slice 5 — Home as a cockpit (see §14).
-- [ ] Slices 6 to 9 of §4, each ticked here when shipped.
+- [x] Slice 6 — Posting page and job cards (see §15).
+- [ ] Slices 7 to 9 of §4, each ticked here when shipped.
 - [ ] README (UI section) and screenshots, `DESIGN.md`, `PRODUCT.md`, `design/README.md` and this spec marked done.
 
 ## 9. Acceptance criteria
@@ -155,3 +156,15 @@ Not done in this slice (belongs to later ones): page reload after every action (
 **System check** is a hidden card on Home that the page script reveals only when a *required* check fails; Settings (System) always shows it.
 
 **Checked in a real browser** (light, dark, 390 px, no horizontal scroll); README text and `docs/images/dashboard.png` refreshed. Test: Home has exactly one primary run button and count-aware labels; `tests/test_css.py` no longer whitelists `.eyebrow`.
+
+## 15. Slice 6 — Posting page and job cards (done)
+
+**Job cards (D3, D4).** A row now shows the avatar, title, company line, a few chips, the AI reason, the score ring and **one visible button** (*View package*, or *Build package* for postings worth packaging) plus a **⋯ overflow menu** (`details.more`, closes on outside click, item click and Esc) holding *I applied*, *Not for me* and, for filtered-out or closed rows, *Build package*. *Hide* is gone: *Not for me* (optional reason) is the single dismissal and the dialog says it never comes back. The status badge is dropped when it only repeats the tab (*scored*, *selected*). The filled action moved to the head of the top board: **Build N packages for your top 5**, only for the board rows that have none; on Job matches *Search for new jobs* is secondary.
+
+**Posting page.** The header carries the page's one filled primary, chosen by state: *Score this posting* (passed, unscored) → *Build package* (no package, not applied) → *Open posting to apply* (package ready, not applied); applied postings have none. *Open posting* is secondary otherwise; the star moved out of the `h1` next to a ⋯ menu with *Block this company* and *Not for me*. Posting text (always open, scrollable) sits beside the package card in a two-column workspace; the cards' own buttons (build, "I applied", add interview) are secondary.
+
+**Other pages.** Documents' PDF buttons, Actions' thirteen *Run* buttons and Applications' *I applied* are secondary now (labels get their verbs in slice 8).
+
+**Deferred.** Inline CV/letter preview and named verification checks (need a PDF/HTML preview design) move to the backlog; the "Build N packages" button does not yet clamp to `max_packages_per_day` (the board is at most `top_matches_count` rows).
+
+**Tests.** `test_job_cards_are_quiet_and_dismissal_is_one_action`, `test_posting_page_has_one_primary_and_a_workspace`; existing posting-page tests updated (475 total). Checked in a real browser at 1440 and 390 px.

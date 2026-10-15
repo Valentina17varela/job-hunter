@@ -630,6 +630,37 @@ legend.flabel { padding: 0; }
 .job-reason { margin: .5rem 0 0; color: var(--ink); font-size: var(--text-sm); text-wrap: pretty; }
 .warn-line { margin: .35rem 0 0; color: var(--warn); font-size: var(--text-sm); display: flex; gap: .35rem; align-items: center; }
 .job-actions { display: flex; flex-direction: column; gap: .4rem; align-items: stretch; min-width: 128px; }
+.board-head-action { margin: .2rem 0 .8rem; }
+.more { position: relative; }
+.more > summary { list-style: none; cursor: pointer; display: inline-grid; place-items: center; }
+.more > summary::-webkit-details-marker { display: none; }
+.more .menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + .25rem);
+  z-index: var(--z-menu);
+  min-width: 11rem;
+  display: flex;
+  flex-direction: column;
+  padding: .3rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-hover);
+}
+.more .menu button {
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+  padding: .5rem .7rem;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+.more .menu button:hover { background: var(--soft); }
+.workspace { align-items: start; }
+.workspace pre.desc { white-space: pre-wrap; }
 .verdict {
   text-transform: uppercase;
   font-size: var(--text-xs);
@@ -725,7 +756,6 @@ ul.flags { margin: .3rem 0 0; padding-left: 1.2rem; }
 }
 .job-card .ring { order: 3; }
 .job-card .job-actions { order: 4; flex-direction: row; align-items: center; min-width: 18.5rem; justify-content: flex-end; }
-.job-card .job-actions .btn.ghost { padding-inline: .5rem; }
 .ring.none { box-shadow: none; }
 .big-link:hover { color: var(--accent-text); }
 .st-score_failed { background: var(--bad-soft); color: var(--bad); }

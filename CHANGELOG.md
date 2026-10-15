@@ -11,6 +11,7 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 - One orange voice: neutral avatars, badges, tags and chips, flat surfaces, a real type scale, honest icons (sliders for Settings, sprite stars and close buttons).
 - Accessibility floor: labelled controls everywhere, announced status messages, skip link, landmarks, 24 px targets, reduced motion, a real 404 page, theme applied before first paint.
 - Home as a cockpit: slim header with the one next action ("Score 12 postings"), inline KPI strip, "what to do next" first, a three-step pipeline list, system check only when something required fails.
+- Quieter job cards and posting page: one visible button per row plus a ⋯ menu, *Hide* merged into *Not for me*, one filled primary per page area, "Build N packages for your top 5" at the board's head, posting text beside the package.
 - Interaction polish: focus and scroll position survive actions that reload the page, one transition token, pressed states, page cross-fades, long-lived caching for versioned assets and a preloaded font.
 - *Posted* filter and live filters in Job matches.
 - Top matches board (always your best 5), *Not for me* reasons, `jobhunter top --fill`.

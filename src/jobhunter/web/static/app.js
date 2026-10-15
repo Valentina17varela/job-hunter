@@ -526,6 +526,16 @@
     });
   }
 
+  // ---------- overflow menus (<details class="more">) ----------
+  document.addEventListener('click', (ev) => {
+    $$('details.more[open]').forEach((d) => { if (!d.contains(ev.target) || ev.target.closest('.menu button')) d.open = false; });
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    const open = $('details.more[open]');
+    if (open) { open.open = false; $('summary', open).focus(); }
+  });
+
   // ---------- health ----------
   const health = $('#health');
   if (health) {
