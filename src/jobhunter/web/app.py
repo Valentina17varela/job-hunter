@@ -83,6 +83,21 @@ def active_filters(
     return chips
 
 
+class CachedStatic(StaticFiles):
+    """Versioned (`?v=`) assets are immutable; fonts and images last a week; rest revalidates."""
+
+    async def get_response(self, path: str, scope):  # type: ignore[no-untyped-def]
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            if b"v=" in scope.get("query_string", b""):
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            elif path.startswith(("fonts/", "img/")):
+                response.headers["Cache-Control"] = "public, max-age=604800"
+            else:
+                response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 def asset_url(name: str) -> str:
     """`/static/<name>?v=<mtime>`: a changed file is never served from the browser cache."""
     try:
@@ -271,7 +286,7 @@ def create_app(
     hosts = allowed_hosts or {f"127.0.0.1:{port}", f"localhost:{port}"}
     app = FastAPI(title="Job Hunter", docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(LocalOnlyMiddleware, allowed_hosts=hosts)
-    app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
+    app.mount("/static", CachedStatic(directory=HERE / "static"), name="static")
     templates = Jinja2Templates(directory=HERE / "templates")
     manager = runner or RunManager(config_path, Path.cwd(), log_dir=None)
     templates.env.filters["dt"] = fmt_dt

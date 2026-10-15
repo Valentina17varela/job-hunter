@@ -1,4 +1,5 @@
 import json
+import re
 import threading
 from pathlib import Path
 
@@ -897,3 +898,19 @@ def test_unknown_pages_get_a_real_404_and_the_api_keeps_json(env):
     assert api.status_code == 404 and api.json()["error"]
     missing = client.get("/jobs/99999", headers=HOST)
     assert missing.status_code == 404 and "Posting not found" in missing.text
+
+
+def test_static_cache_headers(env):
+    client = env[0]
+    html = client.get("/").text
+    assert 'rel="preload" href="/static/fonts/PlusJakartaSans.woff2"' in html
+    versioned = re.search(r'href="(/static/style\.css\?v=\d+)"', html).group(1)
+    assert "immutable" in client.get(versioned).headers["cache-control"]
+    assert client.get("/static/style.css").headers["cache-control"] == "no-cache"
+    assert "max-age" in client.get("/static/fonts/PlusJakartaSans.woff2").headers["cache-control"]
+
+
+def test_reload_keeps_place():
+    js = (Path(__file__).parents[1] / "src/jobhunter/web/static/app.js").read_text()
+    assert js.count("location.reload()") == 1  # only inside reloadHere
+    assert "jh_place" in js

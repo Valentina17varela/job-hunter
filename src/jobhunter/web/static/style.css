@@ -76,6 +76,7 @@ h2.group {
 pre.desc { max-height: 480px; }
 a:focus-visible, summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 p { text-wrap: pretty; }
+b, strong { font-weight: var(--weight-bold); }
 
 /* ---- Utilities ---- */
 .skip-link {
@@ -230,11 +231,12 @@ main:focus { outline: 0; }
   font: inherit;
   font-weight: var(--weight-semibold);
   cursor: pointer;
-  transition: .12s;
+  transition: var(--transition);
   border-color: var(--btn-border);
   text-decoration: none;
 }
 .btn:hover { border-color: var(--ink-neutral); text-decoration: none; transform: translateY(-1px); }
+.btn:active, .fb-chip:active { transform: translateY(0) scale(.98); }
 .btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 .btn.primary {
   background: var(--primary);
@@ -424,7 +426,7 @@ legend.flabel { padding: 0; }
 .count { background: transparent; color: var(--muted); border-radius: 0; padding: 0; font-size: var(--text-xs); margin-left: .2rem; }
 .pager { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.2rem; }
 .tabs .count { background: transparent; padding: 0 .1rem; }
-#jobs-results { transition: opacity .12s; }
+#jobs-results { transition: var(--transition); }
 #jobs-results.loading { opacity: .55; }
 .filterbar {
   display: flex;
@@ -472,7 +474,7 @@ legend.flabel { padding: 0; }
   border-radius: var(--r-md);
   background: var(--panel);
   cursor: pointer;
-  transition: .12s;
+  transition: var(--transition);
 }
 .fb-chip {
   display: inline-flex;
@@ -484,7 +486,7 @@ legend.flabel { padding: 0; }
   border-radius: var(--r-md);
   background: var(--panel);
   cursor: pointer;
-  transition: .12s;
+  transition: var(--transition);
   font-weight: var(--weight-bold);
   color: var(--muted);
 }
@@ -665,7 +667,7 @@ legend.flabel { padding: 0; }
   padding: 1rem .25rem;
   margin: 0;
   box-shadow: none;
-  transition: .12s;
+  transition: var(--transition);
   border-bottom: 1px solid var(--border);
 }
 .job-card:hover { border-color: var(--border); box-shadow: none; background: var(--soft); }
@@ -1080,5 +1082,10 @@ tr:last-child td { border-bottom: 0; }
 /* ---- (prefers-reduced-motion: reduce) ---- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-  .btn:hover, .kpi:hover { transform: none; }
+  .btn:hover, .btn:active, .fb-chip:active, .kpi:hover { transform: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
+
+/* ---- Page changes cross-fade (same-origin navigation) ---- */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .12s; }

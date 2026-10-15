@@ -72,7 +72,8 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 - [x] Slice 1 — Foundation (see §10).
 - [x] Slice 2 — Accessibility and theming floor (see §11).
 - [x] Slice 3 — Surface language (see §12).
-- [ ] Slices 4 to 9 of §4, each ticked here when shipped.
+- [x] Slice 4 — Interaction (see §13).
+- [ ] Slices 5 to 9 of §4, each ticked here when shipped.
 - [ ] README (UI section) and screenshots, `DESIGN.md`, `PRODUCT.md`, `design/README.md` and this spec marked done.
 
 ## 9. Acceptance criteria
@@ -131,3 +132,13 @@ Not done in this slice (belongs to later ones): page reload after every action (
 **Checked in a real browser** (light, dark, 390 px) on Home, Job matches, posting detail, Applications and Settings; screenshots in the README refreshed. Tests: 6 new in `tests/test_css.py` (status and stage rules, neutral defaults, type and weight tokens, caps, no glyph icons, stage bars). `DESIGN.md` still describes the pre-slice-3 look; it is regenerated in slice 9.
 
 **Deviations from the plan.** The Home hero and the "one filled primary per area" rule are still pending (slices 5 and 6); step numbers stay as small neutral circles until Home becomes a pipeline list.
+
+## 13. Slice 4 — Interaction (done)
+
+**Place kept after actions (D5, cheap path).** Every action that reloads the page (favorite, applied, hide, not for me, block, run finished, refresh) goes through one `reloadHere()`: it stores the scroll position and the index of the job row and control that had focus, and after the reload puts focus back on the same control (or the next row when the row left the list, or `main` when there was no row). Verified in a real browser: starring the 4th row at scroll 600 comes back at scroll 600 with focus on that star. In-place row updates stay a later step.
+
+**One motion language.** A single `--transition` token (colors, border, shadow, opacity, transform at .12 s) replaces the four ad-hoc `transition: .12s` rules; buttons and filter chips get a pressed state (`:active`); same-origin page changes cross-fade through `@view-transition` (disabled under `prefers-reduced-motion`).
+
+**Delivery.** Versioned assets (`?v=`) are served `immutable` for a year, fonts and images for a week, everything else `no-cache` (`CachedStatic`); the font is preloaded in `<head>`, which removes the text swap on first paint. `<b>`/`<strong>` are weight 700 (they computed to 900 inside 800 parents).
+
+**Tests.** `test_one_transition_token_and_pressed_state`, `test_static_cache_headers`, `test_reload_keeps_place` (473 total). Not done here: in-place updates without reload.

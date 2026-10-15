@@ -3,6 +3,37 @@
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
 
+  // Reloading after an action must not lose the reader's place: remember the scroll position and
+  // which control of which job row had focus, and put focus back after the page comes up.
+  const PLACE_KEY = 'jh_place';
+  function reloadHere() {
+    try {
+      const el = document.activeElement;
+      const card = el && el.closest ? el.closest('.job-card') : null;
+      const place = { path: location.pathname + location.search, y: window.scrollY };
+      if (card) {
+        place.card = $$('.job-card').indexOf(card);
+        place.ctl = $$('button, a', card).indexOf(el);
+      }
+      sessionStorage.setItem(PLACE_KEY, JSON.stringify(place));
+    } catch (e) { /* storage unavailable: reload anyway */ }
+    location.reload();
+  }
+
+  (function restorePlace() {
+    let place = null;
+    try {
+      place = JSON.parse(sessionStorage.getItem(PLACE_KEY) || 'null');
+      sessionStorage.removeItem(PLACE_KEY);
+    } catch (e) { return; }
+    if (!place || place.path !== location.pathname + location.search) return;
+    window.scrollTo(0, place.y || 0);
+    const cards = $$('.job-card');
+    const card = place.card >= 0 && cards.length ? cards[Math.min(place.card, cards.length - 1)] : null;
+    const target = card ? ($$('button, a', card)[Math.max(place.ctl, 0)] || card.querySelector('a, button')) : $('#main');
+    if (target) target.focus({ preventScroll: true });
+  })();
+
   function toast(message) {
     const el = $('#toast');
     el.textContent = message;
@@ -31,7 +62,7 @@
   }
 
   async function act(fn, reload) {
-    try { await fn(); if (reload !== false) location.reload(); return true; }
+    try { await fn(); if (reload !== false) reloadHere(); return true; }
     catch (err) { toast(err.message); return false; }
   }
 
@@ -57,7 +88,7 @@
       setDock(ok ? 'ok' : 'bad', ok ? 'done' : 'failed');
       $('#dock-result').textContent = ok ? 'Finished.' : 'Exited with code ' + s.exit_code + '. Read the log above.';
       $('#dock-foot').hidden = false;
-      if (ok && run.reload) { $('#dock-result').textContent = 'Finished. Updating this page…'; setTimeout(() => location.reload(), 1200); }
+      if (ok && run.reload) { $('#dock-result').textContent = 'Finished. Updating this page…'; setTimeout(() => reloadHere(), 1200); }
     }).catch(() => setDock('bad', 'lost connection'));
   }
 
@@ -85,7 +116,7 @@
   if (dock) {
     $('#dock-toggle').addEventListener('click', () => dock.classList.toggle('min'));
     $('#dock-close').addEventListener('click', () => { dock.hidden = true; });
-    $('#dock-refresh').addEventListener('click', () => location.reload());
+    $('#dock-refresh').addEventListener('click', () => reloadHere());
     try {
       const saved = JSON.parse(sessionStorage.getItem(KEY) || 'null');
       if (saved) openDock(saved, true);
@@ -425,7 +456,8 @@
       try {
         await post('/api/jobs/' + nfmJob + '/ignore', body);
         try { sessionStorage.setItem(NOTICE_KEY, '1'); } catch (e) { /* ignore */ }
-        location.reload();
+        nfm.close();
+        reloadHere();
       } catch (err) { toast(err.message); }
     });
   }
@@ -546,7 +578,7 @@
       const ok = await act(() => post('/api/config', { updates: { search: { companies_exclude: list } } }), false);
       if (!ok) return;
       if (confirm(company + ' is blocked. Re-filter now so its current postings leave your matches?')) startRun({ id: 'refilter' }, 'Re-filtering with your new criteria', true);
-      else location.reload();
+      else reloadHere();
     }
   });
 })();
