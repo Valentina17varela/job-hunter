@@ -532,6 +532,8 @@
     fetch('/api/health').then((r) => r.json()).then((checks) => {
       health.innerHTML = '';
       const bad = checks.filter((c) => !c.ok);
+      const card = $('#health-card');
+      if (card) card.hidden = !bad.some((c) => c.required);  // Home: only when something required fails
       if (!bad.length) {
         const li = document.createElement('li');
         li.innerHTML = '<span class="dot"></span>';

@@ -198,7 +198,11 @@ def build_suggestions(
             {
                 "text": f"{plural(unscored, 'posting matches', 'postings match')} your criteria, "
                 f"{'and is' if unscored == 1 else 'and are'} waiting for AI scoring.",
-                "run": {"id": "score", "label": "Score them with AI", "llm": True},
+                "run": {
+                    "id": "score",
+                    "label": f"Score {plural(unscored, 'posting', 'postings')}",
+                    "llm": True,
+                },
             }
         )
     unpackaged = by.get("selected", 0)
@@ -207,7 +211,11 @@ def build_suggestions(
             {
                 "text": f"{plural(unpackaged, 'top match has', 'top matches have')} no tailored CV "
                 "and cover letter yet.",
-                "run": {"id": "tailor", "label": "Build their packages", "llm": True},
+                "run": {
+                    "id": "tailor",
+                    "label": f"Build {plural(unpackaged, 'package', 'packages')}",
+                    "llm": True,
+                },
                 "link": {"href": "/jobs?status=best", "label": "Review them first"},
             }
         )
@@ -357,6 +365,8 @@ def create_app(
             max_calls=config.budget.max_llm_calls_per_run, backend=config.llm.backend,
             running=manager.active(), favorites_open=favorites.count_without_application(conn),
             plan=top_board.plan(conn, config),
+            unscored=data["by_status"].get("passed", 0) + data["by_status"].get("score_failed", 0),
+            unpackaged=data["by_status"].get("selected", 0),
         )  # fmt: skip
 
     @app.get("/jobs")

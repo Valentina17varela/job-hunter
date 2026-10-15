@@ -32,15 +32,15 @@
 </article>
 {% endmacro %}
 
-{% macro top_fill(plan) %}
+{% macro top_fill(plan, primary=true) %}
 {% if plan.need %}
 <div class="top-fill" data-top-fill>
   {% if plan.fill_ids %}
   <p><b>Only {{ plan.board|length }} of {{ plan.target }} matches so far.</b> {{ plan.unscored_left }} posting{{ 's' if plan.unscored_left != 1 }} met your criteria but {{ 'have' if plan.unscored_left != 1 else 'has' }} no AI score yet. Score the {{ plan.fill_ids|length }} most promising to refill your top {{ plan.target }}.</p>
-  <button class="btn primary" data-run='{{ {"id": "score", "jobs": plan.fill_ids}|tojson|forceescape }}' data-label="Scoring {{ plan.fill_ids|length }} replacements" data-reload>{{ m.icon('spark') }} Score {{ plan.fill_ids|length }} replacements</button>
+  <button class="btn{{ ' primary' if primary }}" data-run='{{ {"id": "score", "jobs": plan.fill_ids}|tojson|forceescape }}' data-label="Scoring {{ plan.fill_ids|length }} replacements" data-reload>{{ m.icon('spark') }} Score {{ plan.fill_ids|length }} replacements</button>
   {% else %}
   <p><b>Only {{ plan.board|length }} of {{ plan.target }} matches.</b> There are no unscored postings left to evaluate. Search for new jobs, or loosen a rule (Home shows which rule rejected the most).</p>
-  <div class="actions"><button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button><a class="btn" href="/">See why postings were left out</a></div>
+  <div class="actions"><button class="btn{{ ' primary' if primary }}" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button><a class="btn" href="/">See why postings were left out</a></div>
   {% endif %}
 </div>
 {% endif %}
@@ -52,7 +52,7 @@
     <p class="muted small">The best fits you have not dismissed. Hide one, or say it is not for you, and the next best takes its place.</p></div>
   {{ top_fill(plan) }}
   {% if plan.below %}<p class="callout warn"><b>{{ m.icon('alert') }} {{ plan.below }} of these {{ 'is' if plan.below == 1 else 'are' }} below your score threshold.</b> They are the best of what is scored, not strong matches.</p>{% endif %}
-  {% for r in plan.board %}{{ job_card(r, blocked, r.below_threshold) }}{% else %}<p class="muted">Nothing scored yet. Press <b>Score with AI</b> on Home.</p>{% endfor %}
+  {% for r in plan.board %}{{ job_card(r, blocked, r.below_threshold) }}{% else %}<p class="muted">Nothing scored yet. Score your matches from Home.</p>{% endfor %}
   {% for text in suggestions %}<p class="hint">{{ m.icon('info') }} {{ text }}</p>{% endfor %}
 </section>
 {% endmacro %}
@@ -60,7 +60,7 @@
 {% macro top_compact(plan) %}
 <section class="card">
   <div class="card-head"><h2>{{ m.icon('target') }} Top matches</h2><a href="/jobs?status=best">All matches →</a></div>
-  {{ top_fill(plan) }}
+  {{ top_fill(plan, false) }}
   {% for r in plan.board %}
   <a class="todo plain" href="/jobs/{{ r.id }}">{{ m.avatar(r.company, 34) }}<p><b>{{ r.title }}</b><br><span class="muted small">{{ r.company }}{% if r.below_threshold %} · <span class="badge warn">below your threshold</span>{% endif %}</span></p>{{ m.ring(r.score, 40) }}</a>
   {% else %}<p class="muted">Nothing scored yet.</p>{% endfor %}

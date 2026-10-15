@@ -104,7 +104,7 @@ def test_every_posting_status_and_stage_has_a_style_rule():
 
 def test_orange_is_not_the_default_tint():
     """Neutral by default: avatars, badges, tags, filter chips and tiles use neutral tokens."""
-    for selector in (".avatar", ".badge", ".tag", ".afchip", ".kpi-ic", ".step-n", ".empty-ic"):
+    for selector in (".avatar", ".badge", ".tag", ".afchip", ".pipe-n", ".empty-ic"):
         block = STYLE.split(f"\n{selector} {{")[1].split("}")[0]
         assert "badge-soft" not in block and "orange" not in block, selector
     assert "--surface-neutral:" in TOKENS and "--ink-neutral:" in TOKENS
@@ -119,7 +119,7 @@ def test_type_scale_and_weights_are_tokens_not_literals():
 
 
 def test_all_caps_is_reserved_for_micro_labels():
-    allowed = {".eyebrow", ".verdict", ".fb-sel > span"}
+    allowed = {".verdict", ".fb-sel > span"}
     for _context, head, body in _blocks(STYLE):
         if "text-transform: uppercase" in body:
             assert set(s.strip() for s in head.split(",")) <= allowed, head

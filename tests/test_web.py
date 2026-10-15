@@ -123,7 +123,9 @@ def test_dashboard_shows_funnel_and_filter_reasons(env):
     html = env[0].get("/", headers=HOST).text
     assert "From postings to offers" in html and "Match your criteria" in html
     assert "Title is not one of your target roles" in html  # friendly rule names, not ids
-    assert "Search for new jobs" in html and "Score with AI" in html and "Build packages" in html
+    assert "Search for new jobs" in html and "Your pipeline" in html
+    assert len(re.findall(r'btn primary" data-run', html)) == 1  # one primary action on Home
+    assert re.search(r"(Score|Build) \d+ (posting|package)", html)  # buttons say how much
 
 
 def test_jobs_filters(env):

@@ -73,7 +73,8 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 - [x] Slice 2 — Accessibility and theming floor (see §11).
 - [x] Slice 3 — Surface language (see §12).
 - [x] Slice 4 — Interaction (see §13).
-- [ ] Slices 5 to 9 of §4, each ticked here when shipped.
+- [x] Slice 5 — Home as a cockpit (see §14).
+- [ ] Slices 6 to 9 of §4, each ticked here when shipped.
 - [ ] README (UI section) and screenshots, `DESIGN.md`, `PRODUCT.md`, `design/README.md` and this spec marked done.
 
 ## 9. Acceptance criteria
@@ -142,3 +143,15 @@ Not done in this slice (belongs to later ones): page reload after every action (
 **Delivery.** Versioned assets (`?v=`) are served `immutable` for a year, fonts and images for a week, everything else `no-cache` (`CachedStatic`); the font is preloaded in `<head>`, which removes the text swap on first paint. `<b>`/`<strong>` are weight 700 (they computed to 900 inside 800 parents).
 
 **Tests.** `test_one_transition_token_and_pressed_state`, `test_static_cache_headers`, `test_reload_keeps_place` (473 total). Not done here: in-place updates without reload.
+
+## 14. Slice 5 — Home as a cockpit (done)
+
+**Slim header band (D1).** The slate hero (and its glow tokens, eyebrow and statistics column) is gone. Home opens with the mascot at 64 px, `h1` "Home", one line of state ("1,214 postings found, 3 worth a look, 2 applied. Nothing runs until you press a button.") and **the one filled primary action of the page**: the first runnable suggestion (score, then package), or *Search for new jobs* when nothing is pending. Labels say how much will happen ("Score 12 postings", "Build 2 packages"); `build_suggestions` produces them.
+
+**Order of the page.** header → KPI strip (one inline row with dividers, no icons or tiles) → *What to do next* beside *Upcoming interviews* → Top matches → *Your pipeline* → funnel and *Why postings were left out*. *What to do next* keeps links only (the run buttons live in the header and the pipeline); the top-matches fill card is a secondary button on Home (it stays primary on Job matches, where it is the area's action).
+
+**Pipeline list.** The three equal step cards became one vertical list with a neutral number, a title, one line and the controls on the right; the count-aware AI buttons appear only when there is something to do. The orange→red gradient on the "left out" bars is neutral now.
+
+**System check** is a hidden card on Home that the page script reveals only when a *required* check fails; Settings (System) always shows it.
+
+**Checked in a real browser** (light, dark, 390 px, no horizontal scroll); README text and `docs/images/dashboard.png` refreshed. Test: Home has exactly one primary run button and count-aware labels; `tests/test_css.py` no longer whitelists `.eyebrow`.

@@ -4,61 +4,25 @@
 {% block content %}
 {% set f = stats.funnel %}
 
-<section class="hero">
+{% set nxt = suggestions|selectattr('run')|list|first %}
+<header class="home-head">
+  <img src="/static/img/logo.png" alt="" width="64" height="64">
   <div>
-    <span class="eyebrow">Personal job-search copilot</span>
-    <h1>Find the roles that fit you. Apply with a tailored CV.</h1>
-    <p>It searches public job boards, keeps only what matches your criteria, scores each role against your CV, writes a tailored CV and cover letter, and tracks every step until the offer. Everything runs on your machine, only when you click.</p>
+    <h1>Home</h1>
+    <p>{{ "{:,}".format(f.fetched) }} postings found, {{ kpis.matches }} worth a look, {{ f.applied }} applied. Nothing runs until you press a button.</p>
   </div>
-  <div class="hero-side">
-    <img class="hero-logo" src="/static/img/logo.png" alt="" width="150" height="150">
-    <div class="hero-stats">
-      <div><b>{{ "{:,}".format(f.fetched) }}</b><span>postings found</span></div>
-      <div><b>{{ kpis.matches }}</b><span>matches for you</span></div>
-      <div><b>{{ f.applied }}</b><span>applications</span></div>
-    </div>
-  </div>
-</section>
+  {% if nxt %}<button class="btn primary" data-run='{{ {"id": nxt.run.id}|tojson|forceescape }}' data-label="{{ nxt.run.label }}" data-reload>{{ m.icon('spark' if nxt.run.llm else 'search') }} {{ nxt.run.label }}</button>
+  {% else %}<button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>{% endif %}
+</header>
 
 {% if running %}<div class="notice">{{ m.icon('play') }} A run is in progress: <b>{{ running.spec_id }}</b>. Its log is in the panel at the bottom right.</div>{% endif %}
 
 <section class="kpis">
-  <a class="kpi" href="/jobs?status=best"><span class="kpi-ic g1">{{ m.icon('target') }}</span><div><b>{{ kpis.matches }}</b><span>Matches worth a look</span></div></a>
-  <a class="kpi" href="/packages"><span class="kpi-ic g2">{{ m.icon('doc') }}</span><div><b>{{ kpis.ready }}</b><span>Ready to apply</span></div></a>
-  <a class="kpi" href="/pipeline"><span class="kpi-ic g3">{{ m.icon('send') }}</span><div><b>{{ kpis.active }}</b><span>Active applications</span></div></a>
-  <a class="kpi" href="/pipeline"><span class="kpi-ic g4">{{ m.icon('cal') }}</span><div><b>{{ kpis.interviews }}</b><span>Interviews pending</span></div></a>
+  <a class="kpi" href="/jobs?status=best"><b>{{ kpis.matches }}</b><span>Matches worth a look</span></a>
+  <a class="kpi" href="/packages"><b>{{ kpis.ready }}</b><span>Ready to apply</span></a>
+  <a class="kpi" href="/pipeline"><b>{{ kpis.active }}</b><span>Active applications</span></a>
+  <a class="kpi" href="/pipeline"><b>{{ kpis.interviews }}</b><span>Interviews pending</span></a>
 </section>
-{% import "_top.html" as top %}
-{{ top.top_compact(plan) }}
-{% if favorites_open %}<p class="muted small"><a href="/jobs?status=favorites">{{ m.icon('star-fill') }} {{ favorites_open }} favorite{{ 's' if favorites_open != 1 }} without an application yet</a></p>{% endif %}
-
-<section class="card">
-  <div class="card-head"><h2>Your workflow</h2><p class="muted">Three steps. Press them in order whenever you want to look for work.</p></div>
-  <div class="steps">
-    <div class="step">
-      <span class="step-n">1</span>
-      <h3>Search</h3>
-      <p>Look for new postings on all sources and keep only the ones matching your criteria. Free, no AI.</p>
-      <div class="step-actions"><button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>
-        <button class="btn" data-open-add>{{ m.icon('doc') }} Add a posting by hand</button></div>
-    </div>
-    <div class="step">
-      <span class="step-n">2</span>
-      <h3>Review matches</h3>
-      <p>AI reads each posting against your CV, rates the fit and flags blockers such as country restrictions.</p>
-      <div class="step-actions"><button class="btn primary" data-run='{"id":"score"}' data-label="Scoring postings with AI" data-reload>{{ m.icon('spark') }} Score with AI</button>
-      <a class="link" href="/jobs?status=best">See best matches →</a></div>
-    </div>
-    <div class="step">
-      <span class="step-n">3</span>
-      <h3>Prepare &amp; apply</h3>
-      <p>For your top matches: a CV that highlights what matters, a one-page cover letter and a recruiter message.</p>
-      <div class="step-actions"><button class="btn primary" data-run='{"id":"tailor"}' data-label="Building application packages" data-reload>{{ m.icon('doc') }} Build packages</button>
-      <a class="link" href="/packages">Open documents →</a></div>
-    </div>
-  </div>
-</section>
-
 <div class="grid-2">
   <section class="card">
     <div class="card-head"><h2>What to do next</h2></div>
@@ -66,14 +30,12 @@
     <div class="todo">
       <span class="todo-ic">{{ m.icon('check') }}</span>
       <p>{{ s.text }}</p>
-      {% if s.run %}<button class="btn small primary" data-run='{{ {"id": s.run.id}|tojson|forceescape }}' data-label="{{ s.run.label }}" data-reload>{{ s.run.label }}</button>{% endif %}
       {% if s.link %}<a class="btn small" href="{{ s.link.href }}">{{ s.link.label }}</a>{% endif %}
     </div>
     {% else %}
     <p class="muted">You are all caught up. Run a new search when you want to look for more roles.</p>
     {% endfor %}
   </section>
-
   <section class="card">
     <div class="card-head"><h2>Upcoming interviews</h2><a class="link" href="/pipeline">Applications →</a></div>
     {% for i in upcoming %}
@@ -88,6 +50,35 @@
     {% endif %}
   </section>
 </div>
+
+{% import "_top.html" as top %}
+{{ top.top_compact(plan) }}
+{% if favorites_open %}<p class="muted small"><a href="/jobs?status=favorites">{{ m.icon('star-fill') }} {{ favorites_open }} favorite{{ 's' if favorites_open != 1 }} without an application yet</a></p>{% endif %}
+
+<section class="card">
+  <div class="card-head"><h2>Your pipeline</h2><p class="muted">Three steps, in order, whenever you want to look for work.</p></div>
+  <ol class="pipeline">
+    <li class="pipe-row">
+      <span class="pipe-n">1</span>
+      <div><h3>Search</h3><p>Look for new postings on all sources and keep the ones that match your criteria. Free, no AI.</p></div>
+      <div class="pipe-actions"><button class="btn" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>
+        <button class="btn" data-open-add>{{ m.icon('doc') }} Add a posting</button></div>
+    </li>
+    <li class="pipe-row">
+      <span class="pipe-n">2</span>
+      <div><h3>Review matches</h3><p>The AI rates each posting against your CV and flags blockers such as country restrictions.</p></div>
+      <div class="pipe-actions">{% if unscored %}<button class="btn" data-run='{"id":"score"}' data-label="Scoring postings with AI" data-reload>{{ m.icon('spark') }} Score {{ unscored }} posting{{ 's' if unscored != 1 }}</button>{% endif %}
+        <a class="link" href="/jobs?status=best">See best matches →</a></div>
+    </li>
+    <li class="pipe-row">
+      <span class="pipe-n">3</span>
+      <div><h3>Prepare and apply</h3><p>For your top matches: a CV that highlights what matters, a one-page cover letter and a recruiter message.</p></div>
+      <div class="pipe-actions">{% if unpackaged %}<button class="btn" data-run='{"id":"tailor"}' data-label="Building application packages" data-reload>{{ m.icon('spark') }} Build {{ unpackaged }} package{{ 's' if unpackaged != 1 }}</button>{% endif %}
+        <a class="link" href="/packages">Open documents →</a></div>
+    </li>
+  </ol>
+</section>
+
 
 <div class="grid-2">
   <section class="card">
@@ -117,7 +108,7 @@
     {% for rule, n in stats.rejected_by_rule.items() %}
     <div class="funnel-row">
       <span class="funnel-label wide">{{ rule_labels.get(rule, rule) }}</span>
-      <span class="bar warn"><span style="width: {{ 100 * n / top }}%"></span></span>
+      <span class="bar"><span style="width: {{ 100 * n / top }}%"></span></span>
       <span class="funnel-n">{{ "{:,}".format(n) }}</span>
     </div>
     {% endfor %}
@@ -126,7 +117,7 @@
   </section>
 </div>
 
-<section class="card">
+<section class="card" id="health-card" hidden>
   <div class="card-head"><h2>System check</h2><span class="muted small">Last search: {{ stats.last_fetch[0].at|dt if stats.last_fetch else 'never' }}</span></div>
   <ul id="health" class="health"><li class="muted">Checking…</li></ul>
 </section>
