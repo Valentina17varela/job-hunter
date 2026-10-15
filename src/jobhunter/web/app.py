@@ -15,6 +15,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from jobhunter import applications, config_edit, favorites, fetch_url, latex, postings, tailoring
@@ -303,6 +304,25 @@ def create_app(
     async def config_error(request: Request, exc: ConfigError) -> Any:
         return templates.TemplateResponse(request, "error.html", {"message": str(exc)}, 500)
 
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request: Request, exc: StarletteHTTPException) -> Any:
+        """Pages answer with the normal layout; the JSON API keeps JSON."""
+        path = request.url.path
+        if path.startswith(("/api/", "/static/", "/files/")) or request.method != "GET":
+            return JSONResponse({"error": str(exc.detail)}, status_code=exc.status_code)
+        titles = {404: "Page not found", 405: "Not allowed"}
+        message = (
+            "That page does not exist. Check the address, or go back to where you were."
+            if exc.status_code == 404
+            else str(exc.detail)
+        )
+        return templates.TemplateResponse(
+            request,
+            "error.html",
+            {"message": message, "title": titles.get(exc.status_code, "Something went wrong")},
+            exc.status_code,
+        )
+
     @app.exception_handler(applications.TrackingError)
     async def tracking_error(request: Request, exc: applications.TrackingError) -> Any:
         return JSONResponse({"error": str(exc)}, status_code=400)
@@ -441,7 +461,10 @@ def create_app(
         row = conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
         if row is None:
             return templates.TemplateResponse(
-                request, "error.html", {"message": f"No posting with id {job_id}"}, 404
+                request,
+                "error.html",
+                {"message": f"No posting with id {job_id}.", "title": "Posting not found"},
+                404,
             )
         score = conn.execute(
             "SELECT * FROM scores WHERE job_id = ? ORDER BY created_at DESC LIMIT 1", (job_id,)

@@ -234,7 +234,7 @@ erDiagram
 
 ### Web UI
 
-The interface uses the Kinetic Horizon look (orange brand, mascot, self-hosted Plus Jakarta Sans; no external requests). It is light by default; the sidebar has a toggle for an optional dark theme that your browser remembers.
+The interface uses the Kinetic Horizon look (orange brand, mascot, self-hosted Plus Jakarta Sans; no external requests). It is light by default; a button next to the logo switches to an optional dark theme that your browser remembers (applied before the page paints, so there is no flash). It is built to be usable without a mouse or with a screen reader: every control has an accessible name, status messages are announced, there is a skip link, the focus ring is always visible, motion respects `prefers-reduced-motion`, and unknown pages get a proper 404.
 
 `uv run jobhunter ui --open` serves a local dashboard on `127.0.0.1`. Every button runs the same command as the CLI and streams its log into a panel on the page.
 
@@ -255,7 +255,7 @@ What you can do there:
 |---|---|
 | ![Matches](docs/images/matches.png) **Job matches:** AI score, why it fits, what to verify, one-click build/apply | ![Detail](docs/images/job-detail.png) **Posting detail:** score, live filter verdict, package, notes and interviews |
 | ![Applications](docs/images/applications.png) **Applications:** kanban from *Ready to apply* to *Offer*, with a collapsible *Closed* group | ![Actions](docs/images/actions.png) **Actions:** every stage with its options, dry-run included |
-| ![Dark theme](docs/images/dark.png) **Dark theme:** optional, one click in the sidebar (light is the default) | ![Mobile](docs/images/mobile.png) **Small screens:** usable down to about 390 px |
+| ![Dark theme](docs/images/dark.png) **Dark theme:** optional, one click next to the logo (light is the default) | ![Mobile](docs/images/mobile.png) **Small screens:** usable down to about 390 px |
 
 ### Observations
 

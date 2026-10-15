@@ -70,7 +70,8 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 ## 8. Tasks
 - [x] Author answers §5.
 - [x] Slice 1 — Foundation (see §10).
-- [ ] Slices 2 to 9 of §4, each ticked here when shipped.
+- [x] Slice 2 — Accessibility and theming floor (see §11).
+- [ ] Slices 3 to 9 of §4, each ticked here when shipped.
 - [ ] README (UI section) and screenshots, `DESIGN.md`, `PRODUCT.md`, `design/README.md` and this spec marked done.
 
 ## 9. Acceptance criteria
@@ -97,3 +98,21 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 **Intended visual differences (dark theme only).**
 - Primary and ghost buttons no longer draw a grey border: the old dark rule out-ranked `.btn.primary { border-color: transparent }` by accident.
 - `color-scheme: dark` makes native controls (scrollbars, `<select>` popups, date pickers) follow the theme.
+
+## 11. Slice 2 — Accessibility and theming floor (done)
+
+**Accessibility.**
+- Every Settings field now has a label tied to its control (`for`/`id`), checkbox groups are `fieldset`/`legend`, hints are `aria-describedby` targets, the tag inputs (created by script) take the field's id, label and hint, and the two freshness numbers name themselves. In a real browser all **61 controls on Settings have an accessible name**.
+- Interview rows and the add form name their controls ("Interview 2: date and time"); the favorite star is a named toggle (`aria-label="Favorite"` + `aria-pressed`); the score ring is `role="img"` ("AI match score 91 of 100"); icons are `aria-hidden`; new-tab links carry `rel="noopener"`; table headers have `scope`.
+- Announcements: the toast and the Settings save state are `role="status"`; the live filter writes its count ("4 postings") into a persistent live region; after a chip is removed focus returns to that filter control instead of `<body>`.
+- Chrome: skip link, labelled landmarks, `aria-current="page"` on the active nav item, `<main id="main" tabindex="-1">`, `aria-pressed` on the theme toggle.
+- Targets: star, icon buttons, tag and filter-chip remove buttons are at least 24 px (the only smaller ones are checkboxes inside larger labels). Inline links in text are underlined. `prefers-reduced-motion: reduce` disables animation and transitions. The decorative step arrow is hidden from screen readers (`content: "→" / ""`).
+- A real 404 page (and "Posting not found") in the normal layout with a single `h1`; `/api`, `/static` and `/files` keep JSON.
+
+**Theming.** `theme.js` (a blocking 6-line static file in `<head>`) sets the saved theme before the first paint, so dark users no longer see a light flash; the theme toggle moved out of the side card into the brand row so it is reachable on small screens too (icon button, `aria-pressed`, label "Dark theme"/"Light theme"); in dark, the slate header surface is distinct from card surfaces (`#162036` vs `#111a2e`). `color-scheme` came with slice 1.
+
+**Bug found by the stricter test.** The first version of the Settings macros built attributes inside `{{ ... }}` and Jinja escaped their quotes (`id=&#34;f-9&#34;`); the strict "every control is labelled" test (no placeholder or nearby-label shortcuts any more) caught it.
+
+**Tests added** (9, `tests/test_web.py`): label/for/describedby association, interview names, skip link and landmarks and `aria-current`, live regions, ring/star/icon names, theme before paint, reduced motion and target sizes, 404 page. Checked in a real browser: Settings controls, skip link, dark theme at load, live count and focus after clearing a chip, 404.
+
+Not done in this slice (belongs to later ones): page reload after every action (slice 4), cache headers and font preload (slice 4), the sidebar rail (decision D6, kept).

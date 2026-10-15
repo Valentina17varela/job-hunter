@@ -25,6 +25,7 @@
   <noscript><button class="btn" type="submit">Apply</button></noscript>
 </form>
 
+<div id="jobs-live" class="sr-only" role="status" aria-live="polite"></div>
 <div id="jobs-results">
 
 {% if plan %}{{ top.top_board(plan, blocked, board_suggestions) }}{% endif %}

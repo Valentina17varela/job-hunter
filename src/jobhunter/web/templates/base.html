@@ -9,8 +9,10 @@
   <link rel="apple-touch-icon" href="/static/img/icon-180.png">
   <link rel="stylesheet" href="{{ asset('tokens.css') }}">
   <link rel="stylesheet" href="{{ asset('style.css') }}">
+  <script src="{{ asset('theme.js') }}"></script>
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -29,33 +31,35 @@
     </defs>
   </svg>
 
-  <aside class="sidebar">
+  <aside class="sidebar" aria-label="Job Hunter">
+    <div class="brand-row">
     <a class="brand" href="/">
       <span class="logo"><img src="/static/img/logo.png" alt="" width="38" height="38"></span>
       <span><b>Job<i>Hunter</i></b><small>Your private job-search copilot</small></span>
     </a>
-    <nav>
+    <button class="icon-btn theme-toggle" id="theme-toggle" type="button" aria-label="Dark theme" aria-pressed="false" title="Dark theme">◐</button>
+    </div>
+    <nav aria-label="Main">
       {% for key, label, href, icon in [
         ('dashboard', 'Home', '/', 'home'), ('jobs', 'Job matches', '/jobs', 'target'),
         ('pipeline', 'Applications', '/pipeline', 'board'), ('packages', 'Documents', '/packages', 'doc'),
         ('run', 'Actions', '/run', 'play'), ('settings', 'Settings', '/settings', 'gear')] %}
-      <a href="{{ href }}" class="{{ 'on' if active == key else '' }}"><svg class="ic"><use href="#i-{{ icon }}"/></svg>{{ label }}</a>
+      <a href="{{ href }}" class="{{ 'on' if active == key else '' }}"{% if active == key %} aria-current="page"{% endif %}><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-{{ icon }}"/></svg>{{ label }}</a>
       {% endfor %}
     </nav>
     <div class="side-card">
       <b>100% local</b>
       <p>Your CV and applications never leave this computer. Nothing runs or is sent unless you press the button.</p>
-      <button class="btn small ghost" id="theme-toggle" type="button" aria-label="Switch between light and dark theme">◐ Dark theme</button>
     </div>
   </aside>
 
-  <main>{% block content %}{% endblock %}</main>
+  <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
 
   {% import "_macros.html" as m %}
   {% include "_add_posting.html" %}
   {% include "_not_for_me.html" %}
   <div id="top-notice" class="top-notice" role="status" hidden></div>
-  <div id="toast" class="toast" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
   <section id="dock" class="dock" hidden aria-live="polite">
     <header>

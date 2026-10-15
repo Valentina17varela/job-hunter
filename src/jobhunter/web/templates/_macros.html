@@ -1,8 +1,8 @@
 {% macro ring(score, size=56) -%}
 {%- if score is none -%}
-<span class="ring none" style="--size:{{ size }}px" title="Not scored yet"><i>–</i></span>
+<span class="ring none" style="--size:{{ size }}px" role="img" aria-label="Not scored yet" title="Not scored yet"><i aria-hidden="true">–</i></span>
 {%- else -%}
-<span class="ring r{{ (score // 25) }}" style="--size:{{ size }}px; --pct:{{ score }}" title="AI match score"><i>{{ score }}</i></span>
+<span class="ring r{{ (score // 25) }}" style="--size:{{ size }}px; --pct:{{ score }}" role="img" aria-label="AI match score {{ score }} of 100" title="AI match score"><i aria-hidden="true">{{ score }}</i></span>
 {%- endif -%}
 {%- endmacro %}
 
@@ -10,7 +10,7 @@
 <span class="avatar" style="--size:{{ size }}px" aria-hidden="true">{{ (name or "?").strip()[:2]|upper }}</span>
 {%- endmacro %}
 
-{% macro icon(name) -%}<svg class="ic"><use href="#i-{{ name }}"/></svg>{%- endmacro %}
+{% macro icon(name) -%}<svg class="ic" aria-hidden="true" focusable="false"><use href="#i-{{ name }}"/></svg>{%- endmacro %}
 
 {% macro empty(icon_name, title, text) -%}
 <div class="empty-state">

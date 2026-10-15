@@ -3,7 +3,7 @@
 <article class="job-card">
   {{ m.avatar(r.company) }}
   <div class="job-main">
-    <button class="star {{ 'on' if r.is_favorite }}" data-star="{{ r.id }}" aria-pressed="{{ 'true' if r.is_favorite else 'false' }}" title="Favorite">{{ '★' if r.is_favorite else '☆' }}</button>
+    <button class="star {{ 'on' if r.is_favorite }}" data-star="{{ r.id }}" aria-pressed="{{ 'true' if r.is_favorite else 'false' }}" aria-label="Favorite" title="Favorite">{{ '★' if r.is_favorite else '☆' }}</button>
     <a class="job-title" href="/jobs/{{ r.id }}">{{ r.title }}</a>
     <div class="job-sub">{{ r.company }} · {{ source_label(r.source) }}</div>
     <div class="chips">

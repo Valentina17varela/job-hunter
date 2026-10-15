@@ -142,6 +142,9 @@
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = 'Type and press Enter';
+    if (box.dataset.inputId) input.id = box.dataset.inputId;
+    if (box.dataset.desc) input.setAttribute('aria-describedby', box.dataset.desc);
+    input.setAttribute('aria-label', box.dataset.label || 'Add an item');
     function render() {
       $$('.tag', box).forEach((t) => t.remove());
       values.forEach((v, i) => {
@@ -279,6 +282,9 @@
         const fresh = doc.getElementById('jobs-results');
         if (!fresh) throw new Error('no results area');
         resultsBox.innerHTML = fresh.innerHTML;
+        const count = resultsBox.querySelector('p.muted');
+        const live = document.getElementById('jobs-live');
+        if (live && count) live.textContent = count.textContent.trim();
         history.replaceState(null, '', url);
       } catch (err) {
         if (err.name !== 'AbortError') location.href = url; // fall back to a normal page load
@@ -308,6 +314,9 @@
       syncActive();
       clearTimeout(timer);
       refresh();
+      // the chip that was clicked disappears: keep keyboard focus in the filter bar
+      const target = all ? filterForm.elements.q : filterForm.elements[one.dataset.clear];
+      if (target && target.focus) target.focus();
     });
     filterForm.addEventListener('submit', (ev) => { ev.preventDefault(); clearTimeout(timer); refresh(); });
     filterForm.addEventListener('change', (ev) => {
@@ -414,7 +423,13 @@
   const applyTheme = (t) => {
     if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     else document.documentElement.removeAttribute('data-theme');
-    if (themeBtn) themeBtn.textContent = t === 'dark' ? '◑ Light theme' : '◐ Dark theme';
+    if (themeBtn) {
+      const dark = t === 'dark';
+      themeBtn.textContent = dark ? '◑' : '◐';
+      themeBtn.setAttribute('aria-pressed', String(dark));
+      themeBtn.setAttribute('aria-label', dark ? 'Light theme' : 'Dark theme');
+      themeBtn.title = dark ? 'Light theme' : 'Dark theme';
+    }
   };
   let savedTheme = null;
   try { savedTheme = localStorage.getItem('jh_theme'); } catch (e) { /* private mode */ }

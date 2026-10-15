@@ -34,7 +34,7 @@
 
 <section class="card">
   <div class="card-head"><h2>Recent actions</h2></div>
-  <table class="compact"><thead><tr><th>Action</th><th>Result</th><th>Started</th></tr></thead><tbody>
+  <table class="compact"><thead><tr><th scope="col">Action</th><th scope="col">Result</th><th scope="col">Started</th></tr></thead><tbody>
   {% for r in history %}
     <tr><td>{{ r.spec_id }}</td><td><span class="badge {{ 'good' if r.status == 'ok' else ('bad' if r.status == 'failed' else '') }}">{{ r.status }}</span></td>
         <td class="muted">{{ r.started_at|dt }}</td></tr>

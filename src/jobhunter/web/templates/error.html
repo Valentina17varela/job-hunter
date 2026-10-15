@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
-{% block title %}Something went wrong{% endblock %}
+{% block title %}{{ title or 'Something went wrong' }}{% endblock %}
 {% block content %}
-{% call m.empty('alert', 'Something went wrong', message) %}<a class="btn" href="/">Back to Home</a>{% endcall %}
+<h1 class="sr-only">{{ title or 'Something went wrong' }}</h1>
+{% call m.empty('alert', title or 'Something went wrong', message) %}<div class="actions" style="justify-content:center"><a class="btn primary" href="/">Back to Home</a><a class="btn" href="/jobs">Job matches</a></div>{% endcall %}
 {% endblock %}

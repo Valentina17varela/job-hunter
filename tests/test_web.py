@@ -1,5 +1,6 @@
 import json
 import threading
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,6 +13,7 @@ from jobhunter.web.app import create_app
 from jobhunter.web.runner import RunManager
 
 HOST = {"host": "testserver"}
+STATIC_DIR = Path(__file__).resolve().parents[1] / "src" / "jobhunter" / "web" / "static"
 
 
 class FakeProc:
@@ -621,10 +623,6 @@ def _unlabelled_controls(html: str) -> list[str]:
         # wrapped by a <label> that is still open
         if before.rfind("<label") > before.rfind("</label>"):
             continue
-        # tag inputs and similar widgets carry their label in the surrounding field
-        in_field = before.rfind('class="field') > before.rfind("</div>")
-        if in_field and 'class="flabel"' in before[-600:]:
-            continue
         bad.append(f"<{tag}{attrs[:60]}")
     return bad
 
@@ -808,3 +806,94 @@ def test_active_filters_are_shown_as_removable_chips_and_score_is_a_choice(env):
 def test_settings_points_to_the_posted_filter(env):
     html = env[0].get("/settings", headers=HOST).text
     assert "Posted</b> filter" in html
+
+
+# --- accessibility and theming floor (spec 24, slice 2) -----------------------------------------
+
+
+def test_settings_labels_are_associated_with_their_controls(env):
+    import re
+
+    html = env[0].get("/settings", headers=HOST).text
+    labels = re.findall(r'<label class="flabel" for="(f-\d+)"', html)
+    assert len(labels) >= 20
+    for fid in labels:
+        assert f'id="{fid}"' in html or f'data-input-id="{fid}"' in html, fid  # a target exists
+    assert html.count("<legend") >= 3  # checkbox groups are fieldsets with a legend
+    assert 'aria-label="Freshness for company boards, in days"' in html
+    hinted = re.findall(r'aria-describedby="(f-\d+-hint)"', html) + re.findall(
+        r'data-desc="(f-\d+-hint)"', html
+    )
+    assert hinted and all(f'id="{h}"' in html for h in hinted)  # hints are real elements
+    js = env[0].get("/static/app.js", headers=HOST).text
+    assert "box.dataset.inputId" in js and "box.dataset.label" in js  # the tag input is named
+
+
+def test_interview_controls_have_names(env):
+    client, conn, *_ = env
+    apps.set_stage(conn, 3, "applied", None)
+    apps.add_interview(conn, 3, "technical", "2026-10-20T10:00", "bring examples")
+    html = client.get("/jobs/3", headers=HOST).text
+    for text in ("Interview 1: kind", "Interview 1: date and time", "Interview 1: outcome",
+                 "Interview 1: notes", "New interview: kind", "New interview: notes"):  # fmt: skip
+        assert f'aria-label="{text}"' in html, text
+
+
+def test_page_chrome_has_skip_link_landmarks_and_current_page(env):
+    client = env[0]
+    html = client.get("/jobs", headers=HOST).text
+    assert 'class="skip-link" href="#main"' in html and '<main id="main"' in html
+    assert '<nav aria-label="Main">' in html and 'aria-label="Job Hunter"' in html
+    assert html.count('aria-current="page"') == 1
+    assert ">Job matches" in html.split('aria-current="page"')[1][:300]
+    assert 'id="theme-toggle"' in html and 'aria-pressed="false"' in html
+
+
+def test_announcements_and_status_regions(env):
+    client = env[0]
+    html = client.get("/jobs", headers=HOST).text
+    assert 'id="toast" class="toast" role="status" aria-live="polite"' in html
+    assert 'id="jobs-live"' in html and 'aria-live="polite"' in html
+    settings = client.get("/settings", headers=HOST).text
+    assert 'class="save-state' in settings and 'role="status" aria-live="polite"' in settings
+    js = client.get("/static/app.js", headers=HOST).text
+    assert "jobs-live" in js  # the filter count is announced after each live refresh
+
+
+def test_score_ring_star_and_icons_have_accessible_names(env):
+    client = env[0]
+    html = client.get("/jobs?status=all", headers=HOST).text
+    assert 'role="img" aria-label="AI match score 91 of 100"' in html
+    assert 'class="star' in html and 'aria-label="Favorite"' in html
+    assert '<svg class="ic" aria-hidden="true" focusable="false">' in html
+    assert 'rel="noopener"' in client.get("/packages", headers=HOST).text
+
+
+def test_theme_is_applied_before_first_paint_and_the_toggle_keeps_the_key(env):
+    client = env[0]
+    html = client.get("/", headers=HOST).text
+    head = html.split("</head>")[0]
+    assert "/static/theme.js" in head  # blocking, in <head>, before the body paints
+    theme = client.get("/static/theme.js", headers=HOST).text
+    assert "jh_theme" in theme and "data-theme" in theme
+    assert "jh_theme" in client.get("/static/app.js", headers=HOST).text
+
+
+def test_css_honours_reduced_motion_and_minimum_target_sizes():
+    css = (STATIC_DIR / "style.css").read_text()
+    assert "prefers-reduced-motion: reduce" in css and "animation: none" in css
+    for selector in (".star", ".icon-btn", ".afchip button", ".tag button"):
+        block = css.split(f"{selector} {{")[1].split("}")[0]
+        assert "1.5rem" in block, f"{selector} must be at least 24px (1.5rem)"
+    assert ".skip-link:focus" in css and ".sr-only" in css
+
+
+def test_unknown_pages_get_a_real_404_and_the_api_keeps_json(env):
+    client = env[0]
+    page = client.get("/nope", headers=HOST)
+    assert page.status_code == 404 and "Page not found" in page.text
+    assert page.text.count("<h1") == 1 and 'href="/"' in page.text
+    api = client.get("/api/nope", headers=HOST)
+    assert api.status_code == 404 and api.json()["error"]
+    missing = client.get("/jobs/99999", headers=HOST)
+    assert missing.status_code == 404 and "Posting not found" in missing.text
