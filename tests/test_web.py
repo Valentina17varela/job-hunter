@@ -1,6 +1,7 @@
 import json
 import re
 import threading
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -931,3 +932,29 @@ def test_posting_page_has_one_primary_and_a_workspace(env):
     assert 'class="more"' in page and "workspace" in page
     h1 = re.search(r"<h1>(.*?)</h1>", page, re.S).group(1)
     assert "star" not in h1  # the star left the title
+
+
+def test_settings_has_one_save_bar_and_real_tabs(env):
+    page = env[0].get("/settings", headers=HOST).text
+    assert page.count("data-save-cfg") == 2  # Save and Save & re-filter, once for the whole page
+    assert 'id="savebar"' in page and 'aria-label="Settings sections"' in page
+    for panel in ("looking", "ai", "sources", "files", "system"):
+        assert f'id="{panel}"' in page
+
+
+def test_applications_board_has_four_stage_columns_and_a_ready_strip(env):
+    apps.set_stage(env[1], 3, "applied", None)
+    page = env[0].get("/pipeline", headers=HOST).text
+    assert "ready-strip" in page or "Nothing waiting" in page and 'class="column ready"' not in page
+    assert page.count('class="column stage-') >= 4
+    assert re.search(r"applied (today|yesterday|\d+ days ago)", page)  # not a raw timestamp
+
+
+def test_ago_filter():
+    from jobhunter.web.app import ago
+
+    now = datetime.now(UTC)
+    assert ago(now.isoformat()) == "today"
+    assert ago((now - timedelta(days=1)).isoformat()) == "yesterday"
+    assert ago((now - timedelta(days=5)).isoformat()) == "5 days ago"
+    assert ago(None) == "—"

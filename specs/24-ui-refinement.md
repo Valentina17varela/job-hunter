@@ -75,7 +75,8 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 - [x] Slice 4 — Interaction (see §13).
 - [x] Slice 5 — Home as a cockpit (see §14).
 - [x] Slice 6 — Posting page and job cards (see §15).
-- [ ] Slices 7 to 9 of §4, each ticked here when shipped.
+- [x] Slice 7 — Applications and Settings (see §16).
+- [ ] Slices 8 and 9 of §4, each ticked here when shipped.
 - [ ] README (UI section) and screenshots, `DESIGN.md`, `PRODUCT.md`, `design/README.md` and this spec marked done.
 
 ## 9. Acceptance criteria
@@ -168,3 +169,15 @@ Not done in this slice (belongs to later ones): page reload after every action (
 **Deferred.** Inline CV/letter preview and named verification checks (need a PDF/HTML preview design) move to the backlog; the "Build N packages" button does not yet clamp to `max_packages_per_day` (the board is at most `top_matches_count` rows).
 
 **Tests.** `test_job_cards_are_quiet_and_dismissal_is_one_action`, `test_posting_page_has_one_primary_and_a_workspace`; existing posting-page tests updated (475 total). Checked in a real browser at 1440 and 390 px.
+
+## 16. Slice 7 — Applications and Settings (done)
+
+**Applications fit a laptop (item 10).** *Ready to apply* is not a stage, so it left the board: it is a strip of compact cards above it (hidden, with one muted line, when empty). The board has four stage columns (`repeat(4, minmax(0, 1fr))`), two under 1100 px and one under 860 px; the fixed 230 px columns and the horizontal scroll are gone. Verified at 1280 px: no horizontal scroll. Cards show "applied today / yesterday / N days ago" (new `ago` filter) instead of the update time, and changing a stage offers **Undo** in the toast after the page reloads (`jh_undo` in `sessionStorage`).
+
+**Settings tabs that work.** The tabs show one section at a time (`hidden` on the others, deep links like `/settings#ai`, `aria-current`, the first invalid field switches to its tab). Without script everything stays visible.
+
+**One dirty-aware save.** The three per-section Save buttons became one sticky bar: *Save* (primary) and *Save & re-filter*, both disabled until a value differs from the loaded state (a non-mutating read of the tag inputs, so typing is never committed early); the bar is hidden on the CV/letter and System tabs, which keep their own file buttons. The save writes every section at once through the same validated `/api/config` call.
+
+**Trimmed hints.** The intro and the longest hints lost their repeated sentences (the `.orig` mention, the "Acme, Inc." example, the aggregator/company-board duplication).
+
+**Tests.** `test_settings_has_one_save_bar_and_real_tabs`, `test_applications_board_has_four_stage_columns_and_a_ready_strip`, `test_ago_filter` (478 total). Checked in a real browser: 1280 px board, tab switching, dirty on/off, validation error on the right tab, stage change and undo.

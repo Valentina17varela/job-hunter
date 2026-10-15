@@ -246,10 +246,10 @@ What you can do there:
 - **Add a posting by hand:** *Add a posting* on Home and Job matches. Paste a link (one request to that page pre-fills the form; sites that need a login do not work) or just the text, review the fields and save. It skips your filters (you chose it), shows a *Manual* badge and has its own *Score this posting with AI* and *Build package* buttons. Adding the same link twice updates the same posting.
 - **Favorites:** a ★ on every card and posting page, for any status (filtered-out or closed ones too). It is only a bookmark: it never changes the posting's status, and a re-filter, dedupe or closing never removes it. Add a short note ("ask about the visa") on the posting page; closed favorites show a *Closed* badge. Home links to the favorites you have not applied to.
 - **Block list:** *Block this company* on a posting page (asks first, then offers *Re-filter now*), or edit the list in Settings (× to remove). Postings of a blocked company are filtered out, now and in future searches; applied, in-process, rejected, hidden and packaged postings are left alone. A favorite from a blocked company keeps its star and shows a *Blocked company* badge.
-- **Applications:** kanban from *Ready to apply* to *Offer*, notes and interviews (type, date, outcome) per application.
+- **Applications:** a *Ready to apply* strip above a four-column board (*Applied*, *Screening*, *Interviewing*, *Offer*) that fits a laptop screen without scrolling sideways; closed stages sit in a collapsed group. Cards say "applied 5 days ago", and moving a card offers an **Undo**. Notes and interviews (type, date, outcome) live on the posting page.
 - **Documents:** every generated CV and cover letter with its checks, the recruiter message, and a **Delete** button per package.
 - **Actions:** every stage and maintenance command with its options (dry run, only these ids, limit, rebuild).
-- **Settings:** edit everything: search criteria, AI engine and limits, sources and company list, your LaTeX CV and your cover-letter template.
+- **Settings:** one tab at a time (what you look for, AI and documents, sources, your LaTeX CV and cover letter, system check). A single save bar at the bottom — **Save** and **Save & re-filter** — enables itself only when something changed and tells you about invalid values on the right tab.
 
 | | |
 |---|---|

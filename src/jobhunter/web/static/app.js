@@ -34,6 +34,8 @@
     if (target) target.focus({ preventScroll: true });
   })();
 
+  const UNDO_KEY = 'jh_undo';
+
   function toast(message) {
     const el = $('#toast');
     el.textContent = message;
@@ -65,6 +67,27 @@
     try { await fn(); if (reload !== false) reloadHere(); return true; }
     catch (err) { toast(err.message); return false; }
   }
+
+  // A stage change reloads the page; the toast that follows offers to put it back.
+  (function undoToast() {
+    let u = null;
+    try {
+      u = JSON.parse(sessionStorage.getItem(UNDO_KEY) || 'null');
+      sessionStorage.removeItem(UNDO_KEY);
+    } catch (e) { return; }
+    if (!u) return;
+    const el = $('#toast');
+    el.textContent = u.text + ' ';
+    const undo = document.createElement('button');
+    undo.type = 'button';
+    undo.className = 'toast-undo';
+    undo.textContent = 'Undo';
+    undo.addEventListener('click', () => act(() => post('/api/jobs/' + u.job + '/stage', { stage: u.prev })));
+    el.append(undo);
+    el.hidden = false;
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => (el.hidden = true), 8000);
+  })();
 
   // ---------- run dock ----------
   const dock = $('#dock');
@@ -168,7 +191,15 @@
 
   document.addEventListener('change', (ev) => {
     const sel = ev.target.closest('[data-stage-job]');
-    if (sel) act(() => post('/api/jobs/' + sel.dataset.stageJob + '/stage', { stage: sel.value }));
+    if (!sel) return;
+    const prev = sel.dataset.prev;
+    const label = sel.selectedOptions[0].textContent;
+    act(async () => {
+      await post('/api/jobs/' + sel.dataset.stageJob + '/stage', { stage: sel.value });
+      try {
+        if (prev) sessionStorage.setItem(UNDO_KEY, JSON.stringify({ job: sel.dataset.stageJob, prev, text: 'Moved to ' + label + '.' }));
+      } catch (e) { /* no undo without storage */ }
+    });
   });
 
   document.addEventListener('submit', (ev) => {
@@ -214,14 +245,15 @@
     });
     input.addEventListener('blur', () => { if (input.value.trim()) add(input.value); });
     box.append(input);
+    box.peek = () => values.concat(input.value.trim() ? [input.value.trim()] : []);
     box.getValues = () => { if (input.value.trim()) add(input.value); return values.slice(); };
     render();
   }
   $$('.tags[data-cfg]').forEach(initTags);
 
-  function readField(el) {
+  function readField(el, peek) {
     switch (el.dataset.type) {
-      case 'tags': return el.getValues();
+      case 'tags': return peek ? el.peek() : el.getValues();
       case 'checks': return $$('input:checked', el).map((c) => c.value);
       case 'number': {
         const v = el.value.trim();
@@ -248,30 +280,43 @@
     });
   }
 
+  // ---------- Settings: one tab at a time, one dirty-aware save ----------
+  let showPanel = () => {};
+  let baseline = '';
+  let refreshDirty = () => {};
+
+  function collectConfig(peek) {
+    const updates = {};
+    $$('[data-card] [data-cfg]').forEach((el) => { const v = readField(el, peek); if (v !== undefined) setNested(updates, el.dataset.cfg, v); });
+    return updates;
+  }
+
   document.addEventListener('click', async (ev) => {
     const saveCfg = ev.target.closest('[data-save-cfg]');
     if (saveCfg) {
-      const card = saveCfg.closest('[data-card]');
-      const state = $('.save-state', saveCfg.closest('.form-actions'));
+      const state = $('#savebar .save-state');
       if (saveCfg.disabled) return;
-      saveCfg.disabled = true;
-      const updates = {};
-      $$('[data-cfg]', card).forEach((el) => { const v = readField(el); if (v !== undefined) setNested(updates, el.dataset.cfg, v); });
+      $$('[data-save-cfg]').forEach((b) => (b.disabled = true));
       try {
-        await post('/api/config', { updates });
-        showErrors(card, []);
-        state.textContent = 'Saved ✓';
+        await post('/api/config', { updates: collectConfig(false) });
+        $$('[data-card]').forEach((card) => showErrors(card, []));
+        baseline = JSON.stringify(collectConfig(true));
+        refreshDirty();
+        state.textContent = 'Saved';
         state.className = 'save-state ok small';
         if (saveCfg.dataset.then === 'refilter') startRun({ id: 'refilter' }, 'Re-filtering with your new criteria', true);
       } catch (err) {
         let detail = err.message;
         if (err.data && err.data.errors) {
-          showErrors(card, err.data.errors);
+          $$('[data-card]').forEach((card) => showErrors(card, err.data.errors));
           detail = err.data.errors.map((e) => e.field + ': ' + e.message).join(' · ');
+          const bad = $$('[data-cfg]').find((x) => x.dataset.cfg === err.data.errors[0].field);
+          if (bad) showPanel(bad.closest('[data-card]').id);
         }
+        refreshDirty();
         state.textContent = 'Not saved: ' + detail;
         state.className = 'save-state bad small';
-      } finally { saveCfg.disabled = false; }
+      }
       return;
     }
     const saveFile = ev.target.closest('[data-save-file]');
@@ -300,10 +345,43 @@
     }).catch(() => { area.placeholder = 'Could not load the file'; area.disabled = true; });
   });
 
-  $$('#settings-tabs a').forEach((a) => a.addEventListener('click', () => {
-    $$('#settings-tabs a').forEach((x) => x.classList.remove('on'));
-    a.classList.add('on');
-  }));
+  const settingsTabs = $('#settings-tabs');
+  if (settingsTabs) {
+    const tabs = $$('a', settingsTabs);
+    const ids = tabs.map((t) => t.getAttribute('href').slice(1));
+    const bar = $('#savebar');
+    const saveBtn = $('[data-save-cfg]:not([data-then])');
+    const refilterBtn = $('[data-save-cfg][data-then]');
+    showPanel = (id, focus) => {
+      if (!ids.includes(id)) id = ids[0];
+      tabs.forEach((t) => {
+        const on = t.getAttribute('href') === '#' + id;
+        t.classList.toggle('on', on);
+        if (on) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current');
+      });
+      ids.forEach((x) => { document.getElementById(x).hidden = x !== id; });
+      bar.hidden = !document.getElementById(id).hasAttribute('data-card');
+      try { history.replaceState(null, '', '#' + id); } catch (e) { /* ignore */ }
+      if (focus) document.getElementById(id).focus({ preventScroll: true });
+    };
+    tabs.forEach((t) => t.addEventListener('click', (ev) => { ev.preventDefault(); showPanel(t.getAttribute('href').slice(1)); }));
+    window.addEventListener('hashchange', () => showPanel(location.hash.slice(1)));
+    showPanel(location.hash.slice(1));
+
+    baseline = JSON.stringify(collectConfig(true));
+    refreshDirty = () => {
+      const dirty = JSON.stringify(collectConfig(true)) !== baseline;
+      saveBtn.disabled = !dirty;
+      refilterBtn.disabled = !dirty;
+      const state = $('.save-state', bar);
+      if (dirty) { state.textContent = 'Unsaved changes'; state.className = 'save-state muted small'; }
+      else if (state.className.includes('muted')) state.textContent = '';
+    };
+    refreshDirty();
+    ['input', 'change', 'click', 'keyup'].forEach((type) => document.addEventListener(type, (ev) => {
+      if (ev.target.closest && ev.target.closest('[data-card]')) setTimeout(refreshDirty, 0);
+    }));
+  }
 
   // ---------- Job matches: filters apply as you choose (spec 23) ----------
   const filterForm = document.querySelector('form.filterbar');

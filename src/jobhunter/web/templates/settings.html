@@ -21,39 +21,34 @@
 {% block content %}
 {% set s = config.search %}
 <header class="page-head"><div><h1>Settings</h1>
-  <p class="muted">Everything is configurable here. Changes are written to <code>{{ config_path }}</code> (comments are kept, except inside a list you edit; a <code>.bak</code> copy of the previous version and a one-time <code>.orig</code> are saved). No restart needed.</p></div></header>
+  <p class="muted">Saved to <code>{{ config_path }}</code>: your comments are kept and the previous version stays as <code>.bak</code>. No restart needed.</p></div></header>
 
-<nav class="tabs" id="settings-tabs">
+<nav class="tabs" id="settings-tabs" aria-label="Settings sections">
   <a href="#looking" class="on">What I'm looking for</a><a href="#ai">AI &amp; documents</a><a href="#sources">Sources</a><a href="#files">My CV &amp; letter</a><a href="#system">System</a>
 </nav>
 
-<section class="card" id="looking" data-card>
+<section class="card" id="looking" data-card tabindex="-1">
   <h2>{{ m.icon('target') }} What I'm looking for</h2>
-  <p class="muted">A posting is kept only if it passes all of these. Press <b>Save &amp; re-filter</b> to apply them to everything already downloaded.</p>
+  <p class="muted">A posting is kept only if it passes all of these. <b>Save &amp; re-filter</b> applies them to everything already downloaded.</p>
   <div class="form-grid">
     {% call(fid, hid, lbl) field('Roles I want', 'The title must contain at least one of these words or phrases (case-insensitive, whole words).') %}{{ tags('search.titles_include', s.titles_include, label=lbl, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Words I do not want in the title', 'Any match drops the posting, e.g. frontend, mobile, qa, junior.') %}{{ tags('search.titles_exclude', s.titles_exclude, label=lbl, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field_group('Seniority', 'Guessed from the title: staff/principal/lead = lead, senior/sr = senior, junior/intern = junior, otherwise mid.') %}{{ checks('search.seniority', s.seniority, ['junior', 'mid', 'senior', 'lead']) }}{% endcall %}
     {% call(fid, hid, lbl) field_group('Work mode') %}{{ checks('search.work_mode', s.work_mode, ['remote', 'hybrid', 'onsite']) }}{% endcall %}
-    {% call(fid, hid, lbl) field('Where I can work', 'Postings naming a place must name one of these (LATAM also matches “Latin America”). A plain “Remote” passes unless the text restricts the country. Leave empty to accept anywhere.') %}{{ tags('search.locations_allowed', s.locations_allowed, label=lbl, id=fid, desc=hid) }}{% endcall %}
-    {% call(fid, hid, lbl) field('Companies I never want to see', 'Whole company names; “Acme, Inc.” and “ACME” are the same, but “Meta” never blocks “Metamask”. You can also block one from its posting page.') %}{{ tags('search.companies_exclude', s.companies_exclude, label=lbl, id=fid, desc=hid) }}{% endcall %}
+    {% call(fid, hid, lbl) field('Where I can work', 'A posting that names a place must name one of these (LATAM also matches “Latin America”). Empty accepts anywhere.') %}{{ tags('search.locations_allowed', s.locations_allowed, label=lbl, id=fid, desc=hid) }}{% endcall %}
+    {% call(fid, hid, lbl) field('Companies I never want to see', 'Whole company names: “Meta” never blocks “Metamask”. You can also block one from its posting page.') %}{{ tags('search.companies_exclude', s.companies_exclude, label=lbl, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Technologies I want to see', 'At least one must appear in the title or description.') %}{{ tags('search.keywords_include', s.keywords_include, label=lbl, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Things that rule a posting out', 'e.g. security clearance, US citizen.') %}{{ tags('search.keywords_exclude', s.keywords_exclude, label=lbl, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Minimum yearly pay (USD)', 'Compared with the top of the published range. Monthly pay × 12. 0 turns it off.') %}{{ number('search.salary.min_usd', s.salary.min_usd, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Postings without a published salary') %}{{ select('search.salary.on_missing', s.salary.on_missing, [('pass', 'Keep them'), ('reject', 'Drop them')], id=fid, desc=hid) }}{% endcall %}
-    {% call(fid, hid, lbl) field('Freshness (days)', 'Aggregator postings older than this are dropped. For company boards a posting still listed is open, so leave it empty unless you want a limit.') %}
+    {% call(fid, hid, lbl) field('Freshness (days)', 'Older aggregator postings are dropped. A company-board posting that is still listed is open, so leave that empty unless you want a limit.') %}
       <div class="row">{{ number('search.max_age_days', s.max_age_days, min=1, width='7rem', id=fid, desc=hid, label='Freshness for aggregators, in days') }} <span class="muted small">aggregators</span>
       {{ number('search.max_age_days_ats', s.max_age_days_ats, nullable=true, min=1, width='7rem', id=fid ~ '-ats', label='Freshness for company boards, in days') }} <span class="muted small">company boards</span></div>
-      <p class="hint">This is what the search keeps. To narrow only what you see, use the <b>Posted</b> filter in <a href="/jobs">Job matches</a>.</p>{% endcall %}
-  </div>
-  <div class="form-actions">
-    <button class="btn" data-save-cfg>Save</button>
-    <button class="btn primary" data-save-cfg data-then="refilter">Save &amp; re-filter</button>
-    <span class="save-state muted small" role="status" aria-live="polite"></span>
+      <p class="hint">To narrow only what you see, use the <b>Posted</b> filter in <a href="/jobs">Job matches</a>.</p>{% endcall %}
   </div>
 </section>
 
-<section class="card" id="ai" data-card>
+<section class="card" id="ai" data-card tabindex="-1">
   <h2>{{ m.icon('doc') }} AI &amp; documents</h2>
   <div class="form-grid">
     {% call(fid, hid, lbl) field('AI engine', 'Your Claude subscription (run “claude auth login” once) or an Anthropic API key.') %}{{ select('llm.backend', config.llm.backend, [('claude_cli', 'My Claude subscription'), ('anthropic_api', 'Anthropic API key')], id=fid, desc=hid) }}{% endcall %}
@@ -75,10 +70,9 @@
     {% call(fid, hid, lbl) field('Seconds before an AI call times out') %}{{ number('llm.timeout_seconds', config.llm.timeout_seconds, min=10, width='7rem', id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('LaTeX engine') %}{{ select('latex.engine', config.latex.engine, [('auto', 'automatic'), ('tectonic', 'tectonic'), ('latexmk', 'latexmk')], id=fid, desc=hid) }}{% endcall %}
   </div></details>
-  <div class="form-actions"><button class="btn primary" data-save-cfg>Save</button><span class="save-state muted small" role="status" aria-live="polite"></span></div>
 </section>
 
-<section class="card" id="sources" data-card>
+<section class="card" id="sources" data-card tabindex="-1">
   <h2>{{ m.icon('search') }} Sources</h2>
   <div class="form-grid">
     {% call(fid, hid, lbl) field_group('Job boards to search', 'Company boards (Greenhouse, Lever, Ashby…) come from your company list below.') %}{{ checks('sources.aggregators', config.sources.aggregators, AGGREGATORS) }}{% endcall %}
@@ -87,7 +81,6 @@
     {% call(fid, hid, lbl) field('We Work Remotely categories') %}{{ tags('sources.wwr_categories', config.sources.wwr_categories, label=lbl, id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('Close a posting after it disappears for (days)') %}{{ number('sources.stale_days', config.sources.stale_days, min=1, width='6rem', id=fid, desc=hid) }}{% endcall %}
   </div>
-  <div class="form-actions"><button class="btn primary" data-save-cfg>Save</button><span class="save-state muted small" role="status" aria-live="polite"></span></div>
   <h3>Companies to look at</h3>
   <p class="muted small">One company name per line. “Find their job boards” checks which of them publish on Greenhouse, Lever or Ashby and adds the ones found to your list. The company is only a way to discover boards: filtering ignores it.</p>
   <textarea class="code" rows="8" aria-label="Company candidates list" data-file="candidates" spellcheck="false"></textarea>
@@ -98,9 +91,9 @@
   </div>
 </section>
 
-<section class="card" id="files">
+<section class="card" id="files" tabindex="-1">
   <h2>{{ m.icon('doc') }} My CV and cover letter</h2>
-  <p class="muted">The LaTeX files the tool reads. Your header (name, contact) is never sent to the AI. A <code>.bak</code> copy of the previous version is kept when you save.</p>
+  <p class="muted">The LaTeX files the tool reads. Your header (name, contact) is never sent to the AI.</p>
   <h3>CV <code>{{ config.paths.cv_master }}</code></h3>
   <textarea class="code" rows="16" aria-label="Master CV (LaTeX)" data-file="cv" spellcheck="false"></textarea>
   <div class="form-actions"><button class="btn primary" data-save-file="cv">Save CV</button>
@@ -117,8 +110,13 @@
   {% elif cv is string %}<p><span class="badge bad">Invalid markers</span> {{ cv }}</p>{% endif %}
 </section>
 
-<section class="card" id="system">
+<section class="card" id="system" tabindex="-1">
   <h2>System check</h2>
   <ul id="health" class="health"><li class="muted">Checking…</li></ul>
 </section>
+<div class="savebar" id="savebar" hidden>
+  <span class="save-state muted small" role="status" aria-live="polite"></span>
+  <button class="btn primary" data-save-cfg disabled>Save</button>
+  <button class="btn" data-save-cfg data-then="refilter" disabled>Save &amp; re-filter</button>
+</div>
 {% endblock %}

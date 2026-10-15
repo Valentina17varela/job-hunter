@@ -9,8 +9,8 @@
     {% if nxt %}<div class="chip warn">{{ m.icon('cal') }} {{ nxt.kind.replace('_', ' ') }}{% if nxt.scheduled_at %} · {{ nxt.scheduled_at.replace('T', ' ') }}{% endif %}</div>{% endif %}
     <div class="muted small">{{ c.interviews|length }} interview(s)</div>
   {% endif %}
-  <div class="muted small">updated {{ c.updated_at|dt }}</div>
-  <select data-stage-job="{{ c.job_id }}" aria-label="Stage of {{ c.title }}">{% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if c.stage == s }}>{{ STAGE_LABELS[s] }}</option>{% endfor %}</select>
+  <div class="muted small">applied {{ c.applied_at|ago }}</div>
+  <select data-stage-job="{{ c.job_id }}" data-prev="{{ c.stage }}" aria-label="Stage of {{ c.title }}">{% for s in STAGES %}<option value="{{ s }}" {{ 'selected' if c.stage == s }}>{{ STAGE_LABELS[s] }}</option>{% endfor %}</select>
 </article>
 {% endmacro %}
 {% block content %}
@@ -19,16 +19,20 @@
 {% set closed = cards|selectattr('stage', 'in', closed_stages)|list %}
 <header class="page-head"><div><h1>Applications</h1>
   <p class="muted">Where every application stands. Change a card's stage with its selector; open it to add notes and interviews.</p></div></header>
-<div class="board">
-  <section class="column ready">
-    <h2>Ready to apply <span class="count">{{ ready|length }}</span></h2>
+{% if ready %}
+<section class="ready-strip" aria-labelledby="ready-title">
+  <h2 id="ready-title">Ready to apply <span class="count">{{ ready|length }}</span></h2>
+  <div class="ready-list">
     {% for r in ready %}
     <article class="kcard">
       <div class="kcard-top">{{ m.ring(r.score, 40) }}<div class="grow"><a class="ktitle" href="/jobs/{{ r.id }}">{{ r.title }}</a><div class="muted small">{{ r.company }}</div></div></div>
       <button class="btn small" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>I applied</button>
     </article>
-    {% else %}<p class="muted small">Nothing waiting. Build packages for your best matches.</p>{% endfor %}
-  </section>
+    {% endfor %}
+  </div>
+</section>
+{% else %}<p class="muted small">Nothing waiting to apply. Build packages for your best matches.</p>{% endif %}
+<div class="board">
   {% for stage in open_stages %}
   {% set col = cards|selectattr('stage', 'equalto', stage)|list %}
   <section class="column stage-{{ stage }}">

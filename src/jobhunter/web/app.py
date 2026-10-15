@@ -298,6 +298,7 @@ def create_app(
     templates = Jinja2Templates(directory=HERE / "templates")
     manager = runner or RunManager(config_path, Path.cwd(), log_dir=None)
     templates.env.filters["dt"] = fmt_dt
+    templates.env.filters["ago"] = ago
     templates.env.filters["money"] = money
     templates.env.filters["bar_width"] = bar_width
     templates.env.filters["norm_company"] = normalize_company
@@ -824,6 +825,22 @@ def create_app(
         }  # fmt: skip
 
     return app
+
+
+def ago(value: str | None) -> str:
+    """ISO timestamp → 'today', 'yesterday' or '5 days ago' (UTC calendar days)."""
+    if not value:
+        return "—"
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return value
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    days = (datetime.now(UTC).date() - parsed.astimezone(UTC).date()).days
+    if days <= 0:
+        return "today"
+    return "yesterday" if days == 1 else f"{days} days ago"
 
 
 def fmt_dt(value: str | float | None) -> str:
