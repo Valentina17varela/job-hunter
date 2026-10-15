@@ -40,6 +40,7 @@ Never run the real pipeline (`run`, `score`, `tailor`) or the UI against the per
 - **Code first, LLM last:** discovery, dedupe and filtering are deterministic. The LLM only scores and writes, through `llm.py`, and every call is capped and logged.
 - **No invented facts:** generated CV/letter text is verified in code against the master CV; a failed check blocks the package.
 - **Security rules of the UI** (`specs/09-web-ui.md` §2.2, §5): bind 127.0.0.1 only; Host/Origin checks; JSON-only writes; escape all posting text; files served only from `out/`; locked config fields (`llm.claude_path`, `sources.companies_file`, `sources.candidates_file`, `paths`); no secrets rendered. Outbound requests only to job sources, the configured LLM backend and the single SSRF-safe page fetch of spec 10.
+- **Stylesheets:** every color, shadow, radius, weight, layer, type size and space is a token in `web/static/tokens.css` (light and dark together); `style.css` has no color or shadow literals and declares each selector once per media context (`tests/test_css.py` enforces both). When restyling, check light and dark in a real browser.
 - **Keys** live only in environment variables, never in files, the database, logs or the UI.
 - Request personal data only when the task needs it (`specs/00-overview.md` §7).
 - Repo holds only code, specs, tests, docs, design inputs, `config/config.example.yaml` and `config/company_candidates.txt`. Never commit `config/config.yaml`, `config/companies.yaml`, `config/cv/`, `data/`, `out/` or any key.

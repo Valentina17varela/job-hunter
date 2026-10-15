@@ -44,3 +44,8 @@ out/
 
 # Docker workspace
 workspace/
+
+# Agent tooling state (installed skills, hook consent): local to each machine
+.agents/
+skills-lock.json
+.impeccable/config.local.json
