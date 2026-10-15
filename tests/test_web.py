@@ -455,15 +455,21 @@ def test_tabs_show_counts(env):
         assert label in html
 
 
-def test_dashboard_suggests_next_steps_in_plain_language(env):
+def test_dashboard_pipeline_steps_carry_their_own_state(env):
     client, conn = env[0], env[1]
     html = client.get("/", headers=HOST).text
-    assert "What to do next" in html
+    assert "What to do next" not in html  # the steps replace the separate list
     assert "top match has no tailored CV" in html  # job 3 is selected without a package
-    assert "package is ready" in html  # job 1 is packaged and not applied yet
+    assert "package is ready to review" in html  # job 1 is packaged and not applied yet
+    assert "as applied here" not in html  # job 3 still needs a package
     conn.execute("UPDATE jobs SET status = 'passed' WHERE id = 3")
     conn.commit()
-    assert "waiting for AI scoring" in client.get("/", headers=HOST).text
+    html = client.get("/", headers=HOST).text
+    assert "mark it as applied here" in html  # nothing left to build: the next move is yours
+    assert "waiting for AI scoring" in html
+    assert len(re.findall(r'class="pipe-n on"', html)) == 1  # exactly one current step
+    # the header owns the current step's action: its row does not repeat the button
+    assert 'data-run=\'{"id":"score"}\'' not in html
 
 
 def test_dashboard_on_empty_db_invites_the_first_search(tmp_path, monkeypatch):
@@ -500,9 +506,14 @@ def test_search_is_a_whitelisted_run_that_needs_no_ai(env):
 
 def test_actions_page_groups_every_command(env):
     html = env[0].get("/run", headers=HOST).text
-    for heading in ("Find jobs", "Evaluate with AI", "Apply", "Maintenance"):
+    for heading in ("Find jobs", "Score and prepare", "Single steps", "Maintenance"):
         assert heading in html
     assert html.count("data-runcard=") >= 10
+    main, tools = html.split('class="more-tools"')
+    assert 'data-runcard="search"' in main and 'data-runcard="tailor"' in main
+    assert 'data-runcard="fetch"' in tools and 'data-runcard="doctor"' in tools
+    tailor = html.split('data-spec="tailor"')[1].split("</section>")[0]
+    assert 'class="opt-adv"' in tailor and 'data-opt="jobs"' in tailor.split("opt-adv")[1]
 
 
 def test_suggestion_grammar_and_funnel_scale():
@@ -525,8 +536,6 @@ def test_favorites_api_tab_chip_sort_and_badges(env):
     tab = client.get("/jobs?status=favorites", headers=HOST).text
     assert "Platform Engineer" in tab and "Sales Manager" in tab and "Senior Engineer" not in tab
     assert "visa?" in tab
-    chip = client.get("/jobs?status=all&fav=1&sort=favorites", headers=HOST).text
-    assert "Platform Engineer" in chip and "Senior Engineer" not in chip
     first = client.get("/jobs?status=all&sort=favorites", headers=HOST).text
     assert first.index("Platform Engineer") < first.index("Senior Engineer")
     assert 'href="/jobs?status=favorites"' in client.get("/jobs", headers=HOST).text
@@ -720,6 +729,7 @@ def test_home_points_to_sources_that_exist_but_are_not_enabled(env, tmp_path):
     html = client.get("/", headers=HOST).text
     assert "available but not enabled" in html and "Get on Board" in html and "Himalayas" in html
     assert "/settings#sources" in html
+    assert 'class="todo-ic info"' in html  # information is sky, not amber
 
 
 # --- freshness filter and live filtering (spec 23) -------------------------------------------
@@ -775,8 +785,12 @@ def test_filters_form_one_connected_bar_that_applies_live(env):
     client = env[0]
     html = client.get("/jobs", headers=HOST).text
     form = html.split('<form class="filterbar"')[1].split("</form>")[0]
-    for label in ("Source", "Posted", "Score", "Mode", "Sort", "Favorites"):
+    for label in ("Source", "Posted", "Score", "Mode", "Sort", "More filters"):
         assert label in form, label
+    assert 'name="fav"' not in form  # the Favorites tab is the one way to see them
+    assert "fb-more on" not in form  # nothing narrowed: the extra filters stay folded away
+    narrowed = client.get("/jobs?mode=remote", headers=HOST).text.split("</form>")[0]
+    assert 'class="fb-more on" open>' in narrowed  # a set extra filter opens the fold
     assert "<noscript>" in form and "Filter</button>" not in form  # no Filter button any more
     assert 'id="jobs-results"' in html
     js = client.get("/static/app.js", headers=HOST).text
@@ -932,6 +946,8 @@ def test_posting_page_has_one_primary_and_a_workspace(env):
     assert 'class="more"' in page and "workspace" in page
     h1 = re.search(r"<h1>(.*?)</h1>", page, re.S).group(1)
     assert "star" not in h1  # the star left the title
+    assert 'class="posting-text"' in page and '<pre class="desc"' not in page  # prose, not code
+    assert "— →" not in page and "Job matches" not in page  # no empty-state arrows, one name
 
 
 def test_settings_has_one_save_bar_and_real_tabs(env):

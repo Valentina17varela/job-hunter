@@ -137,7 +137,7 @@ def test_no_text_glyph_icons_in_templates_or_scripts():
 
 
 def test_board_stage_bars_do_not_use_crescent_borders():
-    assert "border-top: 4px" not in STYLE and '.column[class*="stage-"]::before' in STYLE
+    assert "border-top: 4px" not in STYLE and '.column[class*="stage-"] h2::before' in STYLE
     assert "fieldset.field" in STYLE  # native fieldset chrome is neutralised
 
 

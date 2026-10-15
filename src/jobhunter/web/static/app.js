@@ -194,10 +194,11 @@
     if (!sel) return;
     const prev = sel.dataset.prev;
     const label = sel.selectedOptions[0].textContent;
+    const said = { applied: 'Marked as applied. Good luck.', offer: 'Moved to Offer. Congratulations.' };
     act(async () => {
       await post('/api/jobs/' + sel.dataset.stageJob + '/stage', { stage: sel.value });
       try {
-        if (prev) sessionStorage.setItem(UNDO_KEY, JSON.stringify({ job: sel.dataset.stageJob, prev, text: 'Moved to ' + label + '.' }));
+        if (prev) sessionStorage.setItem(UNDO_KEY, JSON.stringify({ job: sel.dataset.stageJob, prev, text: said[sel.value] || 'Moved to ' + label + '.' }));
       } catch (e) { /* no undo without storage */ }
     });
   });
@@ -418,9 +419,8 @@
         const sel = l.querySelector('select');
         if (sel && !l.classList.contains('fb-sort')) l.classList.toggle('on', sel.value !== '');
       });
-      filterForm.querySelectorAll('.fb-chip').forEach((l) => {
-        l.classList.toggle('on', l.querySelector('input').checked);
-      });
+      const more = filterForm.querySelector('.fb-more');
+      if (more) more.classList.toggle('on', [...more.querySelectorAll('select')].some((s) => s.value !== ''));
     };
     const clearControl = (name) => {
       const el = filterForm.elements[name];
@@ -431,7 +431,7 @@
       const one = ev.target.closest('[data-clear]');
       const all = ev.target.closest('[data-clear-all]');
       if (!one && !all) return;
-      (all ? ['q', 'source', 'fresh', 'min_score', 'mode', 'fav'] : [one.dataset.clear]).forEach(clearControl);
+      (all ? ['q', 'source', 'fresh', 'min_score', 'mode'] : [one.dataset.clear]).forEach(clearControl);
       syncActive();
       clearTimeout(timer);
       refresh();

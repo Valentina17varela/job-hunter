@@ -16,13 +16,18 @@
 <form class="filterbar" method="get" action="/jobs" aria-label="Filter postings">
   <input type="hidden" name="status" value="{{ f.status }}">
   <label class="fb-search">{{ m.icon('search') }}<input type="search" name="q" aria-label="Search by title or company" value="{{ f.q }}" placeholder="Search title or company"></label>
-  <label class="fb-sel {{ 'on' if f.source }}"><span>Source</span><select name="source" aria-label="Source"><option value="">All</option>{% for s in sources %}<option value="{{ s.name }}" {{ 'selected' if f.source == s.name }}>{{ s.label }} ({{ "{:,}".format(s.count) if s.count else "none fetched yet" }})</option>{% endfor %}</select></label>
-  <label class="fb-sel {{ 'on' if f.fresh }}" title="Postings without a date are always kept"><span>Posted</span><select name="fresh" aria-label="Posted within"><option value="">Any time</option>{% for o in fresh_options %}<option value="{{ o.days }}" {{ 'selected' if f.fresh == o.days }}>{{ o.label }}</option>{% endfor %}</select></label>
   {% if f.status not in ('filtered',) %}<label class="fb-sel {{ 'on' if f.min_score is not none }}"><span>Score</span><select name="min_score" aria-label="Minimum score"><option value="">Any</option>{% for o in score_options %}<option value="{{ o.value }}" {{ 'selected' if f.min_score == o.value }}>{{ o.label }}</option>{% endfor %}</select></label>{% endif %}
-  <label class="fb-sel {{ 'on' if f.mode }}"><span>Mode</span><select name="mode" aria-label="Work mode"><option value="">Any</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md|mode_label }}</option>{% endfor %}</select></label>
-  <label class="fb-chip {{ 'on' if f.fav }}"><input type="checkbox" name="fav" value="1" {{ 'checked' if f.fav }}> {{ m.icon('star') }} Favorites</label>
+  {% set more_on = f.source or f.fresh or f.mode %}
+  <details class="fb-more {{ 'on' if more_on }}" {{ 'open' if more_on }}>
+    <summary>More filters</summary>
+    <div class="fb-more-body">
+      <label class="fb-sel {{ 'on' if f.source }}"><span>Source</span><select name="source" aria-label="Source"><option value="">All</option>{% for s in sources %}<option value="{{ s.name }}" {{ 'selected' if f.source == s.name }}>{{ s.label }} ({{ "{:,}".format(s.count) if s.count else "none fetched yet" }})</option>{% endfor %}</select></label>
+      <label class="fb-sel {{ 'on' if f.fresh }}" title="Postings without a date are always kept"><span>Posted</span><select name="fresh" aria-label="Posted within"><option value="">Any time</option>{% for o in fresh_options %}<option value="{{ o.days }}" {{ 'selected' if f.fresh == o.days }}>{{ o.label }}</option>{% endfor %}</select></label>
+      <label class="fb-sel {{ 'on' if f.mode }}"><span>Mode</span><select name="mode" aria-label="Work mode"><option value="">Any</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md|mode_label }}</option>{% endfor %}</select></label>
+    </div>
+  </details>
   <label class="fb-sel fb-sort"><span>Sort</span><select name="sort" aria-label="Sort by">{% for k, label in [('score', 'Best score'), ('recent', 'Most recent'), ('company', 'Company A–Z'), ('favorites', 'Favorites first')] %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select></label>
-  <noscript><button class="btn" type="submit">Apply</button></noscript>
+  <noscript><button class="btn" type="submit">Apply filters</button></noscript>
 </form>
 
 <div id="jobs-live" class="sr-only" role="status" aria-live="polite"></div>

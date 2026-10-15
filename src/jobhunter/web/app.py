@@ -63,7 +63,7 @@ def score_options(current: int | None, threshold: int) -> list[dict[str, Any]]:
 
 
 def active_filters(
-    q: str, source: str, mode: str, fav: bool, days: int | None, score: int | None
+    q: str, source: str, mode: str, days: int | None, score: int | None
 ) -> list[dict[str, str]]:
     """What the person has narrowed the list by, as removable chips (name = form control)."""
     chips = []
@@ -79,8 +79,6 @@ def active_filters(
         chips.append({"name": "min_score", "label": f"Score {score}+"})
     if mode:
         chips.append({"name": "mode", "label": f"Mode: {MODE_LABELS.get(mode, mode)}"})
-    if fav:
-        chips.append({"name": "fav", "label": "Favorites only"})
     return chips
 
 
@@ -160,76 +158,96 @@ def bar_width(n: int, total: int) -> float:
 
 
 def kpis(conn: sqlite3.Connection, data: dict[str, Any]) -> dict[str, int]:
-    """The four numbers shown at the top of the dashboard."""
+    """The two counts the Home pipeline states are built from."""
     by = data["by_status"]
     ready = conn.execute(
-        "SELECT COUNT(*) FROM jobs WHERE status IN ('selected', 'packaged') AND id NOT IN "
+        "SELECT COUNT(*) FROM jobs WHERE status = 'packaged' AND id NOT IN "
         "(SELECT job_id FROM applications)"
     ).fetchone()[0]
-    active = conn.execute(
-        "SELECT COUNT(*) FROM applications WHERE stage IN ('applied', 'screening', "
-        "'interviewing', 'offer')"
-    ).fetchone()[0]
-    pending = conn.execute("SELECT COUNT(*) FROM interviews WHERE outcome = 'pending'").fetchone()[
-        0
-    ]
     return {
         "matches": by.get("selected", 0) + by.get("packaged", 0) + by.get("scored", 0),
-        "ready": ready, "active": active, "interviews": pending,
-    }  # fmt: skip
+        "ready": ready,
+    }
+
+
+def pipeline_steps(
+    data: dict[str, Any], counts: dict[str, int], next_id: str
+) -> list[dict[str, Any]]:
+    """The three Home steps, each with its own state; `current` marks the header's step."""
+    by = data["by_status"]
+    fetched = data["funnel"]["fetched"]
+    unscored = by.get("passed", 0) + by.get("score_failed", 0)
+    unpackaged = by.get("selected", 0)
+    ready = counts["ready"]
+    if not fetched:
+        search = "No postings yet. Run your first search to see what is out there. Free, no AI."
+    elif data["last_fetch"]:
+        search = (
+            f"{fetched:,} postings found, last search {fmt_dt(data['last_fetch'][0]['at'])}. "
+            "Free, no AI."
+        )
+    else:
+        search = f"{fetched:,} postings found. Free, no AI."
+    if unscored:
+        review = (
+            f"{plural(unscored, 'posting matches', 'postings match')} your criteria "
+            f"and {'is' if unscored == 1 else 'are'} waiting for AI scoring."
+        )
+    elif counts["matches"]:
+        review = f"{plural(counts['matches'], 'match', 'matches')} worth a look."
+    else:
+        review = "The AI rates each posting against your CV and flags blockers."
+    prepare = []
+    if unpackaged:
+        prepare.append(
+            f"{plural(unpackaged, 'top match has', 'top matches have')} no tailored CV "
+            "and cover letter yet."
+        )
+    if ready:
+        prepare.append(f"{plural(ready, 'package is', 'packages are')} ready to review.")
+        if not unpackaged:
+            prepare.append(
+                f"Apply on the company site, then mark {'it' if ready == 1 else 'them'} "
+                "as applied here."
+            )
+    if not prepare:
+        prepare.append("A tailored CV, a cover letter and a recruiter message for each top match.")
+    current = {"search": 1, "score": 2, "tailor": 3}.get(next_id, 1)
+    return [
+        {"n": 1, "title": "Search", "state": search, "current": current == 1},
+        {"n": 2, "title": "Review matches", "state": review, "current": current == 2},
+        {"n": 3, "title": "Prepare and apply", "state": " ".join(prepare), "current": current == 3},
+    ]
 
 
 def build_suggestions(
     conn: sqlite3.Connection, data: dict[str, Any], config: Config | None = None
 ) -> list[dict[str, Any]]:
-    """Plain-language 'what to do next' list, most useful first."""
+    """The Home header action (`run`) first, then side notes (`note`) the steps do not cover."""
     by = data["by_status"]
     out: list[dict[str, Any]] = []
     if data["total"] == 0:
-        out.append(
-            {
-                "text": "No postings yet. Run your first search to see what is out there.",
-                "run": {"id": "search", "label": "Search for new jobs"},
-            }
-        )
-        return out
+        return [{"run": {"id": "search", "label": "Search for new jobs"}}]
     unscored = by.get("passed", 0) + by.get("score_failed", 0)
     if unscored:
         out.append(
             {
-                "text": f"{plural(unscored, 'posting matches', 'postings match')} your criteria, "
-                f"{'and is' if unscored == 1 else 'and are'} waiting for AI scoring.",
                 "run": {
                     "id": "score",
                     "label": f"Score {plural(unscored, 'posting', 'postings')}",
                     "llm": True,
-                },
+                }
             }
         )
     unpackaged = by.get("selected", 0)
     if unpackaged:
         out.append(
             {
-                "text": f"{plural(unpackaged, 'top match has', 'top matches have')} no tailored CV "
-                "and cover letter yet.",
                 "run": {
                     "id": "tailor",
                     "label": f"Build {plural(unpackaged, 'package', 'packages')}",
                     "llm": True,
-                },
-                "link": {"href": "/jobs?status=best", "label": "Review them first"},
-            }
-        )
-    ready = conn.execute(
-        "SELECT COUNT(*) FROM jobs WHERE status = 'packaged' AND id NOT IN "
-        "(SELECT job_id FROM applications)"
-    ).fetchone()[0]
-    if ready:
-        out.append(
-            {
-                "text": f"{plural(ready, 'package is', 'packages are')} ready. Open "
-                f"{'it' if ready == 1 else 'them'}, check the notes and apply.",
-                "link": {"href": "/packages", "label": "Open packages"},
+                }
             }
         )
     stale = conn.execute(
@@ -240,6 +258,8 @@ def build_suggestions(
     if stale:
         out.append(
             {
+                "note": True,
+                "tone": "warn",
                 "text": f"{plural(stale, 'application has', 'applications have')} had no update "
                 "for a week. Time to follow up?",
                 "link": {"href": "/pipeline", "label": "Open pipeline"},
@@ -251,6 +271,8 @@ def build_suggestions(
             names = ", ".join(source_label(n) for n in off)
             out.append(
                 {
+                    "note": True,
+                    "tone": "info",
                     "text": f"{plural(len(off), 'source is', 'sources are')} available but not "
                     f"enabled: {names}. Turn them on to see their postings.",
                     "link": {"href": "/settings#sources", "label": "Open Settings → Sources"},
@@ -258,12 +280,7 @@ def build_suggestions(
             )
     last = conn.execute("SELECT MAX(created_at) FROM fetch_log").fetchone()[0]
     if last and datetime.fromisoformat(last) < datetime.now(UTC) - timedelta(days=2):
-        out.append(
-            {
-                "text": "Your last search was more than two days ago.",
-                "run": {"id": "search", "label": "Search again"},
-            }
-        )
+        out.append({"run": {"id": "search", "label": "Search again"}})
     return out
 
 
@@ -368,11 +385,14 @@ def create_app(
         config = cfg()
         conn = db(config)
         data = applications.stats(conn)
+        suggestions = build_suggestions(conn, data, config)
+        nxt = next((x["run"] for x in suggestions if "run" in x), None)
         return render(
             request, "dashboard.html", active="dashboard", stats=data,
-            suggestions=build_suggestions(conn, data, config),
+            notes=[x for x in suggestions if x.get("note")], nxt=nxt,
+            steps=pipeline_steps(data, kpis(conn, data), nxt["id"] if nxt else "search"),
             upcoming=applications.upcoming_interviews(conn),
-            kpis=kpis(conn, data), rule_labels=RULE_LABELS,
+            rule_labels=RULE_LABELS,
             max_calls=config.budget.max_llm_calls_per_run, backend=config.llm.backend,
             running=manager.active(), favorites_open=favorites.count_without_application(conn),
             plan=top_board.plan(conn, config),
@@ -384,7 +404,7 @@ def create_app(
     def jobs_page(
         request: Request, status: str = "best", source: str = "", q: str = "",
         min_score: str = "", mode: str = "", sort: str = "score", page: int = 1,
-        fav: str = "", fresh: str = "",
+        fresh: str = "",
     ) -> Any:  # fmt: skip
         config = cfg()
         conn = db(config)
@@ -403,8 +423,6 @@ def create_app(
         elif status not in ("all", *tab_statuses):
             where.append("j.status = ?")
             params.append(status)
-        if fav == "1" and status != "favorites":
-            where.append("f.job_id IS NOT NULL")
         if source:
             where.append("j.source = ?")
             params.append(source)
@@ -469,7 +487,7 @@ def create_app(
         if (
             status == "best"
             and page == 1
-            and not (q or source or mode or fav or days or score_floor is not None)
+            and not (q or source or mode or days or score_floor is not None)
         ):
             plan = top_board.plan(conn, config)
             board_ids = {r["id"] for r in plan["board"]}
@@ -480,13 +498,13 @@ def create_app(
             pages=max(1, -(-total // PAGE_SIZE)), counts=counts, sources=sources, tabs=tabs,
             qs=urlencode({k: v for k, v in {"status": status, "source": source, "q": q,
                           "mode": mode, "sort": sort, "min_score": score_floor,
-                          "fresh": days, "fav": "1" if fav == "1" else ""}.items()
+                          "fresh": days}.items()
                           if v not in ("", None)}),
             f={"status": status, "source": source, "q": q, "min_score": score_floor,
-               "mode": mode, "sort": sort, "fav": fav == "1", "fresh": days},
+               "mode": mode, "sort": sort, "fresh": days},
             fresh_options=fresh_options(config.search.max_age_days),
             score_options=score_options(score_floor, config.scoring.score_threshold),
-            active_filters=active_filters(q, source, mode, fav == "1", days, score_floor),
+            active_filters=active_filters(q, source, mode, days, score_floor),
             blocked=blocked_set(config),
         )  # fmt: skip
 

@@ -19,7 +19,7 @@
     </div>
   </div>
   {{ m.ring(score.score if score else none, 64) }}
-  <div class="actions col">
+  <div class="actions">
     {% set can_open = job.url.startswith('http://') or job.url.startswith('https://') %}
     {% if job.status in ['passed', 'score_failed'] and not score %}<button class="btn primary" data-run='{{ {"id": "score", "jobs": [job.id]}|tojson|forceescape }}' data-label="Scoring this posting with AI" data-reload>{{ m.icon('spark') }} Score this posting</button>
     {% elif not package and not application %}<button class="btn primary" data-run='{{ {"id": "tailor", "jobs": [job.id]}|tojson|forceescape }}' data-label="Building the package for this posting" data-reload>{{ m.icon('spark') }} Build package</button>
@@ -39,7 +39,7 @@
   </div>
 </header>
 
-<div class="grid-2">
+<div class="split">
   <section class="card">
     <h2>{{ m.icon('info') }} Why it matches</h2>
     {% if score %}
@@ -50,8 +50,8 @@
       {% if score.score < threshold %}<p class="muted small mt">Match score {{ score.score }} is below your best-match threshold of {{ threshold }} (Settings → AI &amp; documents). This is the AI's fit score, not your salary or location criteria.</p>{% endif %}
       <p class="muted small mt">Scored by {{ score.model }} · {{ score.created_at|dt }}</p>
     {% elif job.status in ['passed', 'score_failed'] %}
-      <p class="muted">Not scored yet. Press <b>Score this posting</b> at the top, or score all pending ones from Home.</p>
-    {% else %}<p class="muted">Not scored yet. It has to pass your criteria first, then use “Score with AI” on the Home page.</p>{% endif %}
+      <p class="muted">Not scored yet. Press <b>Score this posting</b> above, or score every waiting posting from Home.</p>
+    {% else %}<p class="muted">Not scored. The AI only rates postings that pass your criteria. You can still build a package for this one by hand.</p>{% endif %}
   </section>
 
   <section class="card">
@@ -69,12 +69,12 @@
   <button class="btn small" data-fav-note="{{ job.id }}">Save note</button>
 </section>
 
-<div class="grid-2 workspace">
+<div class="split workspace">
 <section class="card">
   <h2>Posting text</h2>
-  <pre class="desc">{{ job.description }}</pre>
+  <div class="posting-text">{{ job.description }}</div>
 </section>
-<section class="card" id="package">
+<section class="card side-sticky" id="package">
   <h2>{{ m.icon('doc') }} Application package</h2>
   {% if package %}
     <p>{% if package.verified %}<span class="badge good">Checks passed</span>{% else %}<span class="badge bad">Needs review</span>{% endif %}
@@ -89,7 +89,7 @@
     <div class="actions mt"><button class="btn small" data-run='{{ {"id": "tailor", "jobs": [job.id]}|tojson|forceescape }}' data-label="Rebuilding the package" data-reload>Rebuild package</button>
       <button class="btn small danger" data-post="/api/jobs/{{ job.id }}/package/delete" data-json='{}' data-confirm="Delete the generated CV, letter and notes for this posting? Your application record is kept.">Delete package</button></div>
   {% else %}
-    <p class="muted">No package yet. Interested in this one? Build it by hand, whatever its score or filter verdict. It runs only for this posting.</p>
+    <p class="muted">No package yet. You can build one for this posting whatever its score or filter result. It uses one AI call and covers only this posting.</p>
     {% if application %}<button class="btn" data-run='{{ {"id": "tailor", "jobs": [job.id]}|tojson|forceescape }}' data-label="Building the package for this posting" data-reload>Build package</button>{% endif %}
   {% endif %}
 </section>
@@ -134,7 +134,7 @@
 <section class="card">
   <h2>History</h2>
   <table class="compact"><tbody>
-  {% for e in events %}<tr><td class="muted nowrap">{{ e.created_at|dt }}</td><td class="nowrap">{{ e.from_status|state_label }} → {{ e.to_status|state_label }}</td><td class="muted">{{ e.note }}</td></tr>{% endfor %}
+  {% for e in events %}<tr><td class="muted nowrap">{{ e.created_at|dt }}</td><td class="nowrap">{% if e.from_status %}{{ e.from_status|state_label }} → {% endif %}{{ e.to_status|state_label }}</td><td class="muted">{{ e.note }}</td></tr>{% endfor %}
   </tbody></table>
 </section>
 {% endblock %}

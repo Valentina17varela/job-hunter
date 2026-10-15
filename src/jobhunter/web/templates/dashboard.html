@@ -1,89 +1,80 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
+{% import "_top.html" as top %}
 {% block title %}Home{% endblock %}
 {% block content %}
 {% set f = stats.funnel %}
 
-{% set nxt = suggestions|selectattr('run')|list|first %}
 <header class="home-head">
   <img src="/static/img/logo.png" alt="" width="64" height="64">
   <div>
     <h1>Home</h1>
-    <p>{{ "{:,}".format(f.fetched) }} postings found, {{ kpis.matches }} worth a look, {{ f.applied }} applied. Nothing runs until you press a button.</p>
+    <p>Nothing runs until you press a button. You review every match and you apply yourself.</p>
   </div>
-  {% if nxt %}<button class="btn primary" data-run='{{ {"id": nxt.run.id}|tojson|forceescape }}' data-label="{{ nxt.run.label }}" data-reload>{{ m.icon('spark' if nxt.run.llm else 'search') }} {{ nxt.run.label }}</button>
+  {% if nxt %}<button class="btn primary" data-run='{{ {"id": nxt.id}|tojson|forceescape }}' data-label="{{ nxt.label }}" data-reload>{{ m.icon('spark' if nxt.llm else 'search') }} {{ nxt.label }}</button>
   {% else %}<button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>{% endif %}
 </header>
 
 {% if running %}<div class="notice">{{ m.icon('play') }} A run is in progress: <b>{{ running.spec_id|run_label }}</b>. Its log is in the panel at the bottom right.</div>{% endif %}
 
-<section class="kpis">
-  <a class="kpi" href="/jobs?status=best"><b>{{ kpis.matches }}</b><span>Matches worth a look</span></a>
-  <a class="kpi" href="/packages"><b>{{ kpis.ready }}</b><span>Ready to apply</span></a>
-  <a class="kpi" href="/pipeline"><b>{{ kpis.active }}</b><span>Active applications</span></a>
-  <a class="kpi" href="/pipeline"><b>{{ kpis.interviews }}</b><span>Interviews pending</span></a>
-</section>
-<div class="grid-2">
-  <section class="card">
-    <div class="card-head"><h2>What to do next</h2></div>
-    {% for s in suggestions %}
-    <div class="todo">
-      <span class="todo-ic">{{ m.icon('check') }}</span>
-      <p>{{ s.text }}</p>
-      {% if s.link %}<a class="btn small" href="{{ s.link.href }}">{{ s.link.label }}</a>{% endif %}
-    </div>
-    {% else %}
-    <p class="muted">You are all caught up. Run a new search when you want to look for more roles.</p>
-    {% endfor %}
-  </section>
-  <section class="card">
-    <div class="card-head"><h2>Upcoming interviews</h2><a class="link" href="/pipeline">Applications →</a></div>
-    {% for i in upcoming %}
-    <a class="todo plain" href="/jobs/{{ i.job_id }}">
-      <span class="todo-ic cal">{{ m.icon('cal') }}</span>
-      <p><b>{{ i.kind.replace('_', ' ')|capitalize }}</b> · {{ i.title }}<br><span class="muted">{{ i.company }} · {{ i.scheduled_at|dt if i.scheduled_at else 'date not set' }}</span></p>
-    </a>
-    {% else %}<p class="muted">No interviews yet. Add one from an application's page.</p>{% endfor %}
-    {% if stats.stages %}
-    <h3 class="mt">Applications by stage</h3>
-    <div class="chips">{% for stage, n in stats.stages.items() %}<a class="chip stage-{{ stage }}" href="/pipeline">{{ STAGE_LABELS[stage] }} <b>{{ n }}</b></a>{% endfor %}</div>
-    {% endif %}
-  </section>
-</div>
-
-{% import "_top.html" as top %}
-{{ top.top_compact(plan) }}
-{% if favorites_open %}<p class="muted small"><a href="/jobs?status=favorites">{{ m.icon('star-fill') }} {{ favorites_open }} favorite{{ 's' if favorites_open != 1 }} without an application yet</a></p>{% endif %}
-
-<section class="card">
-  <div class="card-head"><h2>Your pipeline</h2><p class="muted">Three steps, in order, whenever you want to look for work.</p></div>
+<section class="card" aria-labelledby="pipeline-h">
+  <div class="card-head"><h2 id="pipeline-h">Your pipeline</h2></div>
   <ol class="pipeline">
+    {% for s in steps %}
     <li class="pipe-row">
-      <span class="pipe-n">1</span>
-      <div><h3>Search</h3><p>Look for new postings on all sources and keep the ones that match your criteria. Free, no AI.</p></div>
-      <div class="pipe-actions"><button class="btn" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>
-        <button class="btn" data-open-add>{{ m.icon('doc') }} Add a posting</button></div>
+      <span class="pipe-n{{ ' on' if s.current }}"{% if s.current %} aria-label="Step {{ s.n }}, next"{% endif %}>{{ s.n }}</span>
+      <div><h3>{{ s.title }}{% if s.current %} <span class="badge">Next</span>{% endif %}</h3><p>{{ s.state }}</p></div>
+      <div class="pipe-actions">
+        {% if s.n == 1 %}
+          {% if not s.current %}<button class="btn" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>{% endif %}
+          <button class="btn" data-open-add>{{ m.icon('doc') }} Add a posting</button>
+        {% elif s.n == 2 %}
+          {% if unscored and not s.current %}<button class="btn" data-run='{"id":"score"}' data-label="Scoring postings with AI" data-reload>{{ m.icon('spark') }} Score {{ unscored }} posting{{ 's' if unscored != 1 }}</button>{% endif %}
+          <a class="link" href="/jobs?status=best">See best matches →</a>
+        {% else %}
+          {% if unpackaged and not s.current %}<button class="btn" data-run='{"id":"tailor"}' data-label="Building application packages" data-reload>{{ m.icon('spark') }} Build {{ unpackaged }} package{{ 's' if unpackaged != 1 }}</button>{% endif %}
+          <a class="link" href="/packages">Open documents →</a>
+        {% endif %}
+      </div>
     </li>
-    <li class="pipe-row">
-      <span class="pipe-n">2</span>
-      <div><h3>Review matches</h3><p>The AI rates each posting against your CV and flags blockers such as country restrictions.</p></div>
-      <div class="pipe-actions">{% if unscored %}<button class="btn" data-run='{"id":"score"}' data-label="Scoring postings with AI" data-reload>{{ m.icon('spark') }} Score {{ unscored }} posting{{ 's' if unscored != 1 }}</button>{% endif %}
-        <a class="link" href="/jobs?status=best">See best matches →</a></div>
-    </li>
-    <li class="pipe-row">
-      <span class="pipe-n">3</span>
-      <div><h3>Prepare and apply</h3><p>For your top matches: a CV that highlights what matters, a one-page cover letter and a recruiter message.</p></div>
-      <div class="pipe-actions">{% if unpackaged %}<button class="btn" data-run='{"id":"tailor"}' data-label="Building application packages" data-reload>{{ m.icon('spark') }} Build {{ unpackaged }} package{{ 's' if unpackaged != 1 }}</button>{% endif %}
-        <a class="link" href="/packages">Open documents →</a></div>
-    </li>
+    {% endfor %}
   </ol>
 </section>
 
+{% if notes %}
+<div class="notes">
+  {% for n in notes %}
+  <div class="todo"><span class="todo-ic {{ n.tone }}">{{ m.icon('alert' if n.tone == 'warn' else 'info') }}</span><p>{{ n.text }}</p><a class="btn small" href="{{ n.link.href }}">{{ n.link.label }}</a></div>
+  {% endfor %}
+</div>
+{% endif %}
 
+{{ top.top_compact(plan) }}
+{% if favorites_open %}<p class="muted small"><a href="/jobs?status=favorites">{{ m.icon('star-fill') }} {{ favorites_open }} favorite{{ 's' if favorites_open != 1 }} without an application yet</a></p>{% endif %}
+
+{% if upcoming or stats.stages %}
+<section class="card">
+  <div class="card-head"><h2>Your applications</h2><a class="link" href="/pipeline">Open applications →</a></div>
+  {% if stats.stages %}
+  <div class="chips">{% for stage, n in stats.stages.items() %}<a class="chip stage-{{ stage }}" href="/pipeline">{{ STAGE_LABELS[stage] }} <b>{{ n }}</b></a>{% endfor %}</div>
+  {% endif %}
+  {% if upcoming %}
+  <h3 class="mt">Upcoming interviews</h3>
+  {% for i in upcoming %}
+  <a class="todo plain" href="/jobs/{{ i.job_id }}">
+    <span class="todo-ic cal">{{ m.icon('cal') }}</span>
+    <p><b>{{ i.kind.replace('_', ' ')|capitalize }}</b> · {{ i.title }}<br><span class="muted">{{ i.company }} · {{ i.scheduled_at|dt if i.scheduled_at else 'date not set' }}</span></p>
+  </a>
+  {% endfor %}
+  {% endif %}
+</section>
+{% endif %}
+
+{% if f.fetched %}
 <div class="grid-2">
   <section class="card">
     <div class="card-head"><h2>From postings to offers</h2></div>
-    {% set steps = [
+    {% set funnel = [
       ('Postings found', f.fetched, 'Everything downloaded from all sources'),
       ('Match your criteria', f.passed_filter, 'Right role, seniority, remote and location'),
       ('Rated by AI', f.scored, 'Compared against your CV'),
@@ -92,7 +83,7 @@
       ('Applications sent', f.applied, 'Marked as applied by you'),
       ('Interviews', f.interviewing, 'Reached an interview stage'),
       ('Offers', f.offer, '')] %}
-    {% for label, n, hint in steps %}
+    {% for label, n, hint in funnel %}
     <div class="funnel-row" title="{{ hint }}">
       <span class="funnel-label">{{ label }}</span>
       <span class="bar"><span style="width: {{ n|bar_width(f.fetched) }}%"></span></span>
@@ -101,21 +92,22 @@
     {% endfor %}
   </section>
 
+  {% if stats.rejected_by_rule %}
   <section class="card">
     <div class="card-head"><h2>Why postings were left out</h2></div>
-    {% if stats.rejected_by_rule %}
-    {% set top = stats.rejected_by_rule.values()|max %}
+    {% set peak = stats.rejected_by_rule.values()|max %}
     {% for rule, n in stats.rejected_by_rule.items() %}
     <div class="funnel-row">
       <span class="funnel-label wide">{{ rule_labels.get(rule, rule) }}</span>
-      <span class="bar"><span style="width: {{ 100 * n / top }}%"></span></span>
+      <span class="bar"><span style="width: {{ 100 * n / peak }}%"></span></span>
       <span class="funnel-n">{{ "{:,}".format(n) }}</span>
     </div>
     {% endfor %}
     <p class="muted mt">Too few matches? Loosen the rule with the biggest bar in <a href="/settings">Settings</a>.</p>
-    {% else %}<p class="muted">Nothing filtered yet. Run a search first.</p>{% endif %}
   </section>
+  {% endif %}
 </div>
+{% endif %}
 
 <section class="card" id="health-card" hidden>
   <div class="card-head"><h2>System check</h2><span class="muted small">Last search: {{ stats.last_fetch[0].at|dt if stats.last_fetch else 'never' }}</span></div>

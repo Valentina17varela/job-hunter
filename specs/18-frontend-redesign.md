@@ -188,3 +188,7 @@ The dark soft fills are the accent colors blended over `--surface` (orange 14 %,
 - [x] Text and control colors use the contrast-checked pairs of §5.1 in both themes (verified when the table was made; no automated script, by decision of the author).
 - [x] No request (covered by a test) leaves the machine to render a page; the same security checks and all tests pass.
 - [x] Pages checked at 390 px by screenshot; controls carry labels and a visible orange focus ring.
+
+## 10. Addendum (spec 24)
+
+The identity this spec introduced was refined by [24](24-ui-refinement.md): the Home hero, orange as the default tint, card-on-card surfaces, uppercase labels and text-glyph icons were replaced by neutral surfaces, one orange voice, flat rows, shape by role and a sprite icon set. The tokens, font, mascot, security rules and the dark theme from this spec are unchanged; `DESIGN.md` describes the result. Where this spec and spec 24 disagree about looks, spec 24 wins.

@@ -25,22 +25,22 @@ Started by hand from the CLI or the UI; every stage (fetch, filter, score, tailo
 ## Capabilities and Constraints
 
 - Pipeline: fetch and dedupe, hard filter with stored rejection reasons, LLM scoring in batches with explicit blockers, tailoring (bullet selection, cover letter, recruiter message in the posting's language), verification, tracking.
-- UI areas: dashboard and funnel, top five matches, job browsing with live filters, favorites and block list, postings added by hand, applications with stages and interviews, generated documents, run controls, safe config editing.
-- Terminology: posting, match, package (CV plus letter plus message plus notes), stage, blocker, "Not for me" (dismiss).
+- UI areas: Home (next action, pipeline with per-step state, applications, funnel), Matches (top five board, live filters, favorites, block list, postings added by hand), the posting page, Applications (ready strip and a four-column board), Documents, Actions, Settings (one tab at a time, one save bar).
+- Terminology: posting, match, package (CV plus letter plus message plus notes), stage, blocker, "Not for me" (the one dismissal), "Mark as applied". Copy speaks to the person ("you/your"); buttons carry their verb and say how much they will do.
 - Security rules the UI must keep: bind 127.0.0.1 only, escape all posting text, no external assets or CDN, JSON-only writes, files served only from `out/`, no secrets rendered, locked config fields.
 - Everything is in English; the person's own profile data and postings may be in other languages.
 - Stack is fixed: FastAPI, Jinja2, vanilla JS and CSS, no build step, fonts bundled locally.
-- Undecided: dark theme (the existing palette is light-only), a true SVG logo.
+- Decided: light is the default theme and dark is an opt-in toggle (applied before first paint). Still undecided: a true SVG logo.
 
 ## Brand Commitments
 
-The mascot logo is binding: an eagle head with dark sunglasses in navy, teal and white with an amber beak (`design/brand/logo/logo.png`, 1024 px opaque master; `logo_no_background.png`, 500 px transparent). It is the only identity asset the author confirmed wanting. `design/brand/palette.md` (Kinetic Horizon) and `design/project_brief.md` exist as earlier design inputs and shipped in spec 18, but they are not confirmed as binding; they are evidence of the current look, not a constraint on future work.
+The mascot logo is binding: an eagle head with dark sunglasses in navy, teal and white with an amber beak (`design/brand/logo/logo.png`, 1024 px opaque master; `logo_no_background.png`, 500 px transparent). It is the only identity asset the author confirmed wanting. `design/brand/palette.md` (Kinetic Horizon) and `design/project_brief.md` are earlier design inputs (spec 18). The current look is "The Quiet Cockpit" (spec 24, `DESIGN.md`): neutral surfaces with one orange voice. Neither earlier input is binding.
 
 ## Evidence on Hand
 
 - Logo files in `design/brand/logo/`.
 - A fictional demo workspace (`uv run python scripts/seed_demo.py` or `jobhunter demo`) and screenshots in `docs/images/`.
-- Specs in `specs/` including the shipped frontend redesign (18) and top matches (22).
+- Specs in `specs/` including the frontend redesign (18), top matches (22), live filters (23) and the UI refinement (24), plus the design reviews in `docs/design-audit/`.
 - No real user testimonials, usage data or other users' feedback yet. Do not fabricate any.
 
 ## Product Principles

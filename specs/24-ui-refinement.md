@@ -1,6 +1,6 @@
 # 24 — UI refinement: "The Quiet Cockpit"
 
-**Status:** IN PROGRESS (decisions D1–D6 answered; slice 1 under way)
+**Status:** DONE (all nine slices shipped; audit 11/20 → 16/20)
 
 ## 1. Problem
 
@@ -77,15 +77,15 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 - [x] Slice 6 — Posting page and job cards (see §15).
 - [x] Slice 7 — Applications and Settings (see §16).
 - [x] Slice 8 — Voice (see §17).
-- [ ] Slice 9 of §4, each ticked here when shipped.
-- [ ] README (UI section) and screenshots, `DESIGN.md`, `PRODUCT.md`, `design/README.md` and this spec marked done.
+- [x] Slice 9 — Close (see §18).
+- [x] README (UI section) and screenshots, `DESIGN.md`, `PRODUCT.md`, `design/README.md` and this spec marked done.
 
 ## 9. Acceptance criteria
-- [ ] Every page shows at most one filled primary action per area, and it is the next step.
-- [ ] A new `/impeccable audit` scores clearly above 11/20 and the critique above 27/40, with browser evidence this time.
-- [ ] No control without an accessible name; toasts, saves and filter results are announced.
-- [ ] The Applications board shows all five stages at 1280 px without horizontal scroll.
-- [ ] Light and dark are both verified in a real browser; nothing loads from outside.
+- [x] Every page shows at most one filled primary action per area, and it is the next step.
+- [x] A new `/impeccable audit` scores 16/20 (was 11/20) with browser evidence ([`impeccable-audit-2.md`](../docs/design-audit/impeccable-audit-2.md)). The critique was not re-run (open: `/impeccable critique`, previous 27/40).
+- [x] No control without an accessible name; toasts, saves and filter results are announced.
+- [x] The Applications board shows all four stage columns at 1280 px without horizontal scroll (Ready to apply is a strip above it).
+- [x] Light and dark are both verified in a real browser (the detector only in light); nothing loads from outside.
 
 ## 10. Slice 1 — Foundation (done)
 
@@ -159,6 +159,22 @@ Not done in this slice (belongs to later ones): page reload after every action (
 
 **Checked in a real browser** (light, dark, 390 px, no horizontal scroll); README text and `docs/images/dashboard.png` refreshed. Test: Home has exactly one primary run button and count-aware labels; `tests/test_css.py` no longer whitelists `.eyebrow`.
 
+**Revision (critique follow-up, distill on Home).** The next action appeared three or four times (header, "What to do next", pipeline buttons) and no step showed its own state. Changes: the KPI strip and the "What to do next" card are gone. `pipeline_steps` (in `web/app.py`) gives each pipeline step a state line ("3 postings match your criteria and are waiting for AI scoring", "2 top matches have no tailored CV and cover letter yet. 1 package is ready to review"), and the step the header acts on carries a neutral "Next" badge and an inked number (`.pipe-n.on`) instead of a second button; the other steps keep their count-aware secondary buttons. `build_suggestions` now returns only the header action (`run`) and side notes (`note`: stale applications, sources not enabled), shown as slim rows under the pipeline. The header line no longer repeats counts. Interviews and stage chips live in one "Your applications" card shown only when there is something to show; the funnel and "left out" cards appear only once postings exist, so a new workspace has no filler empty states. Tests: `test_dashboard_pipeline_steps_carry_their_own_state`, plus the existing one-primary and empty-database tests. Not yet checked in a real browser (tools were unavailable); `docs/images/dashboard.png` is not refreshed.
+
+**Revision (critique follow-up, layout on Home and the posting page).** Posting page: the header's buttons, star and ⋯ menu are one row (primary, *Open posting*, star, ⋯) instead of a column with the icons stranded underneath, and the title keeps a 20rem minimum so a long title wraps the row instead of squeezing it. "Why it matches" and "Your criteria" use a 3:2 `.split` grid (the criteria card is short, so it no longer takes half the width); the workspace uses the same grid with the posting text wide and the package card `position: sticky`, so the package stays in view while the person reads. The posting text no longer scrolls inside a 480px box on wide screens (the page scrolls); below 860px it keeps a 28rem cap so the package is not buried. Home: a lone card in a `.grid-2` row now spans the row (the funnel with no "left out" card). Removed the unused `.actions.col` rule. Not verified in a browser; pytest, ruff and the layout detector scan have not been run (tools unavailable).
+
+**Revision (critique follow-up, distill on Matches and Actions).** Matches: the filter bar showed seven controls and Favorites twice (a tab and a checkbox chip). The `fav` filter and its chip are removed (the *Favorites* tab and the *Favorites first* sort stay); *Source*, *Posted* and *Mode* sit behind a *More filters* disclosure (`details.fb-more`) that opens by itself and is marked when one of them is set, so search, *Score* and *Sort* are what the person sees. Actions: the groups are *Find jobs* (Search, Re-filter), *Score and prepare* (Score, Build packages, Run everything) and a collapsed *More tools* with *Single steps* (Fetch, Filter) and *Maintenance*; the lone "Evaluate with AI" card is gone and "Apply" no longer names a group, since the tool never applies. The posting-ids, limit and rebuild fields sit in a per-card *Only some postings* disclosure; the dry-run checkbox stays visible. Tests: `test_actions_page_groups_every_command`, `test_filters_form_one_connected_bar_that_applies_live`, `test_favorites_api_tab_chip_sort_and_badges`. Not verified in a browser; pytest, ruff and `check_docs.py` have not been run (tools unavailable).
+
+**Revision (critique follow-up, typeset on the posting text).** The posting text was a `<pre>` in the monospace stack at .88em inside a filled, bordered box, which read like code. It is now `div.posting-text`: body face at `--text-base`, 1.65 leading, `max-width: 68ch`, `text-wrap: pretty`, `overflow-wrap: anywhere`, `white-space: pre-wrap` (the cleaned text keeps its line breaks and "- " bullets), flat on the card with no inner box. Below 860px it keeps the 28rem cap with its own scroll. The recruiter message stays a `pre` (it is a copy block). Test: `test_posting_page_has_one_primary_and_a_workspace`. Not verified in a browser; the type detector scan has not been run (tools unavailable).
+
+**Revision (critique follow-up, clarify).** Copy only. The history's first row read "— → New"; it now shows just the new state when there is no earlier one. "Job matches" (Settings hint, 404 page) is "Matches", the name in the nav, and the Settings hint now points to *More filters* where *Posted* lives. On the posting page, "Not scored yet… use “Score with AI” on the Home page" (a button that does not exist) became "Not scored. The AI only rates postings that pass your criteria. You can still build a package for this one by hand."; the package card says what building costs ("one AI call and covers only this posting"). The status vocabulary (Passed filter, Selected, Packaged, Below match score) was left alone: it is pinned by tests and the stage chips and needs a decision from the author before it changes. Test: `test_posting_page_has_one_primary_and_a_workspace`. Not run (tools unavailable).
+
+**Revision (critique follow-up, colorize).** Strategy: no new hues and no more orange; colour only where grayscale hid a state the design system already names. The Home side notes had no marker at all: each note now carries a `tone` from `build_suggestions` (`warn` for applications with no update in a week, `info` for sources that exist but are not enabled) and an amber alert or sky info icon tile. The upcoming-interview tile on Home was neutral although DESIGN.md lists upcoming interviews as amber; it now uses the warn pair. All pairs are existing tokens (`--warn`/`--warn-soft`, `--info`/`--info-soft`, both themes). Left alone on purpose: the "Next" badge and active filters stay neutral (one orange voice), and the *uses AI* badge stays amber because it flags quota spend. Test: `test_home_points_to_sources_that_exist_but_are_not_enabled`. Contrast and dark theme not checked in a browser (tools unavailable).
+
+**Revision (critique follow-up, delight).** Voice only, no motion, no new elements, at the moments that matter in a job search. When every top match has a package and some are ready, the packages step on Home now also says "Apply on the company site, then mark it/them as applied here", so the person knows the next move is theirs (the tool never applies). The stage-change undo toast says "Marked as applied. Good luck." for Applied and "Moved to Offer. Congratulations." for Offer, and "Moved to X." for the rest. Test: `test_dashboard_pipeline_steps_carry_their_own_state`.
+
+**Revision (critique follow-up, polish).** Read-through of the touched templates and `style.css` against `tests/test_css.py` (each selector once per media context, no literals, tokens only) and the Jinja scoping of the `runcard` macro in `run.html`; no defects found by reading. One copy fix: the no-JavaScript submit button on Matches reads "Apply filters" instead of "Apply" (the tool never applies to jobs). Left for the author: the funnel row "Applications sent" on Home still reads as if the tool sent them (its hint says "Marked as applied by you"; a rename to "Marked as applied" needs the author's call), the status vocabulary, the tab taxonomy, and `/impeccable document` to refresh `.impeccable/design.json`. Not run: pytest, ruff, `check_docs.py`, the detector scans and the browser pass in light, dark and mobile (tools unavailable); `docs/images/*.png` are not refreshed for the critique-follow-up changes.
+
 ## 15. Slice 6 — Posting page and job cards (done)
 
 **Job cards (D3, D4).** A row now shows the avatar, title, company line, a few chips, the AI reason, the score ring and **one visible button** (*View package*, or *Build package* for postings worth packaging) plus a **⋯ overflow menu** (`details.more`, closes on outside click, item click and Esc) holding *I applied*, *Not for me* and, for filtered-out or closed rows, *Build package*. *Hide* is gone: *Not for me* (optional reason) is the single dismissal and the dialog says it never comes back. The status badge is dropped when it only repeats the tab (*scored*, *selected*). The filled action moved to the head of the top board: **Build N packages for your top 5**, only for the board rows that have none; on Job matches *Search for new jobs* is secondary.
@@ -194,3 +210,11 @@ Not done in this slice (belongs to later ones): page reload after every action (
 **No raw tokens.** Work modes read *Remote / Hybrid / On-site / Not stated* (chips, filter, active-filter chip, Settings checkboxes; `mode_label` filter); sources use their names on the posting page and in Settings; interview times use the readable date format instead of ISO strings; interview kinds and outcomes are capitalised; the History table shows status labels instead of ids; Actions history and the Home "a run is in progress" notice show the action's name, not `spec_id`; run status reads Done / Failed / Running; the Actions descriptions lost config keys, backticks and file paths ("up to your per-run call limit", "Your Claude subscription · up to 60 AI calls per run").
 
 **Tests.** `test_voice_you_and_no_raw_tokens` (no first-person labels, no ISO timestamps or raw tokens on six pages, no bare "Run"), `test_actions_page_has_no_config_keys_or_backticks` (480 total). README terms updated (Matches, Mark as applied) and all seven screenshots regenerated (they showed the old nav).
+
+## 18. Slice 9 — Close (done)
+
+- **`DESIGN.md`** regenerated for "The Quiet Cockpit" (frontmatter tokens, flat surfaces, shape by role, the Home header, rows, the board, the save bar, new Do's and Don'ts); the old hero, five-column board and halo-everywhere rules are gone.
+- **`PRODUCT.md`** corrected: the dark theme is decided, the UI areas and terminology reflect the shipped screens, the identity note points to spec 24.
+- **Audit 2** ([`docs/design-audit/impeccable-audit-2.md`](../docs/design-audit/impeccable-audit-2.md)): 16/20 with the detector and a real browser. It found and fixed the wordmark contrast (2.8:1), horizontal scroll at 390 px on two pages, cramped chips and the column stripe; `overused-font` and the kanban `nested-cards` are accepted.
+- **Housekeeping:** spec 18 got an addendum, `design/README.md` and `docs/design-audit/README.md` point to the new state, the test for board stage marks follows the dot.
+- **Open (not blocking):** re-run `/impeccable critique`; small inline link targets on mobile; in-place updates instead of reload; inline CV/letter preview.

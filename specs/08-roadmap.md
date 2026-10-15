@@ -31,7 +31,7 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 
 Suggested order: small and independent first, those that gain from more data later, the ones needed late in a process last.
 
-- [ ] **UI refinement "The Quiet Cockpit"** from the three design reviews: one orange voice, flat surfaces, review workspace, accessibility floor, Home as a cockpit — [24](24-ui-refinement.md) · decisions D1–D6 answered; slices 1–8 of 9 done
+- [x] **UI refinement "The Quiet Cockpit"** from the three design reviews: one orange voice, flat surfaces, review workspace, accessibility floor, Home as a cockpit — [24](24-ui-refinement.md) · done, audit 11/20 → 16/20
 - [ ] **Posting quality**: ghost-job, repost and scam signals; "is it still open?" check — [21](21-posting-quality.md)
 - [ ] **CV importer**: any CV to a marked LaTeX master — [16](16-cv-importer.md)
 - [ ] **First-run setup wizard** in the UI (uses the importer for its CV step) — [15](15-onboarding-wizard.md) · after the importer, or first with the "I have a marked CV / skip" paths
