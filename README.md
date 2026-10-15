@@ -234,7 +234,7 @@ erDiagram
 
 ### Web UI
 
-The interface uses the Kinetic Horizon look (orange brand, mascot, self-hosted Plus Jakarta Sans; no external requests). It is light by default; a button next to the logo switches to an optional dark theme that your browser remembers (applied before the page paints, so there is no flash). It is built to be usable without a mouse or with a screen reader: every control has an accessible name, status messages are announced, there is a skip link, the focus ring is always visible, motion respects `prefers-reduced-motion`, and unknown pages get a proper 404.
+The interface uses the Kinetic Horizon look (orange brand, mascot, self-hosted Plus Jakarta Sans; no external requests). Orange is reserved for the main action and the match score, everything else is neutral so the next step stands out. It is light by default; a button next to the logo switches to an optional dark theme that your browser remembers (applied before the page paints, so there is no flash). It is built to be usable without a mouse or with a screen reader: every control has an accessible name, status messages are announced, there is a skip link, the focus ring is always visible, motion respects `prefers-reduced-motion`, and unknown pages get a proper 404.
 
 `uv run jobhunter ui --open` serves a local dashboard on `127.0.0.1`. Every button runs the same command as the CLI and streams its log into a panel on the page.
 

@@ -525,7 +525,7 @@ def test_favorites_api_tab_chip_sort_and_badges(env):
     assert "Platform Engineer" in chip and "Senior Engineer" not in chip
     first = client.get("/jobs?status=all&sort=favorites", headers=HOST).text
     assert first.index("Platform Engineer") < first.index("Senior Engineer")
-    assert "★ Favorites" in client.get("/jobs", headers=HOST).text
+    assert 'href="/jobs?status=favorites"' in client.get("/jobs", headers=HOST).text
     assert "favorites without an application" in client.get("/", headers=HOST).text
     page = client.get("/jobs/3", headers=HOST).text
     assert 'aria-pressed="true"' in page and "Block this company" in page

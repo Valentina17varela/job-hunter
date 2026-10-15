@@ -79,7 +79,7 @@ def active_filters(
     if mode:
         chips.append({"name": "mode", "label": f"Mode: {mode}"})
     if fav:
-        chips.append({"name": "fav", "label": "★ Favorites only"})
+        chips.append({"name": "fav", "label": "Favorites only"})
     return chips
 
 
@@ -420,7 +420,7 @@ def create_app(
             for key, label, sts in JOB_TABS
         ]  # fmt: skip
         fav_total = conn.execute("SELECT COUNT(*) FROM favorites").fetchone()[0]
-        tabs.append({"key": "favorites", "label": "★ Favorites", "n": fav_total})
+        tabs.append({"key": "favorites", "label": "Favorites", "n": fav_total})
         per_source = {r[0]: r[1] for r in conn.execute(
             "SELECT source, COUNT(*) FROM jobs GROUP BY source")}  # fmt: skip
         enabled = [*config.sources.aggregators, *sources_registry.company_boards()]

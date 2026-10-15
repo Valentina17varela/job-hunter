@@ -10,7 +10,7 @@
 </header>
 
 <nav class="tabs">
-  {% for t in tabs %}<a class="{{ 'on' if f.status == t.key else '' }}" href="/jobs?status={{ t.key }}">{{ t.label }} <span class="count">{{ "{:,}".format(t.n) }}</span></a>{% endfor %}
+  {% for t in tabs %}<a class="{{ 'on' if f.status == t.key else '' }}" href="/jobs?status={{ t.key }}">{% if t.key == 'favorites' %}{{ m.icon('star') }} {% endif %}{{ t.label }} <span class="count">{{ "{:,}".format(t.n) }}</span></a>{% endfor %}
 </nav>
 
 <form class="filterbar" method="get" action="/jobs" aria-label="Filter postings">
@@ -20,7 +20,7 @@
   <label class="fb-sel {{ 'on' if f.fresh }}" title="Postings without a date are always kept"><span>Posted</span><select name="fresh" aria-label="Posted within"><option value="">Any time</option>{% for o in fresh_options %}<option value="{{ o.days }}" {{ 'selected' if f.fresh == o.days }}>{{ o.label }}</option>{% endfor %}</select></label>
   {% if f.status not in ('filtered',) %}<label class="fb-sel {{ 'on' if f.min_score is not none }}"><span>Score</span><select name="min_score" aria-label="Minimum score"><option value="">Any</option>{% for o in score_options %}<option value="{{ o.value }}" {{ 'selected' if f.min_score == o.value }}>{{ o.label }}</option>{% endfor %}</select></label>{% endif %}
   <label class="fb-sel {{ 'on' if f.mode }}"><span>Mode</span><select name="mode" aria-label="Work mode"><option value="">Any</option>{% for md in ['remote', 'hybrid', 'onsite', 'unknown'] %}<option value="{{ md }}" {{ 'selected' if f.mode == md }}>{{ md }}</option>{% endfor %}</select></label>
-  <label class="fb-chip {{ 'on' if f.fav }}"><input type="checkbox" name="fav" value="1" {{ 'checked' if f.fav }}> ★ Favorites</label>
+  <label class="fb-chip {{ 'on' if f.fav }}"><input type="checkbox" name="fav" value="1" {{ 'checked' if f.fav }}> {{ m.icon('star') }} Favorites</label>
   <label class="fb-sel fb-sort"><span>Sort</span><select name="sort" aria-label="Sort by">{% for k, label in [('score', 'Best score'), ('recent', 'Most recent'), ('company', 'Company A–Z'), ('favorites', 'Favorites first')] %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ label }}</option>{% endfor %}</select></label>
   <noscript><button class="btn" type="submit">Apply</button></noscript>
 </form>
@@ -29,7 +29,7 @@
 <div id="jobs-results">
 
 {% if plan %}{{ top.top_board(plan, blocked, board_suggestions) }}{% endif %}
-{% if active_filters %}<div class="active-filters"><span class="muted small">Showing only:</span>{% for c in active_filters %}<span class="afchip">{{ c.label }}<button type="button" data-clear="{{ c.name }}" aria-label="Remove filter {{ c.label }}">✕</button></span>{% endfor %}<button type="button" class="link-btn" data-clear-all>Clear all</button></div>{% endif %}
+{% if active_filters %}<div class="active-filters"><span class="muted small">Showing only:</span>{% for c in active_filters %}<span class="afchip">{{ c.label }}<button type="button" data-clear="{{ c.name }}" aria-label="Remove filter {{ c.label }}">{{ m.icon('x') }}</button></span>{% endfor %}<button type="button" class="link-btn" data-clear-all>Clear all</button></div>{% endif %}
 {% if plan and not rows %}
 <p class="muted">{{ "Your best match is" if total == 1 else "All " ~ total ~ " best matches are" }} already in your top {{ plan.target }} above. Change the filters or open another tab to see more.</p>
 {% else %}

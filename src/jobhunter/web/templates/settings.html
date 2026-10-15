@@ -54,7 +54,7 @@
 </section>
 
 <section class="card" id="ai" data-card>
-  <h2>{{ m.icon('spark') }} AI &amp; documents</h2>
+  <h2>{{ m.icon('doc') }} AI &amp; documents</h2>
   <div class="form-grid">
     {% call(fid, hid, lbl) field('AI engine', 'Your Claude subscription (run “claude auth login” once) or an Anthropic API key.') %}{{ select('llm.backend', config.llm.backend, [('claude_cli', 'My Claude subscription'), ('anthropic_api', 'Anthropic API key')], id=fid, desc=hid) }}{% endcall %}
     {% call(fid, hid, lbl) field('What the AI should know about me', 'Where you live and what is a deal-breaker. The AI reads this when scoring and writing.') %}{{ area('scoring.candidate_context', config.scoring.candidate_context, 5, id=fid, desc=hid) }}{% endcall %}

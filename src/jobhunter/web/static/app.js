@@ -11,6 +11,18 @@
     toast.t = setTimeout(() => (el.hidden = true), 4500);
   }
 
+  function svgIcon(name) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'ic');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const use = document.createElementNS(ns, 'use');
+    use.setAttribute('href', '#i-' + name);
+    svg.append(use);
+    return svg;
+  }
+
   async function post(url, body) {
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
     const data = await res.json().catch(() => ({}));
@@ -154,7 +166,7 @@
         const x = document.createElement('button');
         x.type = 'button';
         x.setAttribute('aria-label', 'Remove ' + v);
-        x.textContent = '×';
+        x.append(svgIcon('x'));
         x.addEventListener('click', () => { values.splice(i, 1); render(); });
         tag.append(x);
         box.insertBefore(tag, input);
@@ -352,7 +364,7 @@
     const close = document.createElement('button');
     close.className = 'icon-btn';
     close.setAttribute('aria-label', 'Dismiss');
-    close.textContent = '✕';
+    close.append(svgIcon('x'));
     close.addEventListener('click', () => { notice.hidden = true; });
     notice.appendChild(close);
     notice.hidden = false;
@@ -425,7 +437,8 @@
     else document.documentElement.removeAttribute('data-theme');
     if (themeBtn) {
       const dark = t === 'dark';
-      themeBtn.textContent = dark ? '◑' : '◐';
+      const useEl = themeBtn.querySelector('use');
+      if (useEl) useEl.setAttribute('href', dark ? '#i-sun' : '#i-moon');
       themeBtn.setAttribute('aria-pressed', String(dark));
       themeBtn.setAttribute('aria-label', dark ? 'Light theme' : 'Dark theme');
       themeBtn.title = dark ? 'Light theme' : 'Dark theme';
@@ -513,7 +526,8 @@
       } catch (err) { toast(err.message); return; }
       star.setAttribute('aria-pressed', String(on));
       star.classList.toggle('on', on);
-      star.textContent = on ? '★' : '☆';
+      const use = star.querySelector('use');
+      if (use) use.setAttribute('href', on ? '#i-star-fill' : '#i-star');
       const note = $('#favorite-note');
       if (note) note.hidden = !on;
       return;

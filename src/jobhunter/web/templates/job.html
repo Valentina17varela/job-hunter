@@ -6,7 +6,7 @@
 <header class="job-head card">
   {{ m.avatar(job.company, 64) }}
   <div class="grow">
-    <h1><button class="star {{ 'on' if favorite }}" data-star="{{ job.id }}" aria-pressed="{{ 'true' if favorite else 'false' }}" aria-label="Favorite" title="Favorite">{{ '★' if favorite else '☆' }}</button> {{ job.title }}</h1>
+    <h1>{{ m.star(job.id, favorite) }} {{ job.title }}</h1>
     <p class="muted">{{ job.company }} · {{ job.location or 'location not stated' }} · {{ job.remote }} · {{ job.source }}</p>
     <div class="chips">
       <span class="badge st-{{ job.status }}">{{ STATUS_LABELS.get(job.status, job.status) }}</span>
@@ -28,7 +28,7 @@
 
 <div class="grid-2">
   <section class="card">
-    <h2>{{ m.icon('spark') }} Why it matches</h2>
+    <h2>{{ m.icon('info') }} Why it matches</h2>
     {% if score %}
       <p class="lead">{% if info.verdict %}<b class="verdict v-{{ info.verdict }}">{{ info.verdict }}</b>{% endif %} {{ info.reason }}</p>
       {% if info.red_flags %}<div class="callout warn"><b>{{ m.icon('alert') }} Verify before applying</b><ul class="flags">{% for x in info.red_flags %}<li>{{ x }}</li>{% endfor %}</ul></div>{% endif %}
@@ -52,7 +52,7 @@
 </div>
 
 <section class="card" id="favorite-note" {{ '' if favorite else 'hidden' }}>
-  <h2>★ Favorite note</h2>
+  <h2>{{ m.icon('star-fill') }} Favorite note</h2>
   <input type="text" id="fav-note" aria-label="Note about this favorite" maxlength="500" value="{{ favorite.note if favorite and favorite.note else '' }}" placeholder="e.g. ask about the visa">
   <button class="btn small" data-fav-note="{{ job.id }}">Save note</button>
 </section>

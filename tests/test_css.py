@@ -63,8 +63,9 @@ def test_every_var_used_is_defined_in_tokens():
     used = set(re.findall(r"var\((--[\w-]+)", _strip(STYLE)))
     for template in TEMPLATES.glob("*.html"):
         used |= set(re.findall(r"var\((--[\w-]+)", template.read_text()))
-    # --size and --pct are set inline on purpose (rings, avatars, bars); --rc by the ring rules
-    local = {"--size", "--pct", "--rc", "--w"}
+    # set inline or by component rules on purpose: --size/--pct (rings, avatars, bars),
+    # --rc (rings), --stage (board columns)
+    local = {"--size", "--pct", "--rc", "--w", "--stage"}
     missing = sorted(used - defined - local)
     assert not missing, f"undefined custom properties: {missing}"
 
@@ -85,3 +86,56 @@ def test_scale_tokens_exist():
         "--scrim", "--r-full", "--btn-border",
     ):  # fmt: skip
         assert f"{name}:" in TOKENS, name
+
+
+# --- surface language (spec 24, slice 3) ---------------------------------------------------
+
+APP = (STATIC.parent / "app.py").read_text()
+
+
+def test_every_posting_status_and_stage_has_a_style_rule():
+    statuses = re.search(r"STATUS_LABELS = \{(.*?)\}", APP, re.S).group(1)
+    for name in re.findall(r'"(\w+)":', statuses):
+        assert f".st-{name}" in STYLE, f"no .st-{name} rule: a status must not fall back silently"
+    stages = re.search(r"STAGE_LABELS = \{(.*?)\}", APP, re.S).group(1)
+    for name in re.findall(r'"(\w+)":', stages):
+        assert f".chip.stage-{name}" in STYLE, f"no chip rule for stage {name}"
+
+
+def test_orange_is_not_the_default_tint():
+    """Neutral by default: avatars, badges, tags, filter chips and tiles use neutral tokens."""
+    for selector in (".avatar", ".badge", ".tag", ".afchip", ".kpi-ic", ".step-n", ".empty-ic"):
+        block = STYLE.split(f"\n{selector} {{")[1].split("}")[0]
+        assert "badge-soft" not in block and "orange" not in block, selector
+    assert "--surface-neutral:" in TOKENS and "--ink-neutral:" in TOKENS
+
+
+def test_type_scale_and_weights_are_tokens_not_literals():
+    css = _strip(STYLE)
+    sizes = re.findall(r"font-size:\s*([\d.]+rem)", css)
+    assert not sizes, f"font sizes come from --text-*: {sorted(set(sizes))}"
+    assert not re.findall(r"font-weight:\s*\d", css), "weights come from --weight-*"
+    assert "text-wrap: balance" in css and "text-wrap: pretty" in css
+
+
+def test_all_caps_is_reserved_for_micro_labels():
+    allowed = {".eyebrow", ".verdict", ".fb-sel > span"}
+    for _context, head, body in _blocks(STYLE):
+        if "text-transform: uppercase" in body:
+            assert set(s.strip() for s in head.split(",")) <= allowed, head
+
+
+def test_no_text_glyph_icons_in_templates_or_scripts():
+    glyphs = re.compile("[★☆✕◐◑]")
+    for path in [*TEMPLATES.glob("*.html"), STATIC / "app.js", STATIC.parent / "app.py"]:
+        assert not glyphs.search(path.read_text()), f"{path.name} still uses a glyph as an icon"
+    sprite = (TEMPLATES / "base.html").read_text()
+    for icon in ("gear", "sun", "moon", "info", "star", "star-fill", "x", "minus"):
+        assert f'id="i-{icon}"' in sprite, icon
+    gear = re.search(r'<symbol id="i-gear".*?</symbol>', sprite, re.S).group(0)
+    assert "M12 2v3" not in gear, "the settings icon must not be the sun's rays"
+
+
+def test_board_stage_bars_do_not_use_crescent_borders():
+    assert "border-top: 4px" not in STYLE and '.column[class*="stage-"]::before' in STYLE
+    assert "fieldset.field" in STYLE  # native fieldset chrome is neutralised

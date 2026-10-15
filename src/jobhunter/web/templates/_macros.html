@@ -10,6 +10,10 @@
 <span class="avatar" style="--size:{{ size }}px" aria-hidden="true">{{ (name or "?").strip()[:2]|upper }}</span>
 {%- endmacro %}
 
+{% macro star(job_id, on) -%}
+<button class="star {{ 'on' if on }}" data-star="{{ job_id }}" aria-pressed="{{ 'true' if on else 'false' }}" aria-label="Favorite" title="Favorite"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-{{ 'star-fill' if on else 'star' }}"/></svg></button>
+{%- endmacro %}
+
 {% macro icon(name) -%}<svg class="ic" aria-hidden="true" focusable="false"><use href="#i-{{ name }}"/></svg>{%- endmacro %}
 
 {% macro empty(icon_name, title, text) -%}

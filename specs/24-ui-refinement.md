@@ -71,7 +71,8 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 - [x] Author answers §5.
 - [x] Slice 1 — Foundation (see §10).
 - [x] Slice 2 — Accessibility and theming floor (see §11).
-- [ ] Slices 3 to 9 of §4, each ticked here when shipped.
+- [x] Slice 3 — Surface language (see §12).
+- [ ] Slices 4 to 9 of §4, each ticked here when shipped.
 - [ ] README (UI section) and screenshots, `DESIGN.md`, `PRODUCT.md`, `design/README.md` and this spec marked done.
 
 ## 9. Acceptance criteria
@@ -116,3 +117,17 @@ Existing smoke tests stay green. New ones per slice: no orphaned unlabelled cont
 **Tests added** (9, `tests/test_web.py`): label/for/describedby association, interview names, skip link and landmarks and `aria-current`, live regions, ring/star/icon names, theme before paint, reduced motion and target sizes, 404 page. Checked in a real browser: Settings controls, skip link, dark theme at load, live count and focus after clearing a chip, 404.
 
 Not done in this slice (belongs to later ones): page reload after every action (slice 4), cache headers and font preload (slice 4), the sidebar rail (decision D6, kept).
+
+## 12. Slice 3 — Surface language (done)
+
+**One orange voice (D2).** New tokens `--surface-neutral`/`--ink-neutral` (light and dark). Neutral now: avatars, generic badges, tags, active-filter chips, counts, KPI and step and empty-state icons, `code`, the active nav item and tab (the nav keeps its orange indicator bar), the funnel bars, hover borders (`--shadow-hover` is a neutral slate shadow now) and the focus-less "on" state of filters. Links are ink with an underline (orange only on hover). Orange stays on the filled primary buttons, the score ring and the Ready-to-apply tint. Status colours are no longer loose: **every posting status and application stage has an explicit rule** (selected and packaged green; applied, replied and the early stages sky; rejected and score_failed red; the rest, including *Below match score*, neutral), enforced by a test.
+
+**Flat surfaces and shapes by role.** The top board has no outer card (rows with dividers), the workflow steps lose their inner cards and the connector arrows that pointed at nothing when the row wrapped, the Closed group is plain, board columns use a 3 px bar (`::before` with a custom property per stage) instead of a crescent border, and the native `fieldset` chrome introduced in slice 2 is neutralised. Radii are graded (`--r-xs` 6 for code/badges/chips, 8 controls, 12 rows, 16 job cards and columns, 24 containers); status badges and metadata chips are small rectangles, while only pressable or removable things stay pills (primary button, filter chip, tag, file links).
+
+**Type.** The whole stylesheet uses the scale tokens (`--text-xs…3xl`) and five weights (550/650/750 are gone); `text-wrap: balance` on headings and `pretty` on paragraphs; hints and callouts are capped at 68ch; section labels (`h3`, group titles, table headers, board columns) are sentence case, and all caps remain only on the three micro-labels (`.eyebrow`, `.verdict`, filter names).
+
+**Icons.** The settings icon is now sliders (it was a sun); the sun and a moon moved to the theme toggle (swapped by script); the AI sparkle is gone from decoration and kept only on buttons that spend AI quota; new sprite icons `info`, `star`, `star-fill`, `x`, `minus`; the text glyphs (★ ☆ ✕ × ◐ ◑) are gone from templates, script and Python (`tests/test_css.py` enforces it); `i-check` uses the same 1.8 stroke as the set.
+
+**Checked in a real browser** (light, dark, 390 px) on Home, Job matches, posting detail, Applications and Settings; screenshots in the README refreshed. Tests: 6 new in `tests/test_css.py` (status and stage rules, neutral defaults, type and weight tokens, caps, no glyph icons, stage bars). `DESIGN.md` still describes the pre-slice-3 look; it is regenerated in slice 9.
+
+**Deviations from the plan.** The Home hero and the "one filled primary per area" rule are still pending (slices 5 and 6); step numbers stay as small neutral circles until Home becomes a pipeline list.
