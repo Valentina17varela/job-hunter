@@ -43,6 +43,7 @@ A spec is **approved** when the author says so in the conversation or the PR; ag
 | 23 | [Job matches filters: freshness and live filtering](23-job-matches-filters.md) | DONE | `web/app.py` (`/jobs`), `web/static/app.js` | `test_web` |
 | 24 | [UI refinement: The Quiet Cockpit](24-ui-refinement.md) | DONE | — | — |
 | 25 | [Visual overhaul: Flight Deck](25-visual-overhaul.md) | DONE | `web/static`, `web/templates`, `web/app.py` (`pipeline_steps`) | `test_web`, `test_css` |
+| 26 | [Eligibility and language gates, skill gaps, package checks, archive and follow-ups](26-eligibility-gaps-followups.md) | PLANNED (approved, not started) | — | — |
 
 Keep this table current when a spec is added or changes status.
 
