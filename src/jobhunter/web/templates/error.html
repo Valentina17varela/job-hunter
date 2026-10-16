@@ -3,5 +3,5 @@
 {% block title %}{{ title or 'Something went wrong' }}{% endblock %}
 {% block content %}
 <h1 class="sr-only">{{ title or 'Something went wrong' }}</h1>
-{% call m.empty('alert', title or 'Something went wrong', message) %}<div class="actions" style="justify-content:center"><a class="btn primary" href="/">Back to Home</a><a class="btn" href="/jobs">Go to Matches</a></div>{% endcall %}
+{% call m.empty('alert', title or 'Something went wrong', message) %}<div class="actions center"><a class="btn primary" href="/">Back to Home</a><a class="btn" href="/jobs">Go to Matches</a></div>{% endcall %}
 {% endblock %}

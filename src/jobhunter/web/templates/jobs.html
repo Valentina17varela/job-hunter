@@ -3,10 +3,13 @@
 {% import "_top.html" as top %}
 {% block title %}Matches{% endblock %}
 {% block content %}
+{% set best_tab = tabs|selectattr('key', 'equalto', 'best')|first %}
+{% set all_tab = tabs|selectattr('key', 'equalto', 'all')|first %}
 <header class="page-head">
-  <div><h1>Matches</h1><p class="muted">Roles that passed your criteria, rated against your CV. Open one to see why it fits and what to double-check.</p></div>
+  <div><h1>Matches</h1>
+    <p>{% if best_tab and all_tab %}<b>{{ "{:,}".format(best_tab.n) }}</b> best match{{ 'es' if best_tab.n != 1 }} out of <b>{{ "{:,}".format(all_tab.n) }}</b> postings, ranked by how well they fit your CV.{% else %}Postings ranked by how well they fit your CV.{% endif %} Open one to see why it fits and what to check.</p></div>
   <div class="actions"><button class="btn" data-open-add>{{ m.icon('doc') }} Add a posting</button>
-  <button class="btn" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button></div>
+    <button class="btn" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button></div>
 </header>
 
 <nav class="tabs">

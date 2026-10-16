@@ -4,8 +4,9 @@
 {% block content %}
 <header class="page-head"><div><h1>Documents</h1>
   <p class="muted">A tailored CV and cover letter for each role (LaTeX compiled to PDF). Open them, read the notes, then apply on the company site.</p></div></header>
+{% if items %}<div class="doc-list">{% endif %}
 {% for it in items %}
-<section class="card pkg">
+<section class="pkg">
   <div class="row between">
     <div class="row">{{ m.avatar(it.row.company, 52) }}
       <div><a class="strong big-link" href="/jobs/{{ it.row.id }}">{{ it.row.title }}</a>
@@ -28,4 +29,5 @@
 {% else %}
 {% call m.empty('doc', 'No documents yet', 'Build packages for your best matches and they will appear here.') %}<button class="btn primary" data-run='{"id":"tailor"}' data-label="Building application packages" data-reload>Build packages</button>{% endcall %}
 {% endfor %}
+{% if items %}</div>{% endif %}
 {% endblock %}

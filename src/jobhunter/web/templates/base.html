@@ -7,7 +7,8 @@
   <link rel="icon" href="/static/favicon.ico" sizes="48x48">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/img/icon-32.png">
   <link rel="apple-touch-icon" href="/static/img/icon-180.png">
-  <link rel="preload" href="/static/fonts/PlusJakartaSans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/static/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/static/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ asset('tokens.css') }}">
   <link rel="stylesheet" href="{{ asset('style.css') }}">
   <script src="{{ asset('theme.js') }}"></script>
@@ -40,27 +41,26 @@
     </defs>
   </svg>
 
-  <aside class="sidebar" aria-label="Job Hunter">
-    <div class="brand-row">
-    <a class="brand" href="/">
-      <span class="logo"><img src="/static/img/logo.png" alt="" width="38" height="38"></span>
-      <span><b>Job<i>Hunter</i></b><small>Your private job-search copilot</small></span>
-    </a>
-    <button class="icon-btn theme-toggle" id="theme-toggle" type="button" aria-label="Dark theme" aria-pressed="false" title="Dark theme"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+  <header class="topbar" aria-label="Job Hunter">
+    <div class="topbar-in">
+      <a class="brand" href="/">
+        <span class="logo"><img src="/static/img/logo.png" alt="" width="44" height="44"></span>
+        <b>Job<i>Hunter</i></b>
+      </a>
+      <nav aria-label="Main">
+        {% for key, label, href, icon in [
+          ('dashboard', 'Home', '/', 'home'), ('jobs', 'Matches', '/jobs', 'target'),
+          ('pipeline', 'Applications', '/pipeline', 'board'), ('packages', 'Documents', '/packages', 'doc'),
+          ('run', 'Actions', '/run', 'play'), ('settings', 'Settings', '/settings', 'gear')] %}
+        <a href="{{ href }}" class="{{ 'on' if active == key else '' }}"{% if active == key %} aria-current="page"{% endif %}><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-{{ icon }}"/></svg>{{ label }}</a>
+        {% endfor %}
+      </nav>
+      <span class="local-note" title="Your CV and applications never leave this computer. Nothing runs or is sent unless you press the button.">100% local</span>
+      <button class="icon-btn theme-toggle" id="theme-toggle" type="button" aria-label="Dark theme" aria-pressed="false" title="Dark theme"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
     </div>
-    <nav aria-label="Main">
-      {% for key, label, href, icon in [
-        ('dashboard', 'Home', '/', 'home'), ('jobs', 'Matches', '/jobs', 'target'),
-        ('pipeline', 'Applications', '/pipeline', 'board'), ('packages', 'Documents', '/packages', 'doc'),
-        ('run', 'Actions', '/run', 'play'), ('settings', 'Settings', '/settings', 'gear')] %}
-      <a href="{{ href }}" class="{{ 'on' if active == key else '' }}"{% if active == key %} aria-current="page"{% endif %}><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-{{ icon }}"/></svg>{{ label }}</a>
-      {% endfor %}
-    </nav>
-    <div class="side-card">
-      <b>100% local</b>
-      <p>Your CV and applications never leave this computer. Nothing runs or is sent unless you press the button.</p>
-    </div>
-  </aside>
+  </header>
+
+  {% block strip %}{% include "_strip.html" %}{% endblock %}
 
   <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
 
@@ -72,6 +72,7 @@
 
   <section id="dock" class="dock" hidden aria-live="polite">
     <header>
+      <img class="dock-mascot" src="/static/img/logo.png" alt="" width="28" height="28">
       <span class="dock-dot" id="dock-dot"></span>
       <b id="dock-title">Working…</b>
       <span id="dock-status" class="badge">running</span>

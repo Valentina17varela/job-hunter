@@ -173,9 +173,10 @@ def kpis(conn: sqlite3.Connection, data: dict[str, Any]) -> dict[str, int]:
 def pipeline_steps(
     data: dict[str, Any], counts: dict[str, int], next_id: str
 ) -> list[dict[str, Any]]:
-    """The three Home steps, each with its own state; `current` marks the header's step."""
+    """The four pipeline stages (strip on every page, steps on Home); `current` is the next one."""
     by = data["by_status"]
-    fetched = data["funnel"]["fetched"]
+    funnel = data["funnel"]
+    fetched = funnel["fetched"]
     unscored = by.get("passed", 0) + by.get("score_failed", 0)
     unpackaged = by.get("selected", 0)
     ready = counts["ready"]
@@ -197,27 +198,37 @@ def pipeline_steps(
         review = f"{plural(counts['matches'], 'match', 'matches')} worth a look."
     else:
         review = "The AI rates each posting against your CV and flags blockers."
-    prepare = []
     if unpackaged:
-        prepare.append(
+        package = (
             f"{plural(unpackaged, 'top match has', 'top matches have')} no tailored CV "
             "and cover letter yet."
         )
+    else:
+        package = "A tailored CV, a cover letter and a recruiter message for each top match."
+    apply_parts = []
     if ready:
-        prepare.append(f"{plural(ready, 'package is', 'packages are')} ready to review.")
+        apply_parts.append(f"{plural(ready, 'package is', 'packages are')} ready to review.")
         if not unpackaged:
-            prepare.append(
+            apply_parts.append(
                 f"Apply on the company site, then mark {'it' if ready == 1 else 'them'} "
                 "as applied here."
             )
-    if not prepare:
-        prepare.append("A tailored CV, a cover letter and a recruiter message for each top match.")
-    current = {"search": 1, "score": 2, "tailor": 3}.get(next_id, 1)
+    if not apply_parts:
+        apply_parts.append("You apply on the company site and record it here. Nothing is sent.")
+    current = {"search": 1, "score": 2, "tailor": 3}.get(next_id, 4 if ready else 1)
+    stages = (
+        (1, "Search", search, fetched, "found", "/jobs?status=all"),
+        (2, "Score", review, funnel["scored"], "scored", "/jobs?status=best"),
+        (3, "Package", package, funnel["packaged"], "packages", "/packages"),
+        (4, "Apply", " ".join(apply_parts), funnel["applied"], "applied", "/pipeline"),
+    )
     return [
-        {"n": 1, "title": "Search", "state": search, "current": current == 1},
-        {"n": 2, "title": "Review matches", "state": review, "current": current == 2},
-        {"n": 3, "title": "Prepare and apply", "state": " ".join(prepare), "current": current == 3},
-    ]
+        {
+            "n": n, "title": title, "state": state, "count": count, "unit": unit,
+            "href": href, "current": current == n,
+        }
+        for n, title, state, count, unit, href in stages
+    ]  # fmt: skip
 
 
 def build_suggestions(
@@ -349,7 +360,15 @@ def create_app(
         return {n for n in map(normalize_company, config.search.companies_exclude) if n}
 
     def render(request: Request, name: str, **ctx: Any) -> Any:
-        return templates.TemplateResponse(request, name, {"active": ctx.pop("active", ""), **ctx})
+        config = cfg()
+        conn = db(config)
+        data = applications.stats(conn)
+        suggestions = build_suggestions(conn, data, config)
+        nxt = next((x["run"] for x in suggestions if "run" in x), None)
+        strip = pipeline_steps(data, kpis(conn, data), nxt["id"] if nxt else "search")
+        return templates.TemplateResponse(
+            request, name, {"active": ctx.pop("active", ""), "strip": strip, **ctx}
+        )
 
     @app.exception_handler(ConfigError)
     async def config_error(request: Request, exc: ConfigError) -> Any:
@@ -390,7 +409,6 @@ def create_app(
         return render(
             request, "dashboard.html", active="dashboard", stats=data,
             notes=[x for x in suggestions if x.get("note")], nxt=nxt,
-            steps=pipeline_steps(data, kpis(conn, data), nxt["id"] if nxt else "search"),
             upcoming=applications.upcoming_interviews(conn),
             rule_labels=RULE_LABELS,
             max_calls=config.budget.max_llm_calls_per_run, backend=config.llm.backend,

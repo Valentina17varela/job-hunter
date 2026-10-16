@@ -2,7 +2,7 @@
 {% import "_macros.html" as m %}
 {% block title %}Actions{% endblock %}
 {% macro runcard(s) %}
-  <section class="card runcard" data-spec="{{ s.id }}">
+  <section class="runcard" data-spec="{{ s.id }}">
     <h3 class="plain">{{ s.label }} {% if s.llm %}<span class="badge warn">uses AI</span>{% endif %}</h3>
     <p class="muted">{{ s.description }}</p>
     {% if s.supports_dry_run or s.supports_jobs or s.supports_job_ids %}
@@ -26,9 +26,9 @@
 <header class="page-head"><div><h1>Actions</h1>
   <p class="muted">Everything the tool can do, one button each. Nothing runs by itself: you decide when. Output appears in the panel at the bottom right, and only one action runs at a time.</p></div></header>
 
-{% for title, ids in [('Find jobs', ['search', 'refilter']), ('Score and prepare', ['score', 'tailor', 'all'])] %}
-<h2 class="group">{{ title }}</h2>
-<div class="grid-3">
+{% for title, ids in [('Search', ['search', 'refilter']), ('Score', ['score']), ('Package', ['tailor']), ('Everything in order', ['all'])] %}
+<h2 class="group">{% if loop.index < 4 %}<span class="stage-n" aria-hidden="true">{{ loop.index }}</span>{% endif %}{{ title }}</h2>
+<div class="run-list">
   {% for s in specs if s.id in ids %}{{ runcard(s) }}{% endfor %}
 </div>
 {% endfor %}
@@ -37,7 +37,7 @@
   <summary>More tools</summary>
   {% for title, ids in [('Single steps', ['fetch', 'filter']), ('Maintenance', ['companies-discover', 'companies-check', 'cv-check', 'doctor', 'stats'])] %}
   <h2 class="group">{{ title }}</h2>
-  <div class="grid-3">
+  <div class="run-list">
     {% for s in specs if s.id in ids %}{{ runcard(s) }}{% endfor %}
   </div>
   {% endfor %}

@@ -18,7 +18,7 @@
 
 {% macro empty(icon_name, title, text) -%}
 <div class="empty-state">
-  <span class="empty-ic">{{ icon(icon_name) }}</span>
+  <span class="empty-ic{{ ' lost' if icon_name == 'alert' }}"><img src="/static/img/logo.png" alt="" width="96" height="96"></span>
   <b>{{ title }}</b>
   <p>{{ text }}</p>
   {{ caller() if caller else '' }}

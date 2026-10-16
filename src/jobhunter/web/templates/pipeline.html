@@ -17,22 +17,20 @@
 {% set open_stages = ['applied', 'screening', 'interviewing', 'offer'] %}
 {% set closed_stages = columns|reject('in', open_stages)|list %}
 {% set closed = cards|selectattr('stage', 'in', closed_stages)|list %}
+{% set in_play = cards|selectattr('stage', 'in', open_stages)|list %}
 <header class="page-head"><div><h1>Applications</h1>
-  <p class="muted">Where every application stands. Change a card's stage with its selector; open it to add notes and interviews.</p></div></header>
-{% if ready %}
-<section class="ready-strip" aria-labelledby="ready-title">
-  <h2 id="ready-title">Ready to apply <span class="count">{{ ready|length }}</span></h2>
-  <div class="ready-list">
+  <p><b>{{ ready|length }}</b> ready to apply, <b>{{ in_play|length }}</b> in play. Each posting moves left to right, from your package to an offer.</p>
+  </div></header>
+<div class="board">
+  <section class="column ready-strip stage-ready" aria-labelledby="ready-title">
+    <h2 id="ready-title">Ready to apply <span class="count">{{ ready|length }}</span></h2>
     {% for r in ready %}
     <article class="kcard">
       <div class="kcard-top">{{ m.ring(r.score, 40) }}<div class="grow"><a class="ktitle" href="/jobs/{{ r.id }}">{{ r.title }}</a><div class="muted small">{{ r.company }}</div></div></div>
       <button class="btn small" data-post="/api/jobs/{{ r.id }}/stage" data-json='{"stage": "applied"}'>Mark as applied</button>
     </article>
-    {% endfor %}
-  </div>
-</section>
-{% else %}<p class="muted small">Nothing waiting to apply. Build packages for your best matches.</p>{% endif %}
-<div class="board">
+    {% else %}<p class="muted small empty-col">Nothing waiting to apply. Build packages for your best matches.</p>{% endfor %}
+  </section>
   {% for stage in open_stages %}
   {% set col = cards|selectattr('stage', 'equalto', stage)|list %}
   <section class="column stage-{{ stage }}">

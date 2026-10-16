@@ -1,75 +1,77 @@
 ---
 name: Job Hunter
-description: A quiet, bright, local-first job-search cockpit: neutral surfaces, one orange next action, a sunglasses-eagle copilot.
+description: A local-first job-search flight deck: a navy top bar, a four-stage pipeline that is the spine of every page, navy-tinted neutrals, one amber next action, a sunglasses-eagle copilot.
 colors:
-  primary: "#c2410c"
-  primary-hover: "#9d4300"
-  on-primary: "#ffffff"
-  orange: "#f97316"
-  on-orange: "#582200"
-  orange-border: "#fdba74"
-  orange-soft: "#fff7ed"
-  slate: "#0f172a"
-  on-slate: "#ffffff"
-  canvas: "#f8f9ff"
+  primary: "#f5a524"
+  primary-hover: "#e29210"
+  on-primary: "#0f1b2d"
+  orange: "#f5a524"
+  on-orange: "#0f1b2d"
+  orange-border: "#f0c274"
+  accent-text: "#8f5400"
+  badge-soft: "#fff3d9"
+  slate: "#0f1b2d"
+  on-slate: "#f4f7fb"
+  canvas: "#f2f5f9"
   panel: "#ffffff"
-  soft: "#f8fafc"
-  muted-surface: "#f1f5f9"
-  surface-neutral: "#f1f5f9"
-  ink-neutral: "#334155"
-  border: "#e2e8f0"
-  btn-border: "#cbd5e1"
-  control-border: "#8391a7"
-  ink: "#111827"
-  muted: "#475569"
-  placeholder: "#64748b"
-  info: "#0369a1"
-  info-soft: "#e0f2fe"
-  good: "#047857"
-  good-soft: "#d1fae5"
-  good-fill: "#10b981"
-  warn: "#92400e"
-  warn-soft: "#fef3c7"
-  warn-fill: "#f59e0b"
-  bad: "#ba1a1a"
-  bad-soft: "#ffdad6"
+  soft: "#f7f9fc"
+  muted-surface: "#e9eef4"
+  surface-neutral: "#e9eef4"
+  ink-neutral: "#2d3f56"
+  border: "#dbe2eb"
+  btn-border: "#c3ccd8"
+  control-border: "#6f7f95"
+  ink: "#0f1b2d"
+  muted: "#4a5a70"
+  placeholder: "#5d6c82"
+  focus-ring: "#0e7c86"
+  info: "#0b6b75"
+  info-soft: "#d6eff1"
+  good: "#0a7347"
+  good-soft: "#d6f2e3"
+  good-fill: "#16a56a"
+  warn: "#8a5200"
+  warn-soft: "#fcefcb"
+  warn-fill: "#d99100"
+  bad: "#b3261e"
+  bad-soft: "#fddcd8"
 typography:
   display:
-    fontFamily: "Plus Jakarta Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
-    fontSize: "2rem"
+    fontFamily: "Bricolage Grotesque, Atkinson Hyperlegible Next, system-ui, sans-serif"
+    fontSize: "2.6rem"
     fontWeight: 800
-    lineHeight: 1.2
-    letterSpacing: "-0.035em"
+    lineHeight: 1.05
+    letterSpacing: "-0.04em"
   headline:
-    fontFamily: "Plus Jakarta Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontFamily: "Bricolage Grotesque, Atkinson Hyperlegible Next, system-ui, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 700
     lineHeight: 1.3
-    letterSpacing: "-0.01em"
+    letterSpacing: "-0.02em"
   title:
-    fontFamily: "Plus Jakarta Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontFamily: "Atkinson Hyperlegible Next, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 700
     lineHeight: 1.55
     letterSpacing: "normal"
   body:
-    fontFamily: "Plus Jakarta Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontFamily: "Atkinson Hyperlegible Next, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.55
     letterSpacing: "normal"
   label:
-    fontFamily: "Plus Jakarta Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
-    fontSize: "0.75rem"
-    fontWeight: 700
+    fontFamily: "Spline Sans Mono, ui-monospace, SF Mono, Menlo, monospace"
+    fontSize: "0.8125rem"
+    fontWeight: 500
     lineHeight: 1.2
-    letterSpacing: "0.06em"
+    letterSpacing: "normal"
 rounded:
-  xs: "6px"
-  sm: "8px"
-  md: "12px"
-  lg: "16px"
-  xl: "24px"
+  xs: "4px"
+  sm: "6px"
+  md: "10px"
+  lg: "14px"
+  xl: "18px"
   full: "999px"
 spacing:
   xs: "0.25rem"
@@ -91,11 +93,6 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.sm}"
     padding: "0.6rem 1.1rem"
-  button-ghost:
-    backgroundColor: "transparent"
-    textColor: "{colors.muted}"
-    rounded: "{rounded.sm}"
-    padding: "0.6rem 1.1rem"
   chip:
     backgroundColor: "{colors.soft}"
     textColor: "{colors.muted}"
@@ -109,181 +106,130 @@ components:
   card:
     backgroundColor: "{colors.panel}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.xl}"
+    rounded: "{rounded.lg}"
     padding: "1.5rem 1.7rem"
-  job-row:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
-    rounded: "0"
-    padding: "1rem 0.25rem"
+  topbar:
+    backgroundColor: "{colors.slate}"
+    textColor: "{colors.on-slate}"
+    padding: "0 1.5rem"
   input:
     backgroundColor: "{colors.panel}"
     textColor: "{colors.ink}"
     rounded: "{rounded.sm}"
     padding: "0.5rem 0.7rem"
-  kanban-card:
-    backgroundColor: "{colors.panel}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    padding: "0.85rem"
 ---
 
 # Design System: Job Hunter
 
 ## Overview
 
-**Creative North Star: "The Quiet Cockpit"**
+**Creative North Star: "The Flight Deck"**
 
-A calm instrument panel for one person's job search. Everything is neutral (slate on a faintly cool canvas) until something needs the person: then exactly one thing is orange. The sunglasses-eagle mascot is the copilot: 64px in the Home header, 38px in the sidebar, larger in empty states. Every stage of the pipeline (search, matches, package, apply, track) has a visible state and one clearly marked next action; orange fills mean *the next action*, orange rings mean *a match*, and nothing else is orange.
+Job hunting is a pipeline with four stages: Search, Score, Package, Apply. The interface shows it. A navy top bar carries the mascot, the wordmark and the six pages; under it, every page except Home shows a compact four-stage strip with the live count of each stage and one stage marked as the next step. Home owns the large version of the same pipeline, so a stranger sees what the product does in one glance. The palette is taken from the mascot: navy-tinted neutrals, teal for information and focus, and one amber accent (the beak) that always carries navy text.
 
-Surfaces are flat. Job lists are rows with dividers, not stacks of cards; sections are a heading and a divider; cards appear only for real groupings (a form section, a kanban column, a package). Shape follows role: only things you press or remove are pills (the primary button, filter chips, tags, tabs); status badges and metadata chips are small rectangles; controls are 8px; containers are 24px. Light is the default theme; dark is an opt-in toggle in the sidebar header that keeps the same roles with a lifted orange and tonal navy surfaces, applied before first paint.
-
-The voice is plain and addressed to you ("Your application", "Mark as applied", "Score 12 postings"): buttons carry their verb and say how much they will do, nothing shows a raw token. The system rejects anything that suggests the tool acts on the person's behalf: no urgency theatre, no "apply now" framing, no dark patterns, no decorative motion. It is local: fonts are bundled, icons are inline SVG, nothing is fetched from outside.
+Surfaces are flat. Job lists are rows with dividers; cards appear for real groupings (a form section, a package, a decision rail). Light is the default theme; dark is an opt-in toggle in the top bar with the same roles, applied before first paint. The voice is plain and addressed to you ("Your application", "Mark as applied", "Score 12 postings"): buttons carry their verb and the amount. Nothing suggests the tool acts for the person, and it is local: fonts are bundled, icons are inline SVG, nothing is fetched from outside.
 
 **Key Characteristics:**
-- White panels and flat rows on a cool canvas (`#f8f9ff`), hairline `#e2e8f0` borders, shadows only on state (hover, menus, floating layers).
-- One orange voice: the filled primary button (at most one per area), match rings and the active-nav indicator bar. Avatars, tags, chips, counts and the active tab are neutral; the current pipeline step is marked with an ink number and a neutral "Next" badge, never a second orange button.
-- Plus Jakarta Sans everywhere on a 1.2-ratio scale (`--text-xs…3xl`) and five weights; tabular figures for scores, salaries and counts.
-- Status hues (green, amber, red, sky) never overlap the brand orange, so a warning cannot read as an action.
+- Navy top bar, four-stage pipeline strip, white panels on a cool canvas (`#f2f5f9`), hairline `#dbe2eb` borders, shadows only on state.
+- One amber voice: the filled primary button (at most one per area), match rings, the current-stage marker and the "Hunter" in the wordmark. Navy text on amber, never white. Avatars, tags, chips, counts and tabs are neutral.
+- Status hues (green, amber-brown, red, teal) are separated from the accent by use: warnings are tinted chips and callouts, never filled buttons or stage markers.
+- Three bundled variable fonts with distinct jobs: Bricolage Grotesque for display, Atkinson Hyperlegible Next for the interface, Spline Sans Mono for scores, counts and logs.
 - WCAG AA contrast for text, 3:1 for control borders, focus and rings; `prefers-reduced-motion` honoured.
 - All values live in `static/tokens.css`; `static/style.css` has no colour, shadow, font-size or z-index literals (enforced by `tests/test_css.py`).
 
 ## Colors
 
-A deep-orange accent and slate neutrals over cool white, with separate semantic hues so status never competes with the brand.
-
 ### Primary
-- **Cockpit Orange, deep** (`#c2410c`): the filled primary button, accent text, the wordmark's "Hunter", links on hover and the focus ring. Chosen over the lighter brand orange because white text on `#f97316` fails contrast (2.8:1); `#c2410c` reaches 5.2:1.
-- **Cockpit Orange, pressed** (`#9d4300`): primary hover.
-- **Beacon Orange** (`#f97316`): the brand fill that carries dark text (`#582200`), plus rings, the halo and the faint canvas glow. Never behind white text and never as text on white.
-- **Beacon Tint** (`#fff7ed`) with the `#fdba74` border: the Top-matches fill notice; no longer used for tags, chips or nav.
+- **Beak Amber** (`#f5a524`, dark `#f5b13a`): the filled primary button, rings, the current-stage number chip and the wordmark's "Hunter". It always carries **Navy Ink** (`#0f1b2d`) text.
+- **Beak Amber, pressed** (`#e29210`): primary hover.
+- **Amber Text** (`#8f5400`, dark `#f5b13a`): the accent as text on light surfaces.
 
 ### Secondary
-- **Deep Slate** (`#0f172a`): toasts and the "not for me" notice; the only dark blocks in light theme (the Home hero is gone).
+- **Deep Navy** (`#0f1b2d`, dark `#16233a`): the top bar, toasts and the "not for me" notice.
 
 ### Tertiary
-- **Sky Info** (`#0369a1` on `#e0f2fe`): early application stages (Applied, In process), informational chips.
+- **Teal** (`#0b6b75` on `#d6eff1`, focus ring `#0e7c86`): information, early application stages and keyboard focus.
 
 ### Neutral
-- **Cool Canvas** (`#f8f9ff`): page background with a faint orange radial wash at the top-left.
-- **Panel White** (`#ffffff`): cards, inputs, menus, dialogs.
-- **Mist** (`#f8fafc`), **Fog** (`#f1f5f9`, also `--surface-neutral`): wells, the tab track, kanban columns, avatars, tags, hover rows.
-- **Ink Neutral** (`#334155`): text and icons on neutral fills.
-- **Hairline** (`#e2e8f0`): borders and dividers. **Button Border** (`#cbd5e1`) and **Control Border** (`#8391a7`, 3:1 on white): buttons and form controls.
-- **Ink** (`#111827`), **Slate Text** (`#475569`), **Placeholder** (`#64748b`).
+- **Cool Canvas** (`#f2f5f9`), **Panel White** (`#ffffff`), **Mist** (`#f7f9fc`), **Fog** (`#e9eef4`): page, cards, wells, tab track and hover rows.
+- **Ink Neutral** (`#2d3f56`), **Ink** (`#0f1b2d`), **Slate Text** (`#4a5a70`), **Placeholder** (`#5d6c82`).
+- **Hairline** (`#dbe2eb`), **Button Border** (`#c3ccd8`), **Control Border** (`#6f7f95`, 3:1 on white).
 
 ### Status
-- **Good** (`#047857` on `#d1fae5`, fill `#10b981`): packaged, selected, passing checks, salary, high score.
-- **Warn** (`#92400e` on `#fef3c7`, fill `#f59e0b`): blockers, maybe verdicts, below-threshold, upcoming interviews. Amber, never orange.
-- **Bad** (`#ba1a1a` on `#ffdad6`): rejected, errors, danger actions.
-Every posting status and application stage has an explicit rule; the neutral fill covers the rest (enforced by a test).
+- **Good** (`#0a7347` on `#d6f2e3`, fill `#16a56a`): packaged, selected, passing checks, high score.
+- **Warn** (`#8a5200` on `#fcefcb`, fill `#d99100`): blockers, maybe verdicts, below-threshold. It sits in the same hue family as the accent, so it only appears as tinted text and chips, never as a filled control.
+- **Bad** (`#b3261e` on `#fddcd8`): rejected, errors, danger actions.
 
 ### Named Rules
-**The One Voice Rule.** Orange means "act here" or "this matches". Status uses green, amber, red; information uses sky; everything else is neutral. A screen with orange on everything has no next action.
-**The Dark-Text-On-Bright-Orange Rule.** Text on `#f97316` is `#582200`; white text only sits on `#c2410c` or darker.
-**The Warning Is Amber Rule.** A warning never uses the brand orange.
+**The One Voice Rule.** Amber means "act here" or "this matches". Information is teal, status is green, amber-brown or red, everything else is neutral.
+**The Navy-On-Amber Rule.** Text on the accent is navy. White text never sits on amber.
 
 ## Typography
 
-**Font:** Plus Jakarta Sans (bundled variable woff2, weights 200-800, preloaded), fallback system-ui. `ui-monospace, "SF Mono", Menlo, monospace` only for `code`, `pre` and logs. The family is a deliberate, author-confirmed keep, even though detectors list it among common faces.
+**Fonts:** Bricolage Grotesque (display), Atkinson Hyperlegible Next (interface), Spline Sans Mono (scores, counts, logs, eyebrows). All bundled as variable woff2 (latin and latin-ext subsets, licences next to the files), with system fallbacks. Cyrillic and Greek fall back to the system font.
 
-**Character:** One rounded geometric family does everything. Weight and tracking carry hierarchy; headings are tightly tracked and balanced (`text-wrap: balance`), paragraphs use `pretty`, hints are capped near 68ch.
+**Character:** Display type is large and tightly tracked (`text-wrap: balance`); the interface face is chosen for legibility at small sizes; numbers are monospaced so scores and counts never shift width. Paragraphs use `pretty`.
 
 ### Hierarchy (scale tokens)
-- **Display** (800, `--text-2xl` 2rem, -0.035em): the page `h1`.
-- **Headline** (700, `--text-md` 1.125rem): card and section titles (`h2`).
-- **Title / body** (700 / 400, `--text-base` 15px, 1.55): job-row titles and copy; secondary text is `--text-sm` (14px).
-- **Label** (700, `--text-xs` 12px): sentence-case section labels; **all caps only** for the micro-labels (`.verdict`, filter names), enforced by a test.
-- **Metric** (800, `--text-xl` 1.6rem, -0.02em): reserved for a headline number; the ring score is 700 at 34% of the ring size.
-- **Reading text** (400, `--text-base`, 1.65 leading, 68ch): the posting text on the posting page is prose in the body face, flat on the card, never monospace; `pre` stays for generated copy and logs.
+- **Display** (800, `--text-2xl` 2.6rem, -0.04em): the page `h1`; the stage counts on Home use `--text-3xl`.
+- **Headline** (700, `--text-md` 1.125rem): card and section titles.
+- **Title / body** (700 / 400, `--text-base` 15px, 1.55): job-row titles and copy; secondary text is `--text-sm`.
+- **Label / eyebrow** (500, mono, `--text-sm`): section labels and the pipeline eyebrow; **all caps only** for `.verdict` and filter names, enforced by a test.
+- **Reading text** (400, `--text-base`, 1.65, 68ch): the posting text, prose in the body face.
 - Weights are 400/500/600/700/800 only.
-
-### Named Rules
-**The Tabular Figures Rule.** `font-variant-numeric: tabular-nums` is on at the body level; scores, salaries and counts never shift width.
 
 ## Layout
 
-A fixed 248px sticky sidebar plus one scrolling main column (max 1320px, padding about 2.1rem 2.75rem). Pages are a header and flat sections. Home: a slim header band (mascot, `h1`, one line of context, the one next action), a vertical three-step pipeline whose steps each show their own state, slim side notes when something needs attention, the top matches, "Your applications" (stage chips and upcoming interviews), then the funnel and the "left out" bars. Cards with nothing to show are not rendered. Matches: tabs, a connected filter bar (search, score and sort, with source, posted and mode folded into "More filters"), the top board, then rows (avatar, title, chips, reason, ring, one button and a ⋯ menu). The posting page: a header (score, one primary, star and ⋯ menu), "Why it matches" beside the shorter criteria card (3:2), a workspace of posting text beside the package (3:2, the package card stays in view while you read), then your application and history. Applications: a Ready-to-apply strip above a four-column board (Applied, Screening, Interviewing, Offer) that fits 1280px with no horizontal scroll; closed stages in a collapsed group. Settings: one tab at a time with a sticky save bar.
+A sticky 56px navy top bar (mascot, wordmark, six links, "100% local" note, theme toggle), then the pipeline strip, then one centred column (max 78rem). Home: a header with the value proposition and the one next action, the large four-column pipeline, notes when something needs attention, the top matches, "Your applications", then the funnel and the "left out" bars. Matches: tabs, a connected filter bar, the top board, then rows (avatar, title, chips, reason, ring, one button and a ⋯ menu). The posting page: the posting on the left (header, "Why it matches", posting text, criteria, history) and a sticky decision rail on the right (score ring, the one primary action, package, your application). The remaining pages (Applications, Documents, Actions, Settings) use the same shell and tokens.
 
-Spacing uses the `--space-1…8` scale (0.25 / 0.5 / 0.75 / 1 / 1.5 / 2 / 3 / 4rem). Below 1100px the board is two columns; below 860px the sidebar becomes a top bar with a horizontally scrolling nav and everything collapses to one column. A floating run dock sits bottom-right; the toast (with Undo after a stage change) and the notice float bottom-center. Targets are at least 24px; there is a skip link, landmarks, and `aria-current` on the active nav item and tab.
+Spacing uses the `--space-1…8` scale. Below 1100px the grids narrow; below 860px the top bar wraps with the nav as a scrolling second row, the strip becomes 2x2, the rail drops under the posting, and everything is one column. Targets are at least 24px; there is a skip link, landmarks, and `aria-current` on the active nav item and tab.
 
 ## Elevation & Depth
 
-Flat by default. Depth comes from white panels on the cool canvas, 1px hairlines and Fog wells; shadows respond to state.
-
-### Shadow Vocabulary (all tokens)
-- **Resting card** (`0 1px 2px rgba(15,23,42,.04)`): barely there.
-- **Hover** (`0 8px 24px rgba(15,23,42,.08)`, a neutral slate shadow): kanban cards and menus. Rows tint instead of lifting, so click targets never move.
-- **Halo** (`0 8px 22px rgba(249,115,22,.28)`): reserved for the filled primary button.
-- **Floating layers** (`0 18px 50px`, modal `0 30px 80px` over a `rgba(15,23,42,.55)` scrim): run dock, notices, dialogs.
-- **Focus** (`3px outline --focus-ring, offset 2px` for buttons and links; a 3px glow with a ring-coloured border for form fields). Score rings have no neon glow.
-
-### Named Rules
-**The Flat-By-Default Rule.** Surfaces carry at most the resting hairline shadow; the rest appears on hover, focus and floating layers.
-**The Halo Is Earned Rule.** Only the filled primary button glows.
+Flat by default: panels on the canvas, 1px hairlines and Fog wells. Shadows respond to state: hover, menus and floating layers (run dock, notices, dialogs). The halo is reserved for the filled primary button. Focus is a 3px teal outline with a 2px offset (a glow plus ring border on form fields).
 
 ## Shapes
 
-Shape follows role. Containers are 24px (cards, empty states) and 16px (kanban columns, panels); inner tiles are 12px (kanban cards, menus, filter selects); controls are 8px; badges, metadata chips and code are 6px rectangles. Full pills (`999px`) are reserved for what you press or remove: the primary button, filter chips, tags and the tab track. The circular score ring and the 44px rounded-square logo tile are the two signature forms. Company avatars are neutral rounded squares with initials, not logos, because nothing external is fetched. Borders are 1px solid hairline; empty states use a dashed border; board columns mark their stage with an 8px colour dot before the title (no side stripes).
+Shape follows role: containers are 14px, inner tiles 10px, controls 6px, badges and metadata chips 4 to 6px rectangles. Full pills are reserved for what you press or remove: the primary button, filter chips and tags. The circular score ring is the signature form. Company avatars are neutral rounded squares with initials; nothing external is fetched. The mascot sits on the top bar with no tile behind it.
 
 ## Components
 
 ### Buttons
-- **Primary** (at most one filled per area): `#c2410c` fill, white text, weight 600, `0.6rem 1.1rem`, pill, orange halo; hover `#9d4300`; the pressed state scales to 98%.
-- **Secondary:** white fill, 1px `#cbd5e1` border, 8px radius, ink text; hover darkens the border neutrally. The default for everything that is not the next step, including "Build package" on a row and every Actions button.
-- **Ghost:** transparent, slate text, Fog wash on hover. **Danger** text is `#ba1a1a`.
-- **Icon button / ⋯ menu:** 24px+ target; `details.more` with a white 12px-radius menu that closes on outside click, item click and Esc.
-- **Focus / disabled:** 3px outline with 2px offset; disabled is 50% opacity.
+- **Primary** (at most one filled per area): amber fill, navy text, weight 600, pill, halo; the pressed state scales to 98%.
+- **Secondary:** white fill, 1px Button Border, 6px radius, ink text. **Ghost** and **Danger** (red text) for the rest.
+- **Icon button / ⋯ menu:** 24px+ target; `details.more` menu closes on outside click, item click and Esc.
+
+### Pipeline strip and Home flight deck
+- **Strip:** an ordered list of four links (number chip, stage title, mono count). The current stage has a faint amber wash and an amber number chip; the others have neutral chips.
+- **Flight deck (Home):** the same four stages as large columns with a display-size count, one state line and count-aware buttons ("Score 12 postings"). The current stage has the wash and a "Next" badge and no extra primary button. The columns rise in once on load (reduced-motion safe).
 
 ### Chips, Badges and Tags
-- **Chip:** Mist fill, hairline border, slate text, 6px. Variants: good (salary), warn, link, stage colours.
-- **Badge:** small status rectangle with the status's soft fill; neutral by default.
-- **Tag** (editable list items) and **active filter chip:** neutral pills with a remove button; no orange.
-
-### Cards / Containers
-- **Card:** white, 1px hairline, 24px radius, `1.5rem 1.7rem`, resting shadow. Used for real groups only; never a card inside a card except kanban cards in a column.
-- **Job row:** transparent, divider below, `1rem .25rem`, Mist wash on hover; avatar, title with the star, company line, chips, one-line AI reason, ring, one button and the ⋯ menu.
-
-### Inputs / Fields
-- **Style:** white, 1px `#8391a7` border, 8px, `0.5rem 0.7rem`; every control has a programmatically associated label (`for`/`id`, `fieldset/legend`, `aria-describedby`).
-- **Focus:** ring-coloured border and a 3px glow. **Error:** red border; helper text announced (`role="alert"`).
-- **Filter bar:** one connected white row; selects and search apply as you choose, results announced in a live region.
-- **Settings save bar:** sticky; "Save" (primary) and "Save & re-filter", enabled only when something changed.
-
-### Navigation
-- **Sidebar:** logo tile plus wordmark ("Job" ink, "Hunter" deep orange, 800) with a tagline, a theme toggle (moon/sun icon button), and six rows with an 18px icon: Home, Matches, Applications, Documents, Actions, Settings.
-- **Active:** Fog fill and a 4px orange indicator bar on the sidebar's edge, `aria-current="page"`.
-- **Tabs:** a Fog pill track with a white pill selection and a faint shadow; the active tab is neutral. Settings tabs show one panel at a time.
+Chips: Mist fill, hairline border, 6px (variants good, warn, link, stage colours). Badges: status rectangles with soft fills, neutral by default. Tags and active filters: neutral pills with a remove button; no amber.
 
 ### Match score ring (signature)
-A 56px conic-gradient circle on a Fog track with an inner white disc and a bold tabular number (`role="img"` with a text alternative). Colour encodes quality: red, amber, green; un-scored postings show a muted dash.
-
-### Pipeline list and kanban
-- **Pipeline (Home):** a vertical list: a number, a title, one state line, controls on the right. The step the header acts on has an ink number and a neutral "Next" badge and no button of its own; the other steps show count-aware secondary buttons ("Score 12 postings") only when there is work.
-- **Board:** Fog columns with a stage dot, a plain count and 12px white cards (title, interview chip, "applied 5 days ago", stage select); changing a stage offers Undo in a toast.
+A conic-gradient circle on a Fog track with an inner disc and a bold mono number (`role="img"` with a text alternative). Colour encodes quality: red, amber, green; un-scored postings show a muted dash. It appears at 56px in rows and 96px in the posting rail.
 
 ### Run dock and toasts
-A bottom-right panel with a pulsing amber dot while running (green done, red failed), a monospaced log and a "Refresh page" footer. Toasts are ink pills (`role="status"`); the "not for me" notice is a slate pill with an orange border.
+A bottom-right panel with a pulsing dot while running, a mono log and a "Refresh page" footer. Toasts are ink pills (`role="status"`).
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** keep at most one filled orange action per area; make the next step of the pipeline the filled button and the rest secondary.
-- **Do** put text on `#f97316` in `#582200`, and white text only on `#c2410c` or darker.
-- **Do** use amber for warnings and blockers, red for errors, green for success, sky for information, neutral for everything else.
+- **Do** keep at most one filled amber action per area; make the next step of the pipeline the filled button and the rest secondary.
+- **Do** put navy text on amber fills.
 - **Do** add colours, shadows, radii, type sizes and z-indexes as tokens in `tokens.css` (light and dark together), never as literals in `style.css`.
-- **Do** write labels in the second person, give buttons their verb and show the amount ("Build 4 packages"); show dates, work modes, sources and statuses as readable labels.
+- **Do** write labels in the second person, give buttons their verb and show the amount ("Build 4 packages").
 - **Do** bundle every asset (fonts, inline SVG); the UI makes no outbound requests.
-- **Do** keep controls at 3:1 contrast and at least 24px targets; announce results and saves in live regions; restore focus after an action reloads the page.
+- **Do** keep controls at 3:1 contrast and at least 24px targets; announce results in live regions.
 - **Do** keep light as the default theme, with dark opt-in, applied before first paint.
 
 ### Don't:
-- **Don't** use `#f97316` as a background behind white text or as text on white.
-- **Don't** use orange for warnings, success, tags, avatars, chips or the active tab.
-- **Don't** add resting shadows, text gradients, glass blur, neon glows or decorative motion; shadows follow state.
-- **Don't** use glyph characters as icons (★ ✕ as decoration); use the SVG sprite.
-- **Don't** use side-stripe borders as status marks; use a dot, a badge or a label.
+- **Don't** put white text on amber, or use amber text on white below `#8f5400`.
+- **Don't** use amber for tags, avatars, chips or the active tab, and don't use the warn colour for fills or the current-stage marker.
+- **Don't** add resting shadows, text gradients, glass blur, neon glows or decorative motion beyond the single entrance of the Home pipeline.
+- **Don't** use glyph characters as icons; use the SVG sprite.
+- **Don't** use side-stripe borders as status marks; use a chip, a badge or a label.
 - **Don't** frame the product as acting for the person (no auto-apply language, no urgency counters).
 - **Don't** load fonts, icons, images or scripts from a CDN or any external host.
-- **Don't** replace or redraw the mascot; use the supplied PNGs.
-- **Don't** nest cards inside cards (kanban cards in a column are the only exception) or stack more than one dark block per page.
+- **Don't** replace or redraw the mascot, or put it on a background tile; use the supplied PNG.
+- **Don't** nest cards inside cards (kanban cards in a column are the only exception).

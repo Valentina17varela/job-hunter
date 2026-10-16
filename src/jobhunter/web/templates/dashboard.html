@@ -2,38 +2,59 @@
 {% import "_macros.html" as m %}
 {% import "_top.html" as top %}
 {% block title %}Home{% endblock %}
+{% block strip %}{% endblock %}
 {% block content %}
 {% set f = stats.funnel %}
 
 <header class="home-head">
+  <span class="brush" aria-hidden="true"></span>
   <img src="/static/img/logo.png" alt="" width="64" height="64">
   <div>
-    <h1>Home</h1>
-    <p>Nothing runs until you press a button. You review every match and you apply yourself.</p>
+    <h1><span>Hundreds of postings in.</span> <span>The few that fit you,</span> <span>ready to send.</span></h1>
   </div>
-  {% if nxt %}<button class="btn primary" data-run='{{ {"id": nxt.id}|tojson|forceescape }}' data-label="{{ nxt.label }}" data-reload>{{ m.icon('spark' if nxt.llm else 'search') }} {{ nxt.label }}</button>
-  {% else %}<button class="btn primary" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>{% endif %}
+  <svg class="cv-art" viewBox="0 0 220 150" aria-hidden="true" focusable="false">
+    <rect class="sheet back" x="76" y="14" width="100" height="124" rx="8" transform="rotate(7 126 76)"/>
+    <rect class="sheet" x="34" y="8" width="108" height="132" rx="8"/>
+    <circle class="avatar-dot" cx="58" cy="32" r="10"/>
+    <rect class="line strong" x="75" y="26" width="52" height="6" rx="3"/>
+    <rect class="line" x="75" y="37" width="34" height="4" rx="2"/>
+    <rect class="line" x="48" y="58" width="80" height="4" rx="2"/>
+    <rect class="line hl" x="48" y="70" width="64" height="4" rx="2"/>
+    <rect class="line" x="48" y="82" width="74" height="4" rx="2"/>
+    <rect class="line" x="48" y="94" width="52" height="4" rx="2"/>
+    <rect class="line hl" x="48" y="106" width="70" height="4" rx="2"/>
+    <rect class="line" x="48" y="118" width="46" height="4" rx="2"/>
+    <circle class="badge-dot" cx="146" cy="116" r="20"/>
+    <path class="badge-check" d="M137 116l6 6 11-12"/>
+  </svg>
 </header>
 
 {% if running %}<div class="notice">{{ m.icon('play') }} A run is in progress: <b>{{ running.spec_id|run_label }}</b>. Its log is in the panel at the bottom right.</div>{% endif %}
 
-<section class="card" aria-labelledby="pipeline-h">
-  <div class="card-head"><h2 id="pipeline-h">Your pipeline</h2></div>
+<section class="flight" aria-labelledby="pipeline-h">
+  <h2 id="pipeline-h" class="eyebrow">Your pipeline</h2>
   <ol class="pipeline">
-    {% for s in steps %}
-    <li class="pipe-row">
-      <span class="pipe-n{{ ' on' if s.current }}"{% if s.current %} aria-label="Step {{ s.n }}, next"{% endif %}>{{ s.n }}</span>
-      <div><h3>{{ s.title }}{% if s.current %} <span class="badge">Next</span>{% endif %}</h3><p>{{ s.state }}</p></div>
+    {% for s in strip %}
+    <li class="pipe-row{{ ' now' if s.current }}">
+      <div class="pipe-top">
+        <span class="pipe-n{{ ' on' if s.current }}"{% if s.current %} aria-label="Step {{ s.n }}, next"{% endif %}>{{ s.n }}</span>
+        <h3>{{ s.title }}</h3>
+        {% if s.current %}<span class="badge">Next</span>{% endif %}
+      </div>
+      <p class="pipe-count"><a href="{{ s.href }}">{{ "{:,}".format(s.count) }}</a> <small>{{ s.unit }}</small></p>
+      <p class="pipe-state">{{ s.state }}</p>
       <div class="pipe-actions">
         {% if s.n == 1 %}
-          {% if not s.current %}<button class="btn" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>{% endif %}
+          <button class="btn{{ ' primary' if s.current }}" data-run='{"id":"search"}' data-label="Searching for new jobs" data-reload>{{ m.icon('search') }} Search for new jobs</button>
           <button class="btn" data-open-add>{{ m.icon('doc') }} Add a posting</button>
         {% elif s.n == 2 %}
-          {% if unscored and not s.current %}<button class="btn" data-run='{"id":"score"}' data-label="Scoring postings with AI" data-reload>{{ m.icon('spark') }} Score {{ unscored }} posting{{ 's' if unscored != 1 }}</button>{% endif %}
+          {% if unscored %}<button class="btn{{ ' primary' if s.current }}" data-run='{"id":"score"}' data-label="Scoring postings with AI" data-reload>{{ m.icon('spark') }} Score {{ unscored }} posting{{ 's' if unscored != 1 }}</button>{% endif %}
           <a class="link" href="/jobs?status=best">See best matches →</a>
-        {% else %}
-          {% if unpackaged and not s.current %}<button class="btn" data-run='{"id":"tailor"}' data-label="Building application packages" data-reload>{{ m.icon('spark') }} Build {{ unpackaged }} package{{ 's' if unpackaged != 1 }}</button>{% endif %}
+        {% elif s.n == 3 %}
+          {% if unpackaged %}<button class="btn{{ ' primary' if s.current }}" data-run='{"id":"tailor"}' data-label="Building application packages" data-reload>{{ m.icon('spark') }} Build {{ unpackaged }} package{{ 's' if unpackaged != 1 }}</button>{% endif %}
           <a class="link" href="/packages">Open documents →</a>
+        {% else %}
+          <a class="link" href="/pipeline">Open applications →</a>
         {% endif %}
       </div>
     </li>
@@ -71,6 +92,8 @@
 {% endif %}
 
 {% if f.fetched %}
+<details class="more-tools">
+<summary>See where postings dropped out ({{ "{:,}".format(f.fetched) }} found, {{ "{:,}".format(f.applied) }} applied)</summary>
 <div class="grid-2">
   <section class="card">
     <div class="card-head"><h2>From postings to offers</h2></div>
@@ -107,6 +130,7 @@
   </section>
   {% endif %}
 </div>
+</details>
 {% endif %}
 
 <section class="card" id="health-card" hidden>

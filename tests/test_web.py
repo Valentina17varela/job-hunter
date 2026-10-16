@@ -468,8 +468,46 @@ def test_dashboard_pipeline_steps_carry_their_own_state(env):
     assert "mark it as applied here" in html  # nothing left to build: the next move is yours
     assert "waiting for AI scoring" in html
     assert len(re.findall(r'class="pipe-n on"', html)) == 1  # exactly one current step
-    # the header owns the current step's action: its row does not repeat the button
-    assert 'data-run=\'{"id":"score"}\'' not in html
+    # the current step's own row carries the page's single primary; the header has none
+    assert len(re.findall(r'class="btn primary" data-run', html)) == 1
+    head = re.search(r'<header class="home-head">.*?</header>', html, re.S).group(0)
+    assert "btn" not in head  # the headline band carries no button
+
+
+def test_pipeline_strip_is_on_every_page_but_home_owns_a_big_one(env):
+    client = env[0]
+    for url in ("/jobs", "/jobs/1", "/pipeline", "/packages", "/run", "/settings"):
+        html = client.get(url, headers=HOST).text
+        assert 'aria-label="Your pipeline"' in html, url
+        for title in ("Search", "Score", "Package", "Apply"):
+            assert f'<span class="stage-title">{title}</span>' in html, (url, title)
+        assert html.count('class="stage now"') == 1, url
+    home = client.get("/", headers=HOST).text
+    assert 'class="strip"' not in home and home.count('class="pipe-row now"') == 1
+    assert home.count("<h1") == 1
+
+
+def test_pipeline_steps_are_four_with_one_current():
+    from jobhunter.web.app import pipeline_steps
+
+    funnel = {"fetched": 12, "scored": 5, "packaged": 2, "applied": 1}
+    data = {"by_status": {"passed": 3, "selected": 1}, "funnel": funnel, "last_fetch": []}
+    steps = pipeline_steps(data, {"ready": 2, "matches": 4}, "score")
+    assert [s["title"] for s in steps] == ["Search", "Score", "Package", "Apply"]
+    assert [s["current"] for s in steps] == [False, True, False, False]
+    assert steps[0]["count"] == 12 and steps[3]["href"] == "/pipeline"
+
+
+def test_no_page_requests_an_external_asset_and_every_font_file_exists(env):
+    client = env[0]
+    for url in ("/", "/jobs", "/jobs/1", "/pipeline", "/packages", "/run", "/settings"):
+        html = client.get(url, headers=HOST).text
+        external = re.findall(r'<(?:link|script|img|source)\b[^>]*(?:src|href)="https?://', html)
+        assert not external, url
+    tokens = client.get("/static/tokens.css", headers=HOST).text
+    assert "https://" not in tokens and "http://" not in tokens
+    for path in re.findall(r'url\("(/static/fonts/[^"]+)"\)', tokens):
+        assert client.get(path, headers=HOST).status_code == 200, path
 
 
 def test_dashboard_on_empty_db_invites_the_first_search(tmp_path, monkeypatch):
@@ -506,8 +544,9 @@ def test_search_is_a_whitelisted_run_that_needs_no_ai(env):
 
 def test_actions_page_groups_every_command(env):
     html = env[0].get("/run", headers=HOST).text
-    for heading in ("Find jobs", "Score and prepare", "Single steps", "Maintenance"):
-        assert heading in html
+    headings = ("Search", "Score", "Package", "Everything in order", "Single steps", "Maintenance")
+    for heading in headings:
+        assert f"{heading}</h2>" in html
     assert html.count("data-runcard=") >= 10
     main, tools = html.split('class="more-tools"')
     assert 'data-runcard="search"' in main and 'data-runcard="tailor"' in main
@@ -920,11 +959,12 @@ def test_unknown_pages_get_a_real_404_and_the_api_keeps_json(env):
 def test_static_cache_headers(env):
     client = env[0]
     html = client.get("/").text
-    assert 'rel="preload" href="/static/fonts/PlusJakartaSans.woff2"' in html
+    font = "/static/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2"
+    assert f'rel="preload" href="{font}"' in html
     versioned = re.search(r'href="(/static/style\.css\?v=\d+)"', html).group(1)
     assert "immutable" in client.get(versioned).headers["cache-control"]
     assert client.get("/static/style.css").headers["cache-control"] == "no-cache"
-    assert "max-age" in client.get("/static/fonts/PlusJakartaSans.woff2").headers["cache-control"]
+    assert "max-age" in client.get(font).headers["cache-control"]
 
 
 def test_reload_keeps_place():
@@ -966,6 +1006,48 @@ def test_applications_board_has_four_stage_columns_and_a_ready_strip(env):
     assert re.search(r"applied (today|yesterday|\d+ days ago)", page)  # not a raw timestamp
 
 
+def test_applications_board_starts_with_the_ready_column(env):
+    page = env[0].get("/pipeline", headers=HOST).text
+    first = page.index('class="column ready-strip stage-ready"')
+    assert first < page.index('class="column stage-applied"')  # ready to apply leads the flow
+    assert "ready to apply" in page and "in play" in page
+
+
+def test_matches_and_settings_are_composed_pages(env):
+    client = env[0]
+    jobs = client.get("/jobs", headers=HOST).text
+    assert "ranked by how well" in jobs and 'class="page-head"' in jobs
+    settings = client.get("/settings", headers=HOST).text
+    assert 'class="settings-ws"' in settings and 'class="settings-panels"' in settings
+    assert settings.index('id="settings-tabs"') < settings.index('class="settings-panels"')
+
+
+def test_loading_and_error_states_show_the_mascot(env):
+    client = env[0]
+    assert 'class="dock-mascot"' in client.get("/", headers=HOST).text  # working state
+    missing = client.get("/no-such-page", headers=HOST)
+    assert missing.status_code == 404 and 'class="empty-ic lost"' in missing.text
+
+
+def test_ring_animates_once_and_respects_reduced_motion():
+    from pathlib import Path
+
+    css = (Path(__file__).resolve().parents[1] / "src/jobhunter/web/static/style.css").read_text()
+    assert "@property --pct" in css and "@keyframes sweep" in css
+    assert "animation: sweep" in css
+    assert "animation: none !important" in css  # the reduced-motion rule covers it
+
+
+def test_home_brush_is_a_static_mask_not_inline_markup(env):
+    client = env[0]
+    html = client.get("/", headers=HOST).text
+    assert '<span class="brush" aria-hidden="true"></span>' in html
+    assert '<svg class="brush"' not in html and len(html) < 40_000
+    art = client.get("/static/img/brush.svg", headers=HOST)
+    assert art.status_code == 200 and art.headers["content-type"].startswith("image/svg+xml")
+    assert "http://" not in art.text.replace("http://www.w3.org/2000/svg", "")  # no external refs
+
+
 def test_ago_filter():
     from jobhunter.web.app import ago
 
@@ -994,3 +1076,8 @@ def test_actions_page_has_no_config_keys_or_backticks(env):
     html = env[0].get("/run", headers=HOST).text
     for raw in ("budget.max_llm", "config.yaml", "`", "claude_cli backend", "LLM"):
         assert raw not in html, raw
+
+
+def test_settings_first_paint_does_not_rewrite_the_url():
+    js = (Path(__file__).parents[1] / "src/jobhunter/web/static/app.js").read_text()
+    assert "showPanel(location.hash.slice(1), false, true)" in js  # no fragment added on load

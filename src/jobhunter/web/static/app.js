@@ -353,7 +353,7 @@
     const bar = $('#savebar');
     const saveBtn = $('[data-save-cfg]:not([data-then])');
     const refilterBtn = $('[data-save-cfg][data-then]');
-    showPanel = (id, focus) => {
+    showPanel = (id, focus, silent) => {
       if (!ids.includes(id)) id = ids[0];
       tabs.forEach((t) => {
         const on = t.getAttribute('href') === '#' + id;
@@ -362,12 +362,14 @@
       });
       ids.forEach((x) => { document.getElementById(x).hidden = x !== id; });
       bar.hidden = !document.getElementById(id).hasAttribute('data-card');
-      try { history.replaceState(null, '', '#' + id); } catch (e) { /* ignore */ }
+      // the first call must not touch the URL: a fragment added while the page loads makes the
+      // browser scroll to that section and focus it when loading ends
+      if (!silent) { try { history.replaceState(null, '', '#' + id); } catch (e) { /* ignore */ } }
       if (focus) document.getElementById(id).focus({ preventScroll: true });
     };
     tabs.forEach((t) => t.addEventListener('click', (ev) => { ev.preventDefault(); showPanel(t.getAttribute('href').slice(1)); }));
     window.addEventListener('hashchange', () => showPanel(location.hash.slice(1)));
-    showPanel(location.hash.slice(1));
+    showPanel(location.hash.slice(1), false, true);
 
     baseline = JSON.stringify(collectConfig(true));
     refreshDirty = () => {

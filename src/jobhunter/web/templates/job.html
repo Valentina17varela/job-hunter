@@ -3,6 +3,8 @@
 {% block title %}{{ job.title }}{% endblock %}
 {% block content %}
 <p class="crumb"><a href="/jobs">← Matches</a></p>
+<div class="decision workspace">
+<div class="decision-main">
 <header class="job-head card">
   {{ m.avatar(job.company, 64) }}
   <div class="grow">
@@ -18,15 +20,64 @@
       {% if job.posted_at %}<span class="chip">Posted {{ job.posted_at|dt }}</span>{% endif %}
     </div>
   </div>
-  {{ m.ring(score.score if score else none, 64) }}
-  <div class="actions">
+</header>
+
+<section class="card">
+  <h2>{{ m.icon('info') }} Why it matches</h2>
+  {% if score %}
+    <p class="lead">{% if info.verdict %}<b class="verdict v-{{ info.verdict }}">{{ info.verdict }}</b>{% endif %} {{ info.reason }}</p>
+    {% if info.red_flags %}<div class="callout warn"><b>{{ m.icon('alert') }} Verify before applying</b><ul class="flags">{% for x in info.red_flags %}<li>{{ x }}</li>{% endfor %}</ul></div>{% endif %}
+    {% if info.must_have_match %}<h3>What matches your profile</h3><div class="chips">{% for x in info.must_have_match %}<span class="chip good">{{ x }}</span>{% endfor %}</div>{% endif %}
+    {% if info.gaps %}<h3>Possible gaps</h3><div class="chips">{% for x in info.gaps %}<span class="chip warn">{{ x }}</span>{% endfor %}</div>{% endif %}
+    {% if score.score < threshold %}<p class="muted small mt">Match score {{ score.score }} is below your best-match threshold of {{ threshold }} (Settings → AI &amp; documents). This is the AI's fit score, not your salary or location criteria.</p>{% endif %}
+    <p class="muted small mt">Scored by {{ score.model }} · {{ score.created_at|dt }}</p>
+  {% elif job.status in ['passed', 'score_failed'] %}
+    <p class="muted">Not scored yet. Press <b>Score this posting</b> on the right, or score every waiting posting from Home.</p>
+  {% else %}<p class="muted">Not scored. The AI only rates postings that pass your criteria. You can still build a package for this one by hand.</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Posting text</h2>
+  <div class="posting-text">{{ job.description }}</div>
+</section>
+
+<section class="card">
+  <h2>Your criteria</h2>
+  {% if verdict.passed %}<p><span class="badge good">Passes your criteria</span></p>
+  {% else %}<p><span class="badge bad">Rejected</span> {{ verdict.reason }}</p>{% endif %}
+  {% if verdict.flags %}<div class="chips">{% for x in verdict.flags %}<span class="chip warn">{{ x }}</span>{% endfor %}</div>{% endif %}
+  <p class="muted small mt">Checked live against the filters in Settings.</p>
+</section>
+
+<section class="card" id="favorite-note" {{ '' if favorite else 'hidden' }}>
+  <h2>{{ m.icon('star-fill') }} Favorite note</h2>
+  <input type="text" id="fav-note" aria-label="Note about this favorite" maxlength="500" value="{{ favorite.note if favorite and favorite.note else '' }}" placeholder="e.g. ask about the visa">
+  <button class="btn small" data-fav-note="{{ job.id }}">Save note</button>
+</section>
+
+<section class="card">
+  <h2>History</h2>
+  <table class="compact"><tbody>
+  {% for e in events %}<tr><td class="muted nowrap">{{ e.created_at|dt }}</td><td class="nowrap">{% if e.from_status %}{{ e.from_status|state_label }} → {% endif %}{{ e.to_status|state_label }}</td><td class="muted">{{ e.note }}</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+</div>
+
+<aside class="rail" aria-label="Decision and next step">
+<section class="card rail-score">
+  {{ m.ring(score.score if score else none, 96) }}
+  <div>
+    <p class="rail-label">AI match score</p>
+    <p class="rail-note">{% if score %}{% if info.verdict %}<b class="verdict v-{{ info.verdict }}">{{ info.verdict }}</b>{% endif %} Threshold {{ threshold }}{% else %}Not scored yet{% endif %}</p>
+  </div>
+  <div class="rail-actions">
     {% set can_open = job.url.startswith('http://') or job.url.startswith('https://') %}
     {% if job.status in ['passed', 'score_failed'] and not score %}<button class="btn primary" data-run='{{ {"id": "score", "jobs": [job.id]}|tojson|forceescape }}' data-label="Scoring this posting with AI" data-reload>{{ m.icon('spark') }} Score this posting</button>
     {% elif not package and not application %}<button class="btn primary" data-run='{{ {"id": "tailor", "jobs": [job.id]}|tojson|forceescape }}' data-label="Building the package for this posting" data-reload>{{ m.icon('spark') }} Build package</button>
     {% elif not application and can_open %}<a class="btn primary" href="{{ job.url }}" target="_blank" rel="noopener noreferrer">Open posting to apply {{ m.icon('ext') }}</a>{% endif %}
-    {% if can_open and not (not application and package) %}<a class="btn" href="{{ job.url }}" target="_blank" rel="noopener noreferrer">Open posting {{ m.icon('ext') }}</a>
-    {% elif not can_open %}<span class="muted">Posting link unavailable</span>{% endif %}
     <div class="actions">
+      {% if can_open and not (not application and package) %}<a class="btn grow" href="{{ job.url }}" target="_blank" rel="noopener noreferrer">Open posting {{ m.icon('ext') }}</a>
+      {% elif not can_open %}<span class="muted grow">Posting link unavailable</span>{% endif %}
       {{ m.star(job.id, favorite) }}
       <details class="more">
         <summary class="icon-btn" aria-label="More actions for this posting">{{ m.icon('more') }}</summary>
@@ -37,44 +88,9 @@
       </details>
     </div>
   </div>
-</header>
-
-<div class="split">
-  <section class="card">
-    <h2>{{ m.icon('info') }} Why it matches</h2>
-    {% if score %}
-      <p class="lead">{% if info.verdict %}<b class="verdict v-{{ info.verdict }}">{{ info.verdict }}</b>{% endif %} {{ info.reason }}</p>
-      {% if info.red_flags %}<div class="callout warn"><b>{{ m.icon('alert') }} Verify before applying</b><ul class="flags">{% for x in info.red_flags %}<li>{{ x }}</li>{% endfor %}</ul></div>{% endif %}
-      {% if info.must_have_match %}<h3>What matches your profile</h3><div class="chips">{% for x in info.must_have_match %}<span class="chip good">{{ x }}</span>{% endfor %}</div>{% endif %}
-      {% if info.gaps %}<h3>Possible gaps</h3><div class="chips">{% for x in info.gaps %}<span class="chip warn">{{ x }}</span>{% endfor %}</div>{% endif %}
-      {% if score.score < threshold %}<p class="muted small mt">Match score {{ score.score }} is below your best-match threshold of {{ threshold }} (Settings → AI &amp; documents). This is the AI's fit score, not your salary or location criteria.</p>{% endif %}
-      <p class="muted small mt">Scored by {{ score.model }} · {{ score.created_at|dt }}</p>
-    {% elif job.status in ['passed', 'score_failed'] %}
-      <p class="muted">Not scored yet. Press <b>Score this posting</b> above, or score every waiting posting from Home.</p>
-    {% else %}<p class="muted">Not scored. The AI only rates postings that pass your criteria. You can still build a package for this one by hand.</p>{% endif %}
-  </section>
-
-  <section class="card">
-    <h2>Your criteria</h2>
-    {% if verdict.passed %}<p><span class="badge good">Passes your criteria</span></p>
-    {% else %}<p><span class="badge bad">Rejected</span> {{ verdict.reason }}</p>{% endif %}
-    {% if verdict.flags %}<div class="chips">{% for x in verdict.flags %}<span class="chip warn">{{ x }}</span>{% endfor %}</div>{% endif %}
-    <p class="muted small mt">Checked live against the filters in Settings.</p>
-  </section>
-</div>
-
-<section class="card" id="favorite-note" {{ '' if favorite else 'hidden' }}>
-  <h2>{{ m.icon('star-fill') }} Favorite note</h2>
-  <input type="text" id="fav-note" aria-label="Note about this favorite" maxlength="500" value="{{ favorite.note if favorite and favorite.note else '' }}" placeholder="e.g. ask about the visa">
-  <button class="btn small" data-fav-note="{{ job.id }}">Save note</button>
 </section>
 
-<div class="split workspace">
-<section class="card">
-  <h2>Posting text</h2>
-  <div class="posting-text">{{ job.description }}</div>
-</section>
-<section class="card side-sticky" id="package">
+<section class="card" id="package">
   <h2>{{ m.icon('doc') }} Application package</h2>
   {% if package %}
     <p>{% if package.verified %}<span class="badge good">Checks passed</span>{% else %}<span class="badge bad">Needs review</span>{% endif %}
@@ -93,7 +109,6 @@
     {% if application %}<button class="btn" data-run='{{ {"id": "tailor", "jobs": [job.id]}|tojson|forceescape }}' data-label="Building the package for this posting" data-reload>Build package</button>{% endif %}
   {% endif %}
 </section>
-</div>
 
 <section class="card">
   <h2>{{ m.icon('send') }} Your application</h2>
@@ -129,12 +144,6 @@
     <button class="btn" data-post="/api/jobs/{{ job.id }}/stage" data-json='{"stage": "applied"}'>Mark as applied</button>
   {% endif %}
 </section>
-
-
-<section class="card">
-  <h2>History</h2>
-  <table class="compact"><tbody>
-  {% for e in events %}<tr><td class="muted nowrap">{{ e.created_at|dt }}</td><td class="nowrap">{% if e.from_status %}{{ e.from_status|state_label }} → {% endif %}{{ e.to_status|state_label }}</td><td class="muted">{{ e.note }}</td></tr>{% endfor %}
-  </tbody></table>
-</section>
+</aside>
+</div>
 {% endblock %}

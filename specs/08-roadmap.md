@@ -26,6 +26,7 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 - [x] Open source ready: MIT license, CI, contribution files, source registry, `jobhunter init`/`demo`, Docker, user docs, `doctor` fix hints — [19](19-open-source-ready.md)
 - [x] Agent-ready repository: `CLAUDE.md` (commands, definition of done, code map), `AGENTS.md`, `specs/README.md` (index, statuses, template); specs 00-09 brought up to date
 - [x] Demo workspace (`scripts/seed_demo.py`) and README
+- [x] Visual overhaul "Flight Deck": top bar, four-stage pipeline strip on every page, new palette and fonts, recomposed Home, posting page, Actions and Documents — [25](25-visual-overhaul.md)
 
 ## To do
 

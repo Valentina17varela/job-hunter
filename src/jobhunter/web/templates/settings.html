@@ -23,9 +23,11 @@
 <header class="page-head"><div><h1>Settings</h1>
   <p class="muted">Saved to <code>{{ config_path }}</code>: your comments are kept and the previous version stays as <code>.bak</code>. No restart needed.</p></div></header>
 
+<div class="settings-ws">
 <nav class="tabs" id="settings-tabs" aria-label="Settings sections">
   <a href="#looking" class="on">What you're looking for</a><a href="#ai">AI &amp; documents</a><a href="#sources">Sources</a><a href="#files">Your CV &amp; letter</a><a href="#system">System</a>
 </nav>
+<div class="settings-panels">
 
 <section class="card" id="looking" data-card tabindex="-1">
   <h2>{{ m.icon('target') }} What you're looking for</h2>
@@ -118,5 +120,7 @@
   <span class="save-state muted small" role="status" aria-live="polite"></span>
   <button class="btn primary" data-save-cfg disabled>Save</button>
   <button class="btn" data-save-cfg data-then="refilter" disabled>Save &amp; re-filter</button>
+</div>
+</div>
 </div>
 {% endblock %}
