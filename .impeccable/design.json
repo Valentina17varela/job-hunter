@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T00:00:00Z",
+  "title": "Design System: Job Hunter",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Cockpit Orange, deep", "canonical": "#c2410c", "tonalRamp": ["#341100", "#582200", "#783200", "#9d4300", "#c2410c", "#ea580c", "#fb923c", "#fff7ed"] },
+      "primary-hover": { "role": "primary", "displayName": "Cockpit Orange, pressed", "canonical": "#9d4300", "tonalRamp": ["#341100", "#582200", "#783200", "#9d4300", "#c2410c", "#ea580c", "#fb923c", "#fff7ed"] },
+      "orange": { "role": "primary", "displayName": "Beacon Orange", "canonical": "#f97316", "tonalRamp": ["#582200", "#783200", "#9d4300", "#c2410c", "#ea580c", "#f97316", "#fb923c", "#ffdbca"] },
+      "orange-soft": { "role": "primary", "displayName": "Beacon Tint", "canonical": "#fff7ed", "tonalRamp": ["#9d4300", "#c2410c", "#ea580c", "#f97316", "#fb923c", "#fdba74", "#ffdbca", "#fff7ed"] },
+      "slate": { "role": "secondary", "displayName": "Deep Slate", "canonical": "#0f172a", "tonalRamp": ["#0b1220", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#e2e8f0"] },
+      "info": { "role": "tertiary", "displayName": "Sky Info", "canonical": "#0369a1", "tonalRamp": ["#001d31", "#004b73", "#0369a1", "#0284c7", "#40a2e7", "#93ccff", "#cce5ff", "#e0f2fe"] },
+      "canvas": { "role": "neutral", "displayName": "Cool Canvas", "canonical": "#f8f9ff", "tonalRamp": ["#0b1c30", "#213145", "#584237", "#8391a7", "#cbd5e1", "#d3e4fe", "#e5eeff", "#f8f9ff"] },
+      "panel": { "role": "neutral", "displayName": "Panel White", "canonical": "#ffffff", "tonalRamp": ["#111827", "#334155", "#475569", "#64748b", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#ffffff"] },
+      "good": { "role": "status", "displayName": "Good", "canonical": "#047857", "tonalRamp": ["#022c22", "#064e3b", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0", "#d1fae5"] },
+      "warn": { "role": "status", "displayName": "Warn", "canonical": "#92400e", "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#f59e0b", "#fcd34d", "#fde68a", "#fef3c7"] },
+      "bad": { "role": "status", "displayName": "Bad", "canonical": "#ba1a1a", "tonalRamp": ["#410002", "#690005", "#93000a", "#ba1a1a", "#dc2626", "#ef4444", "#ffb4ab", "#ffdad6"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page titles and the Home hero line." },
+      "headline": { "displayName": "Headline", "purpose": "Page h1 at 2rem on standard pages." },
+      "title": { "displayName": "Title", "purpose": "Card titles, job titles, step titles." },
+      "body": { "displayName": "Body", "purpose": "Default text, descriptions, form copy." },
+      "label": { "displayName": "Label", "purpose": "Uppercase group headings, filter labels, table headers." }
+    },
+    "shadows": [
+      { "name": "resting-card", "value": "0 1px 2px rgba(15, 23, 42, 0.04)", "purpose": "Barely-there lift that sets a card off from the canvas." },
+      { "name": "hover-lift", "value": "0 8px 24px rgba(249, 115, 22, 0.12)", "purpose": "Job cards, KPI tiles and kanban cards on hover; border becomes #fdba74." },
+      { "name": "halo", "value": "0 8px 22px rgba(249, 115, 22, 0.28)", "purpose": "Filled primary button and numbered step badges only." },
+      { "name": "dock", "value": "0 18px 50px rgba(15, 23, 42, 0.28)", "purpose": "Run dock and the not-for-me undo notice." },
+      { "name": "modal", "value": "0 30px 80px rgba(15, 23, 42, 0.35)", "purpose": "Dialogs, over a rgba(15,23,42,.55) blurred scrim." },
+      { "name": "focus-glow", "value": "0 0 0 3px rgba(249, 115, 22, 0.22)", "purpose": "Form field focus, paired with an orange border." }
+    ],
+    "motion": [
+      { "name": "state-transition", "value": "0.12s", "purpose": "Hover and filter state changes on buttons, cards and chips." },
+      { "name": "results-fade", "value": "opacity 0.12s", "purpose": "Live filtering fades the result list to 55% while loading." },
+      { "name": "run-pulse", "value": "pulse 1.2s infinite", "purpose": "Amber run-dock dot while a stage is running." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "860px" },
+      { "name": "wide", "value": "1100px" },
+      { "name": "board", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The next pipeline action; one per area.",
+      "html": "<button class=\"ds-btn-primary\">Find new jobs</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.1rem; border: 1px solid transparent; border-radius: 999px; background: #c2410c; color: #fff; font: 600 15px/1.2 'Plus Jakarta Sans', system-ui, sans-serif; cursor: pointer; box-shadow: 0 8px 22px rgba(249,115,22,.28); transition: .12s; } .ds-btn-primary:hover { background: #9d4300; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 3px solid #c2410c; outline-offset: 2px; } .ds-btn-primary:active { transform: scale(.98); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting actions next to a primary.",
+      "html": "<button class=\"ds-btn-secondary\">Open CV</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.1rem; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: #111827; font: 600 15px/1.2 'Plus Jakarta Sans', system-ui, sans-serif; cursor: pointer; transition: .12s; } .ds-btn-secondary:hover { border-color: #c2410c; transform: translateY(-1px); } .ds-btn-secondary:focus-visible { outline: 3px solid #c2410c; outline-offset: 2px; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Metadata chip; the active variant tints orange.",
+      "html": "<span class=\"ds-chip\">Remote</span> <span class=\"ds-chip ds-chip-on\">Salary shown</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; padding: .14rem .6rem; border: 1px solid #e2e8f0; border-radius: 999px; background: #f8fafc; color: #475569; font: 600 .82rem 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-chip-on { background: #fff7ed; border-color: #fdba74; color: #c2410c; }"
+    },
+    {
+      "name": "Job Card",
+      "kind": "card",
+      "refersTo": "job-card",
+      "description": "A posting: initials avatar, title and sub-line, chips, score ring.",
+      "html": "<article class=\"ds-job\"><span class=\"ds-avatar\">NB</span><div class=\"ds-job-main\"><a class=\"ds-job-title\" href=\"#\">Senior Backend Engineer</a><div class=\"ds-job-sub\">Northbeam · Remote · EU</div><span class=\"ds-chip\">€90-110k</span></div><span class=\"ds-ring\"><i>82</i></span></article>",
+      "css": ".ds-job { display: flex; gap: 1.1rem; align-items: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 1.15rem 1.4rem; box-shadow: 0 1px 2px rgba(15,23,42,.04); transition: .12s; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-job:hover { border-color: #fdba74; box-shadow: 0 8px 24px rgba(249,115,22,.12); } .ds-avatar { width: 44px; height: 44px; flex: none; border-radius: 13px; display: grid; place-items: center; background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; font-weight: 800; } .ds-job-main { flex: 1; min-width: 0; } .ds-job-title { font-size: 1.05rem; font-weight: 700; color: #111827; text-decoration: none; } .ds-job-title:hover { color: #c2410c; } .ds-job-sub { color: #475569; font-size: .88rem; margin: .1rem 0 .5rem; } .ds-ring { --size: 56px; width: var(--size); height: var(--size); border-radius: 50%; display: grid; place-items: center; position: relative; background: conic-gradient(#10b981 82%, #f1f5f9 0); } .ds-ring::before { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: #fff; } .ds-ring i { position: relative; font-style: normal; font-weight: 750; font-size: 19px; color: #111827; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard field with a 3:1 border and an orange focus glow.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search title or company\" aria-label=\"Search\">",
+      "css": ".ds-input { font: 15px 'Plus Jakarta Sans', system-ui, sans-serif; color: #111827; background: #fff; border: 1px solid #8391a7; border-radius: 8px; padding: .5rem .7rem; width: 260px; } .ds-input::placeholder { color: #64748b; } .ds-input:focus { outline: 0; border-color: #c2410c; box-shadow: 0 0 0 3px rgba(249,115,22,.22); }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "card",
+      "description": "Sidebar link; the active item gets Beacon Tint and a left orange bar.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-on\" href=\"#\">Home</a><a href=\"#\">Job matches</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 3px; width: 200px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-nav a { position: relative; padding: .7rem .9rem; border-radius: 12px; color: #475569; font-weight: 600; text-decoration: none; } .ds-nav a:hover { background: #f1f5f9; color: #111827; } .ds-nav a.ds-nav-on { background: #fff7ed; color: #c2410c; } .ds-nav a.ds-nav-on::before { content: ''; position: absolute; left: -1.1rem; top: 22%; bottom: 22%; width: 4px; border-radius: 0 4px 4px 0; background: #f97316; }"
+    },
+    {
+      "name": "Hero",
+      "kind": "custom",
+      "refersTo": "hero",
+      "description": "The one Deep Slate block on Home: eyebrow pill, headline, mascot, orange glow.",
+      "html": "<section class=\"ds-hero\"><div><span class=\"ds-eyebrow\">Today</span><h1>Five postings are worth your time</h1></div></section>",
+      "css": ".ds-hero { position: relative; overflow: hidden; background: #0f172a; color: #fff; border-radius: 24px; padding: 2.4rem 2.6rem; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; } .ds-hero::after { content: ''; position: absolute; right: -80px; top: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(249,115,22,.35), transparent 70%); pointer-events: none; } .ds-eyebrow { display: inline-block; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; background: #f97316; color: #582200; padding: .2rem .65rem; border-radius: 999px; margin-bottom: .7rem; } .ds-hero h1 { margin: 0; font-size: 2.25rem; font-weight: 800; letter-spacing: -.035em; max-width: 20ch; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Co-Pilot Cockpit",
+    "overview": "A bright, warm instrument panel for one person's job search. The sunglasses-eagle mascot is the copilot: it sits in the sidebar and on the Home hero, and the rest of the interface behaves like a well-labelled cockpit. Every stage of the pipeline (search, matches, package, apply, track) has a visible state and one clearly marked next action, and orange is reserved for that action and for match signals.\n\nThe voice is friendly and precise. The mascot and the orange give warmth; exact numbers, plain labels and visible checks give trust. Density is moderate: generous card padding and 24px corners keep the screen calm, while tabular figures, ring scores and compact chips let a person scan many postings quickly.\n\nThe system rejects anything that suggests the tool acts on the person's behalf. It is local, so nothing is fetched from outside: fonts are bundled, icons are inline SVG, there are no CDNs.",
+    "keyCharacteristics": [
+      "White cards on a cool canvas, hairline #e2e8f0 borders, flat at rest, orange-tinted lift on hover.",
+      "One orange voice: filled primary button, active nav, match rings and tags.",
+      "Plus Jakarta Sans everywhere, tight tracking on headlines, tabular figures for scores, salaries and counts.",
+      "Pill shapes for actions and chips; 24px containers; 8px form controls.",
+      "Semantic status colors are distinct from the brand orange so warnings never read as actions.",
+      "WCAG AA contrast for text and 3:1 for control borders, focus and rings."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Orange means \"act here\" or \"this matches\". Status uses green, amber, red; information uses sky. A screen with orange on everything has no next action.", "section": "colors" },
+      { "name": "The Dark-Text-On-Bright-Orange Rule", "body": "Text on #f97316 is #582200; white text only sits on #c2410c or darker.", "section": "colors" },
+      { "name": "The Warning Is Amber Rule", "body": "A warning never uses the brand orange, so it cannot be confused with a primary action.", "section": "colors" },
+      { "name": "The Tabular Figures Rule", "body": "font-variant-numeric: tabular-nums is on at the body level; scores, salaries and counts never shift width.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces carry at most the resting hairline shadow. Orange-tinted lift appears only on hover, focus and floating layers.", "section": "elevation" },
+      { "name": "The Halo Is Earned Rule", "body": "The orange halo belongs to the primary action and the step badges; nothing else glows.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep one primary orange action per area; make the next stage of the pipeline the filled button.",
+      "Do put text on #f97316 in #582200, and white text only on #c2410c or darker.",
+      "Do use amber (#92400e / #fef3c7) for warnings and blockers, red for errors, green for success, sky for information.",
+      "Do bundle every asset (fonts, inline SVG icons); the UI makes no outbound requests.",
+      "Do keep controls at 3:1 contrast (#8391a7 borders) while decorative card borders stay #e2e8f0.",
+      "Do use tabular figures for scores, salaries, dates and counts; show company avatars as initials.",
+      "Do show the mascot at the Home hero (150px), the sidebar tile (38px), empty states and the favicon set, always on a light or slate surface where the navy reads.",
+      "Do keep light as the default theme and keep dark opt-in via the sidebar toggle."
+    ],
+    "donts": [
+      "Don't use #f97316 as a background behind white text, or #ea580c as text on #fff7ed; both fail contrast.",
+      "Don't use orange for warnings or success; it is the action color.",
+      "Don't add drop shadows to cards at rest, gradients on text, glass blur on content cards, or decorative motion; shadows follow state.",
+      "Don't frame the product as acting for the person (no auto-apply language, no urgency counters); a person reviews and applies.",
+      "Don't load fonts, icons, images or scripts from a CDN or any external host.",
+      "Don't replace the mascot with an invented logo or redraw it; use the supplied PNGs.",
+      "Don't nest cards inside cards or stack more than one slate hero per page."
+    ]
+  }
+}

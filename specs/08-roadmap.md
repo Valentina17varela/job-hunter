@@ -26,11 +26,13 @@ A flat list of tasks. Done tasks are checked; the rest are in the suggested orde
 - [x] Open source ready: MIT license, CI, contribution files, source registry, `jobhunter init`/`demo`, Docker, user docs, `doctor` fix hints — [19](19-open-source-ready.md)
 - [x] Agent-ready repository: `CLAUDE.md` (commands, definition of done, code map), `AGENTS.md`, `specs/README.md` (index, statuses, template); specs 00-09 brought up to date
 - [x] Demo workspace (`scripts/seed_demo.py`) and README
+- [x] Visual overhaul "Flight Deck": top bar, four-stage pipeline strip on every page, new palette and fonts, recomposed Home, posting page, Actions and Documents — [25](25-visual-overhaul.md)
 
 ## To do
 
 Suggested order: small and independent first, those that gain from more data later, the ones needed late in a process last.
 
+- [x] **UI refinement "The Quiet Cockpit"** from the three design reviews: one orange voice, flat surfaces, review workspace, accessibility floor, Home as a cockpit — [24](24-ui-refinement.md) · done, audit 11/20 → 16/20
 - [ ] **Posting quality**: ghost-job, repost and scam signals; "is it still open?" check — [21](21-posting-quality.md)
 - [ ] **CV importer**: any CV to a marked LaTeX master — [16](16-cv-importer.md)
 - [ ] **First-run setup wizard** in the UI (uses the importer for its CV step) — [15](15-onboarding-wizard.md) · after the importer, or first with the "I have a marked CV / skip" paths

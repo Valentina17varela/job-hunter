@@ -15,6 +15,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from jobhunter import applications, config_edit, favorites, fetch_url, latex, postings, tailoring
@@ -24,7 +25,7 @@ from jobhunter.db import connect
 from jobhunter.doctor import run_checks, source_keys
 from jobhunter.filters import JobFilter, job_from_row, normalize_company
 from jobhunter.sources import registry as sources_registry
-from jobhunter.web.runner import RUN_SPECS, Busy, RunError, RunManager
+from jobhunter.web.runner import RUN_SPECS, RUN_VERBS, Busy, RunError, RunManager
 
 HERE = Path(__file__).parent
 PAGE_SIZE = 50
@@ -46,6 +47,7 @@ STAGE_LABELS = {
 }  # fmt: skip
 
 
+MODE_LABELS = {"remote": "Remote", "hybrid": "Hybrid", "onsite": "On-site", "unknown": "Not stated"}
 SOURCE_LABELS = {
     "getonboard": "Get on Board", "himalayas": "Himalayas", "themuse": "The Muse",
     "weworkremotely": "We Work Remotely", "remoteok": "RemoteOK", "remotive": "Remotive",
@@ -61,7 +63,7 @@ def score_options(current: int | None, threshold: int) -> list[dict[str, Any]]:
 
 
 def active_filters(
-    q: str, source: str, mode: str, fav: bool, days: int | None, score: int | None
+    q: str, source: str, mode: str, days: int | None, score: int | None
 ) -> list[dict[str, str]]:
     """What the person has narrowed the list by, as removable chips (name = form control)."""
     chips = []
@@ -76,10 +78,23 @@ def active_filters(
     if score is not None:
         chips.append({"name": "min_score", "label": f"Score {score}+"})
     if mode:
-        chips.append({"name": "mode", "label": f"Mode: {mode}"})
-    if fav:
-        chips.append({"name": "fav", "label": "★ Favorites only"})
+        chips.append({"name": "mode", "label": f"Mode: {MODE_LABELS.get(mode, mode)}"})
     return chips
+
+
+class CachedStatic(StaticFiles):
+    """Versioned (`?v=`) assets are immutable; fonts and images last a week; rest revalidates."""
+
+    async def get_response(self, path: str, scope):  # type: ignore[no-untyped-def]
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            if b"v=" in scope.get("query_string", b""):
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            elif path.startswith(("fonts/", "img/")):
+                response.headers["Cache-Control"] = "public, max-age=604800"
+            else:
+                response.headers["Cache-Control"] = "no-cache"
+        return response
 
 
 def asset_url(name: str) -> str:
@@ -143,68 +158,107 @@ def bar_width(n: int, total: int) -> float:
 
 
 def kpis(conn: sqlite3.Connection, data: dict[str, Any]) -> dict[str, int]:
-    """The four numbers shown at the top of the dashboard."""
+    """The two counts the Home pipeline states are built from."""
     by = data["by_status"]
     ready = conn.execute(
-        "SELECT COUNT(*) FROM jobs WHERE status IN ('selected', 'packaged') AND id NOT IN "
+        "SELECT COUNT(*) FROM jobs WHERE status = 'packaged' AND id NOT IN "
         "(SELECT job_id FROM applications)"
     ).fetchone()[0]
-    active = conn.execute(
-        "SELECT COUNT(*) FROM applications WHERE stage IN ('applied', 'screening', "
-        "'interviewing', 'offer')"
-    ).fetchone()[0]
-    pending = conn.execute("SELECT COUNT(*) FROM interviews WHERE outcome = 'pending'").fetchone()[
-        0
-    ]
     return {
         "matches": by.get("selected", 0) + by.get("packaged", 0) + by.get("scored", 0),
-        "ready": ready, "active": active, "interviews": pending,
-    }  # fmt: skip
+        "ready": ready,
+    }
+
+
+def pipeline_steps(
+    data: dict[str, Any], counts: dict[str, int], next_id: str
+) -> list[dict[str, Any]]:
+    """The four pipeline stages (strip on every page, steps on Home); `current` is the next one."""
+    by = data["by_status"]
+    funnel = data["funnel"]
+    fetched = funnel["fetched"]
+    unscored = by.get("passed", 0) + by.get("score_failed", 0)
+    unpackaged = by.get("selected", 0)
+    ready = counts["ready"]
+    if not fetched:
+        search = "No postings yet. Run your first search to see what is out there. Free, no AI."
+    elif data["last_fetch"]:
+        search = (
+            f"{fetched:,} postings found, last search {fmt_dt(data['last_fetch'][0]['at'])}. "
+            "Free, no AI."
+        )
+    else:
+        search = f"{fetched:,} postings found. Free, no AI."
+    if unscored:
+        review = (
+            f"{plural(unscored, 'posting matches', 'postings match')} your criteria "
+            f"and {'is' if unscored == 1 else 'are'} waiting for AI scoring."
+        )
+    elif counts["matches"]:
+        review = f"{plural(counts['matches'], 'match', 'matches')} worth a look."
+    else:
+        review = "The AI rates each posting against your CV and flags blockers."
+    if unpackaged:
+        package = (
+            f"{plural(unpackaged, 'top match has', 'top matches have')} no tailored CV "
+            "and cover letter yet."
+        )
+    else:
+        package = "A tailored CV, a cover letter and a recruiter message for each top match."
+    apply_parts = []
+    if ready:
+        apply_parts.append(f"{plural(ready, 'package is', 'packages are')} ready to review.")
+        if not unpackaged:
+            apply_parts.append(
+                f"Apply on the company site, then mark {'it' if ready == 1 else 'them'} "
+                "as applied here."
+            )
+    if not apply_parts:
+        apply_parts.append("You apply on the company site and record it here. Nothing is sent.")
+    current = {"search": 1, "score": 2, "tailor": 3}.get(next_id, 4 if ready else 1)
+    stages = (
+        (1, "Search", search, fetched, "found", "/jobs?status=all"),
+        (2, "Score", review, funnel["scored"], "scored", "/jobs?status=best"),
+        (3, "Package", package, funnel["packaged"], "packages", "/packages"),
+        (4, "Apply", " ".join(apply_parts), funnel["applied"], "applied", "/pipeline"),
+    )
+    return [
+        {
+            "n": n, "title": title, "state": state, "count": count, "unit": unit,
+            "href": href, "current": current == n,
+        }
+        for n, title, state, count, unit, href in stages
+    ]  # fmt: skip
 
 
 def build_suggestions(
     conn: sqlite3.Connection, data: dict[str, Any], config: Config | None = None
 ) -> list[dict[str, Any]]:
-    """Plain-language 'what to do next' list, most useful first."""
+    """The Home header action (`run`) first, then side notes (`note`) the steps do not cover."""
     by = data["by_status"]
     out: list[dict[str, Any]] = []
     if data["total"] == 0:
-        out.append(
-            {
-                "text": "No postings yet. Run your first search to see what is out there.",
-                "run": {"id": "search", "label": "Search for new jobs"},
-            }
-        )
-        return out
+        return [{"run": {"id": "search", "label": "Search for new jobs"}}]
     unscored = by.get("passed", 0) + by.get("score_failed", 0)
     if unscored:
         out.append(
             {
-                "text": f"{plural(unscored, 'posting matches', 'postings match')} your criteria, "
-                f"{'and is' if unscored == 1 else 'and are'} waiting for AI scoring.",
-                "run": {"id": "score", "label": "Score them with AI", "llm": True},
+                "run": {
+                    "id": "score",
+                    "label": f"Score {plural(unscored, 'posting', 'postings')}",
+                    "llm": True,
+                }
             }
         )
     unpackaged = by.get("selected", 0)
     if unpackaged:
         out.append(
             {
-                "text": f"{plural(unpackaged, 'top match has', 'top matches have')} no tailored CV "
-                "and cover letter yet.",
-                "run": {"id": "tailor", "label": "Build their packages", "llm": True},
-                "link": {"href": "/jobs?status=best", "label": "Review them first"},
-            }
-        )
-    ready = conn.execute(
-        "SELECT COUNT(*) FROM jobs WHERE status = 'packaged' AND id NOT IN "
-        "(SELECT job_id FROM applications)"
-    ).fetchone()[0]
-    if ready:
-        out.append(
-            {
-                "text": f"{plural(ready, 'package is', 'packages are')} ready. Open "
-                f"{'it' if ready == 1 else 'them'}, check the notes and apply.",
-                "link": {"href": "/packages", "label": "Open packages"},
+                "run": {
+                    "id": "tailor",
+                    "label": f"Build {plural(unpackaged, 'package', 'packages')}",
+                    "llm": True,
+                }
             }
         )
     stale = conn.execute(
@@ -215,6 +269,8 @@ def build_suggestions(
     if stale:
         out.append(
             {
+                "note": True,
+                "tone": "warn",
                 "text": f"{plural(stale, 'application has', 'applications have')} had no update "
                 "for a week. Time to follow up?",
                 "link": {"href": "/pipeline", "label": "Open pipeline"},
@@ -226,6 +282,8 @@ def build_suggestions(
             names = ", ".join(source_label(n) for n in off)
             out.append(
                 {
+                    "note": True,
+                    "tone": "info",
                     "text": f"{plural(len(off), 'source is', 'sources are')} available but not "
                     f"enabled: {names}. Turn them on to see their postings.",
                     "link": {"href": "/settings#sources", "label": "Open Settings → Sources"},
@@ -233,12 +291,7 @@ def build_suggestions(
             )
     last = conn.execute("SELECT MAX(created_at) FROM fetch_log").fetchone()[0]
     if last and datetime.fromisoformat(last) < datetime.now(UTC) - timedelta(days=2):
-        out.append(
-            {
-                "text": "Your last search was more than two days ago.",
-                "run": {"id": "search", "label": "Search again"},
-            }
-        )
+        out.append({"run": {"id": "search", "label": "Search again"}})
     return out
 
 
@@ -270,10 +323,18 @@ def create_app(
     hosts = allowed_hosts or {f"127.0.0.1:{port}", f"localhost:{port}"}
     app = FastAPI(title="Job Hunter", docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(LocalOnlyMiddleware, allowed_hosts=hosts)
-    app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
+    app.mount("/static", CachedStatic(directory=HERE / "static"), name="static")
     templates = Jinja2Templates(directory=HERE / "templates")
     manager = runner or RunManager(config_path, Path.cwd(), log_dir=None)
     templates.env.filters["dt"] = fmt_dt
+    templates.env.filters["ago"] = ago
+    templates.env.filters["mode_label"] = lambda v: MODE_LABELS.get(v, str(v).capitalize())
+    templates.env.filters["run_label"] = lambda v: next(
+        (s.label for s in RUN_SPECS if s.id == v), v
+    )
+    templates.env.filters["state_label"] = lambda v: (
+        STATUS_LABELS.get(v) or STAGE_LABELS.get(v) or v or "—"
+    )
     templates.env.filters["money"] = money
     templates.env.filters["bar_width"] = bar_width
     templates.env.filters["norm_company"] = normalize_company
@@ -281,6 +342,8 @@ def create_app(
         AGGREGATORS=list(sources_registry.aggregators()),
         NOT_FOR_ME_REASONS=top_board.REASONS,
         asset=asset_url,
+        run_verb=lambda i: RUN_VERBS.get(i, "Run"),
+        MODE_LABELS=MODE_LABELS,
         source_label=lambda n: SOURCE_LABELS.get(n, n),
         STATUS_LABELS=STATUS_LABELS, STAGE_LABELS=STAGE_LABELS,
         STAGES=applications.STAGES, KINDS=applications.INTERVIEW_KINDS,
@@ -297,11 +360,38 @@ def create_app(
         return {n for n in map(normalize_company, config.search.companies_exclude) if n}
 
     def render(request: Request, name: str, **ctx: Any) -> Any:
-        return templates.TemplateResponse(request, name, {"active": ctx.pop("active", ""), **ctx})
+        config = cfg()
+        conn = db(config)
+        data = applications.stats(conn)
+        suggestions = build_suggestions(conn, data, config)
+        nxt = next((x["run"] for x in suggestions if "run" in x), None)
+        strip = pipeline_steps(data, kpis(conn, data), nxt["id"] if nxt else "search")
+        return templates.TemplateResponse(
+            request, name, {"active": ctx.pop("active", ""), "strip": strip, **ctx}
+        )
 
     @app.exception_handler(ConfigError)
     async def config_error(request: Request, exc: ConfigError) -> Any:
         return templates.TemplateResponse(request, "error.html", {"message": str(exc)}, 500)
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(request: Request, exc: StarletteHTTPException) -> Any:
+        """Pages answer with the normal layout; the JSON API keeps JSON."""
+        path = request.url.path
+        if path.startswith(("/api/", "/static/", "/files/")) or request.method != "GET":
+            return JSONResponse({"error": str(exc.detail)}, status_code=exc.status_code)
+        titles = {404: "Page not found", 405: "Not allowed"}
+        message = (
+            "That page does not exist. Check the address, or go back to where you were."
+            if exc.status_code == 404
+            else str(exc.detail)
+        )
+        return templates.TemplateResponse(
+            request,
+            "error.html",
+            {"message": message, "title": titles.get(exc.status_code, "Something went wrong")},
+            exc.status_code,
+        )
 
     @app.exception_handler(applications.TrackingError)
     async def tracking_error(request: Request, exc: applications.TrackingError) -> Any:
@@ -314,21 +404,25 @@ def create_app(
         config = cfg()
         conn = db(config)
         data = applications.stats(conn)
+        suggestions = build_suggestions(conn, data, config)
+        nxt = next((x["run"] for x in suggestions if "run" in x), None)
         return render(
             request, "dashboard.html", active="dashboard", stats=data,
-            suggestions=build_suggestions(conn, data, config),
+            notes=[x for x in suggestions if x.get("note")], nxt=nxt,
             upcoming=applications.upcoming_interviews(conn),
-            kpis=kpis(conn, data), rule_labels=RULE_LABELS,
+            rule_labels=RULE_LABELS,
             max_calls=config.budget.max_llm_calls_per_run, backend=config.llm.backend,
             running=manager.active(), favorites_open=favorites.count_without_application(conn),
             plan=top_board.plan(conn, config),
+            unscored=data["by_status"].get("passed", 0) + data["by_status"].get("score_failed", 0),
+            unpackaged=data["by_status"].get("selected", 0),
         )  # fmt: skip
 
     @app.get("/jobs")
     def jobs_page(
         request: Request, status: str = "best", source: str = "", q: str = "",
         min_score: str = "", mode: str = "", sort: str = "score", page: int = 1,
-        fav: str = "", fresh: str = "",
+        fresh: str = "",
     ) -> Any:  # fmt: skip
         config = cfg()
         conn = db(config)
@@ -347,8 +441,6 @@ def create_app(
         elif status not in ("all", *tab_statuses):
             where.append("j.status = ?")
             params.append(status)
-        if fav == "1" and status != "favorites":
-            where.append("f.job_id IS NOT NULL")
         if source:
             where.append("j.source = ?")
             params.append(source)
@@ -400,7 +492,7 @@ def create_app(
             for key, label, sts in JOB_TABS
         ]  # fmt: skip
         fav_total = conn.execute("SELECT COUNT(*) FROM favorites").fetchone()[0]
-        tabs.append({"key": "favorites", "label": "★ Favorites", "n": fav_total})
+        tabs.append({"key": "favorites", "label": "Favorites", "n": fav_total})
         per_source = {r[0]: r[1] for r in conn.execute(
             "SELECT source, COUNT(*) FROM jobs GROUP BY source")}  # fmt: skip
         enabled = [*config.sources.aggregators, *sources_registry.company_boards()]
@@ -413,7 +505,7 @@ def create_app(
         if (
             status == "best"
             and page == 1
-            and not (q or source or mode or fav or days or score_floor is not None)
+            and not (q or source or mode or days or score_floor is not None)
         ):
             plan = top_board.plan(conn, config)
             board_ids = {r["id"] for r in plan["board"]}
@@ -424,13 +516,13 @@ def create_app(
             pages=max(1, -(-total // PAGE_SIZE)), counts=counts, sources=sources, tabs=tabs,
             qs=urlencode({k: v for k, v in {"status": status, "source": source, "q": q,
                           "mode": mode, "sort": sort, "min_score": score_floor,
-                          "fresh": days, "fav": "1" if fav == "1" else ""}.items()
+                          "fresh": days}.items()
                           if v not in ("", None)}),
             f={"status": status, "source": source, "q": q, "min_score": score_floor,
-               "mode": mode, "sort": sort, "fav": fav == "1", "fresh": days},
+               "mode": mode, "sort": sort, "fresh": days},
             fresh_options=fresh_options(config.search.max_age_days),
             score_options=score_options(score_floor, config.scoring.score_threshold),
-            active_filters=active_filters(q, source, mode, fav == "1", days, score_floor),
+            active_filters=active_filters(q, source, mode, days, score_floor),
             blocked=blocked_set(config),
         )  # fmt: skip
 
@@ -441,7 +533,10 @@ def create_app(
         row = conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
         if row is None:
             return templates.TemplateResponse(
-                request, "error.html", {"message": f"No posting with id {job_id}"}, 404
+                request,
+                "error.html",
+                {"message": f"No posting with id {job_id}.", "title": "Posting not found"},
+                404,
             )
         score = conn.execute(
             "SELECT * FROM scores WHERE job_id = ? ORDER BY created_at DESC LIMIT 1", (job_id,)
@@ -776,6 +871,22 @@ def create_app(
         }  # fmt: skip
 
     return app
+
+
+def ago(value: str | None) -> str:
+    """ISO timestamp → 'today', 'yesterday' or '5 days ago' (UTC calendar days)."""
+    if not value:
+        return "—"
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return value
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    days = (datetime.now(UTC).date() - parsed.astimezone(UTC).date()).days
+    if days <= 0:
+        return "today"
+    return "yesterday" if days == 1 else f"{days} days ago"
 
 
 def fmt_dt(value: str | float | None) -> str:

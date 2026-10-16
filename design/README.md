@@ -14,6 +14,8 @@ design/
 └── references/          (optional) anything else that inspires the design
 ```
 
+> The current look is "The Quiet Cockpit" (spec 24, `DESIGN.md` at the repository root): neutral surfaces with one orange voice. The Kinetic Horizon palette below is the origin of the colours, not a binding style guide.
+
 ## Status of the inputs
 
 - **Palette, brief, logo: received and reviewed.** `brand/logo/logo_no_background.png` (500×500, transparent) is the logo to use in the UI; `logo.png` (1024×1024, white background) is kept as the high-resolution master.

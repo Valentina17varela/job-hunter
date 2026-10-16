@@ -3,12 +3,57 @@
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
 
+  // Reloading after an action must not lose the reader's place: remember the scroll position and
+  // which control of which job row had focus, and put focus back after the page comes up.
+  const PLACE_KEY = 'jh_place';
+  function reloadHere() {
+    try {
+      const el = document.activeElement;
+      const card = el && el.closest ? el.closest('.job-card') : null;
+      const place = { path: location.pathname + location.search, y: window.scrollY };
+      if (card) {
+        place.card = $$('.job-card').indexOf(card);
+        place.ctl = $$('button, a', card).indexOf(el);
+      }
+      sessionStorage.setItem(PLACE_KEY, JSON.stringify(place));
+    } catch (e) { /* storage unavailable: reload anyway */ }
+    location.reload();
+  }
+
+  (function restorePlace() {
+    let place = null;
+    try {
+      place = JSON.parse(sessionStorage.getItem(PLACE_KEY) || 'null');
+      sessionStorage.removeItem(PLACE_KEY);
+    } catch (e) { return; }
+    if (!place || place.path !== location.pathname + location.search) return;
+    window.scrollTo(0, place.y || 0);
+    const cards = $$('.job-card');
+    const card = place.card >= 0 && cards.length ? cards[Math.min(place.card, cards.length - 1)] : null;
+    const target = card ? ($$('button, a', card)[Math.max(place.ctl, 0)] || card.querySelector('a, button')) : $('#main');
+    if (target) target.focus({ preventScroll: true });
+  })();
+
+  const UNDO_KEY = 'jh_undo';
+
   function toast(message) {
     const el = $('#toast');
     el.textContent = message;
     el.hidden = false;
     clearTimeout(toast.t);
     toast.t = setTimeout(() => (el.hidden = true), 4500);
+  }
+
+  function svgIcon(name) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'ic');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const use = document.createElementNS(ns, 'use');
+    use.setAttribute('href', '#i-' + name);
+    svg.append(use);
+    return svg;
   }
 
   async function post(url, body) {
@@ -19,9 +64,30 @@
   }
 
   async function act(fn, reload) {
-    try { await fn(); if (reload !== false) location.reload(); return true; }
+    try { await fn(); if (reload !== false) reloadHere(); return true; }
     catch (err) { toast(err.message); return false; }
   }
+
+  // A stage change reloads the page; the toast that follows offers to put it back.
+  (function undoToast() {
+    let u = null;
+    try {
+      u = JSON.parse(sessionStorage.getItem(UNDO_KEY) || 'null');
+      sessionStorage.removeItem(UNDO_KEY);
+    } catch (e) { return; }
+    if (!u) return;
+    const el = $('#toast');
+    el.textContent = u.text + ' ';
+    const undo = document.createElement('button');
+    undo.type = 'button';
+    undo.className = 'toast-undo';
+    undo.textContent = 'Undo';
+    undo.addEventListener('click', () => act(() => post('/api/jobs/' + u.job + '/stage', { stage: u.prev })));
+    el.append(undo);
+    el.hidden = false;
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => (el.hidden = true), 8000);
+  })();
 
   // ---------- run dock ----------
   const dock = $('#dock');
@@ -45,7 +111,7 @@
       setDock(ok ? 'ok' : 'bad', ok ? 'done' : 'failed');
       $('#dock-result').textContent = ok ? 'Finished.' : 'Exited with code ' + s.exit_code + '. Read the log above.';
       $('#dock-foot').hidden = false;
-      if (ok && run.reload) { $('#dock-result').textContent = 'Finished. Updating this page…'; setTimeout(() => location.reload(), 1200); }
+      if (ok && run.reload) { $('#dock-result').textContent = 'Finished. Updating this page…'; setTimeout(() => reloadHere(), 1200); }
     }).catch(() => setDock('bad', 'lost connection'));
   }
 
@@ -73,7 +139,7 @@
   if (dock) {
     $('#dock-toggle').addEventListener('click', () => dock.classList.toggle('min'));
     $('#dock-close').addEventListener('click', () => { dock.hidden = true; });
-    $('#dock-refresh').addEventListener('click', () => location.reload());
+    $('#dock-refresh').addEventListener('click', () => reloadHere());
     try {
       const saved = JSON.parse(sessionStorage.getItem(KEY) || 'null');
       if (saved) openDock(saved, true);
@@ -125,7 +191,16 @@
 
   document.addEventListener('change', (ev) => {
     const sel = ev.target.closest('[data-stage-job]');
-    if (sel) act(() => post('/api/jobs/' + sel.dataset.stageJob + '/stage', { stage: sel.value }));
+    if (!sel) return;
+    const prev = sel.dataset.prev;
+    const label = sel.selectedOptions[0].textContent;
+    const said = { applied: 'Marked as applied. Good luck.', offer: 'Moved to Offer. Congratulations.' };
+    act(async () => {
+      await post('/api/jobs/' + sel.dataset.stageJob + '/stage', { stage: sel.value });
+      try {
+        if (prev) sessionStorage.setItem(UNDO_KEY, JSON.stringify({ job: sel.dataset.stageJob, prev, text: said[sel.value] || 'Moved to ' + label + '.' }));
+      } catch (e) { /* no undo without storage */ }
+    });
   });
 
   document.addEventListener('submit', (ev) => {
@@ -142,6 +217,9 @@
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = 'Type and press Enter';
+    if (box.dataset.inputId) input.id = box.dataset.inputId;
+    if (box.dataset.desc) input.setAttribute('aria-describedby', box.dataset.desc);
+    input.setAttribute('aria-label', box.dataset.label || 'Add an item');
     function render() {
       $$('.tag', box).forEach((t) => t.remove());
       values.forEach((v, i) => {
@@ -151,7 +229,7 @@
         const x = document.createElement('button');
         x.type = 'button';
         x.setAttribute('aria-label', 'Remove ' + v);
-        x.textContent = '×';
+        x.append(svgIcon('x'));
         x.addEventListener('click', () => { values.splice(i, 1); render(); });
         tag.append(x);
         box.insertBefore(tag, input);
@@ -168,14 +246,15 @@
     });
     input.addEventListener('blur', () => { if (input.value.trim()) add(input.value); });
     box.append(input);
+    box.peek = () => values.concat(input.value.trim() ? [input.value.trim()] : []);
     box.getValues = () => { if (input.value.trim()) add(input.value); return values.slice(); };
     render();
   }
   $$('.tags[data-cfg]').forEach(initTags);
 
-  function readField(el) {
+  function readField(el, peek) {
     switch (el.dataset.type) {
-      case 'tags': return el.getValues();
+      case 'tags': return peek ? el.peek() : el.getValues();
       case 'checks': return $$('input:checked', el).map((c) => c.value);
       case 'number': {
         const v = el.value.trim();
@@ -202,30 +281,43 @@
     });
   }
 
+  // ---------- Settings: one tab at a time, one dirty-aware save ----------
+  let showPanel = () => {};
+  let baseline = '';
+  let refreshDirty = () => {};
+
+  function collectConfig(peek) {
+    const updates = {};
+    $$('[data-card] [data-cfg]').forEach((el) => { const v = readField(el, peek); if (v !== undefined) setNested(updates, el.dataset.cfg, v); });
+    return updates;
+  }
+
   document.addEventListener('click', async (ev) => {
     const saveCfg = ev.target.closest('[data-save-cfg]');
     if (saveCfg) {
-      const card = saveCfg.closest('[data-card]');
-      const state = $('.save-state', saveCfg.closest('.form-actions'));
+      const state = $('#savebar .save-state');
       if (saveCfg.disabled) return;
-      saveCfg.disabled = true;
-      const updates = {};
-      $$('[data-cfg]', card).forEach((el) => { const v = readField(el); if (v !== undefined) setNested(updates, el.dataset.cfg, v); });
+      $$('[data-save-cfg]').forEach((b) => (b.disabled = true));
       try {
-        await post('/api/config', { updates });
-        showErrors(card, []);
-        state.textContent = 'Saved ✓';
+        await post('/api/config', { updates: collectConfig(false) });
+        $$('[data-card]').forEach((card) => showErrors(card, []));
+        baseline = JSON.stringify(collectConfig(true));
+        refreshDirty();
+        state.textContent = 'Saved';
         state.className = 'save-state ok small';
         if (saveCfg.dataset.then === 'refilter') startRun({ id: 'refilter' }, 'Re-filtering with your new criteria', true);
       } catch (err) {
         let detail = err.message;
         if (err.data && err.data.errors) {
-          showErrors(card, err.data.errors);
+          $$('[data-card]').forEach((card) => showErrors(card, err.data.errors));
           detail = err.data.errors.map((e) => e.field + ': ' + e.message).join(' · ');
+          const bad = $$('[data-cfg]').find((x) => x.dataset.cfg === err.data.errors[0].field);
+          if (bad) showPanel(bad.closest('[data-card]').id);
         }
+        refreshDirty();
         state.textContent = 'Not saved: ' + detail;
         state.className = 'save-state bad small';
-      } finally { saveCfg.disabled = false; }
+      }
       return;
     }
     const saveFile = ev.target.closest('[data-save-file]');
@@ -254,10 +346,45 @@
     }).catch(() => { area.placeholder = 'Could not load the file'; area.disabled = true; });
   });
 
-  $$('#settings-tabs a').forEach((a) => a.addEventListener('click', () => {
-    $$('#settings-tabs a').forEach((x) => x.classList.remove('on'));
-    a.classList.add('on');
-  }));
+  const settingsTabs = $('#settings-tabs');
+  if (settingsTabs) {
+    const tabs = $$('a', settingsTabs);
+    const ids = tabs.map((t) => t.getAttribute('href').slice(1));
+    const bar = $('#savebar');
+    const saveBtn = $('[data-save-cfg]:not([data-then])');
+    const refilterBtn = $('[data-save-cfg][data-then]');
+    showPanel = (id, focus, silent) => {
+      if (!ids.includes(id)) id = ids[0];
+      tabs.forEach((t) => {
+        const on = t.getAttribute('href') === '#' + id;
+        t.classList.toggle('on', on);
+        if (on) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current');
+      });
+      ids.forEach((x) => { document.getElementById(x).hidden = x !== id; });
+      bar.hidden = !document.getElementById(id).hasAttribute('data-card');
+      // the first call must not touch the URL: a fragment added while the page loads makes the
+      // browser scroll to that section and focus it when loading ends
+      if (!silent) { try { history.replaceState(null, '', '#' + id); } catch (e) { /* ignore */ } }
+      if (focus) document.getElementById(id).focus({ preventScroll: true });
+    };
+    tabs.forEach((t) => t.addEventListener('click', (ev) => { ev.preventDefault(); showPanel(t.getAttribute('href').slice(1)); }));
+    window.addEventListener('hashchange', () => showPanel(location.hash.slice(1)));
+    showPanel(location.hash.slice(1), false, true);
+
+    baseline = JSON.stringify(collectConfig(true));
+    refreshDirty = () => {
+      const dirty = JSON.stringify(collectConfig(true)) !== baseline;
+      saveBtn.disabled = !dirty;
+      refilterBtn.disabled = !dirty;
+      const state = $('.save-state', bar);
+      if (dirty) { state.textContent = 'Unsaved changes'; state.className = 'save-state muted small'; }
+      else if (state.className.includes('muted')) state.textContent = '';
+    };
+    refreshDirty();
+    ['input', 'change', 'click', 'keyup'].forEach((type) => document.addEventListener(type, (ev) => {
+      if (ev.target.closest && ev.target.closest('[data-card]')) setTimeout(refreshDirty, 0);
+    }));
+  }
 
   // ---------- Job matches: filters apply as you choose (spec 23) ----------
   const filterForm = document.querySelector('form.filterbar');
@@ -279,6 +406,9 @@
         const fresh = doc.getElementById('jobs-results');
         if (!fresh) throw new Error('no results area');
         resultsBox.innerHTML = fresh.innerHTML;
+        const count = resultsBox.querySelector('p.muted');
+        const live = document.getElementById('jobs-live');
+        if (live && count) live.textContent = count.textContent.trim();
         history.replaceState(null, '', url);
       } catch (err) {
         if (err.name !== 'AbortError') location.href = url; // fall back to a normal page load
@@ -291,9 +421,8 @@
         const sel = l.querySelector('select');
         if (sel && !l.classList.contains('fb-sort')) l.classList.toggle('on', sel.value !== '');
       });
-      filterForm.querySelectorAll('.fb-chip').forEach((l) => {
-        l.classList.toggle('on', l.querySelector('input').checked);
-      });
+      const more = filterForm.querySelector('.fb-more');
+      if (more) more.classList.toggle('on', [...more.querySelectorAll('select')].some((s) => s.value !== ''));
     };
     const clearControl = (name) => {
       const el = filterForm.elements[name];
@@ -304,10 +433,13 @@
       const one = ev.target.closest('[data-clear]');
       const all = ev.target.closest('[data-clear-all]');
       if (!one && !all) return;
-      (all ? ['q', 'source', 'fresh', 'min_score', 'mode', 'fav'] : [one.dataset.clear]).forEach(clearControl);
+      (all ? ['q', 'source', 'fresh', 'min_score', 'mode'] : [one.dataset.clear]).forEach(clearControl);
       syncActive();
       clearTimeout(timer);
       refresh();
+      // the chip that was clicked disappears: keep keyboard focus in the filter bar
+      const target = all ? filterForm.elements.q : filterForm.elements[one.dataset.clear];
+      if (target && target.focus) target.focus();
     });
     filterForm.addEventListener('submit', (ev) => { ev.preventDefault(); clearTimeout(timer); refresh(); });
     filterForm.addEventListener('change', (ev) => {
@@ -343,7 +475,7 @@
     const close = document.createElement('button');
     close.className = 'icon-btn';
     close.setAttribute('aria-label', 'Dismiss');
-    close.textContent = '✕';
+    close.append(svgIcon('x'));
     close.addEventListener('click', () => { notice.hidden = true; });
     notice.appendChild(close);
     notice.hidden = false;
@@ -404,7 +536,8 @@
       try {
         await post('/api/jobs/' + nfmJob + '/ignore', body);
         try { sessionStorage.setItem(NOTICE_KEY, '1'); } catch (e) { /* ignore */ }
-        location.reload();
+        nfm.close();
+        reloadHere();
       } catch (err) { toast(err.message); }
     });
   }
@@ -414,7 +547,14 @@
   const applyTheme = (t) => {
     if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     else document.documentElement.removeAttribute('data-theme');
-    if (themeBtn) themeBtn.textContent = t === 'dark' ? '◑ Light theme' : '◐ Dark theme';
+    if (themeBtn) {
+      const dark = t === 'dark';
+      const useEl = themeBtn.querySelector('use');
+      if (useEl) useEl.setAttribute('href', dark ? '#i-sun' : '#i-moon');
+      themeBtn.setAttribute('aria-pressed', String(dark));
+      themeBtn.setAttribute('aria-label', dark ? 'Light theme' : 'Dark theme');
+      themeBtn.title = dark ? 'Light theme' : 'Dark theme';
+    }
   };
   let savedTheme = null;
   try { savedTheme = localStorage.getItem('jh_theme'); } catch (e) { /* private mode */ }
@@ -466,12 +606,24 @@
     });
   }
 
+  // ---------- overflow menus (<details class="more">) ----------
+  document.addEventListener('click', (ev) => {
+    $$('details.more[open]').forEach((d) => { if (!d.contains(ev.target) || ev.target.closest('.menu button')) d.open = false; });
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    const open = $('details.more[open]');
+    if (open) { open.open = false; $('summary', open).focus(); }
+  });
+
   // ---------- health ----------
   const health = $('#health');
   if (health) {
     fetch('/api/health').then((r) => r.json()).then((checks) => {
       health.innerHTML = '';
       const bad = checks.filter((c) => !c.ok);
+      const card = $('#health-card');
+      if (card) card.hidden = !bad.some((c) => c.required);  // Home: only when something required fails
       if (!bad.length) {
         const li = document.createElement('li');
         li.innerHTML = '<span class="dot"></span>';
@@ -498,7 +650,8 @@
       } catch (err) { toast(err.message); return; }
       star.setAttribute('aria-pressed', String(on));
       star.classList.toggle('on', on);
-      star.textContent = on ? '★' : '☆';
+      const use = star.querySelector('use');
+      if (use) use.setAttribute('href', on ? '#i-star-fill' : '#i-star');
       const note = $('#favorite-note');
       if (note) note.hidden = !on;
       return;
@@ -517,7 +670,7 @@
       const ok = await act(() => post('/api/config', { updates: { search: { companies_exclude: list } } }), false);
       if (!ok) return;
       if (confirm(company + ' is blocked. Re-filter now so its current postings leave your matches?')) startRun({ id: 'refilter' }, 'Re-filtering with your new criteria', true);
-      else location.reload();
+      else reloadHere();
     }
   });
 })();

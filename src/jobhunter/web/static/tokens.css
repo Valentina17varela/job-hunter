@@ -1,38 +1,95 @@
-/* Design tokens (spec 18 §5.1). Light is ALWAYS the default; dark only when chosen (data-theme="dark").
-   Every value was checked for WCAG contrast: text >= 4.5:1, controls and focus >= 3:1. */
-@font-face { font-family: "Plus Jakarta Sans"; src: url("/static/fonts/PlusJakartaSans.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; }
+/* Design tokens (spec 25, "Flight Deck"). Light is ALWAYS the default; dark only when chosen (data-theme="dark").
+   Palette comes from the mascot: navy ink, teal for information, one amber accent with navy text on it.
+   Every color pair was checked for WCAG contrast: text >= 4.5:1, controls and focus >= 3:1.
+   This file is the only place that defines colors, shadows, radii, type, weights, layers and spacing. */
+@font-face { font-family: "Bricolage Grotesque"; src: url("/static/fonts/bricolage-grotesque-latin-wght-normal.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Bricolage Grotesque"; src: url("/static/fonts/bricolage-grotesque-latin-ext-wght-normal.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Atkinson Hyperlegible Next"; src: url("/static/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Atkinson Hyperlegible Next"; src: url("/static/fonts/atkinson-hyperlegible-next-latin-ext-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Spline Sans Mono"; src: url("/static/fonts/spline-sans-mono-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Spline Sans Mono"; src: url("/static/fonts/spline-sans-mono-latin-ext-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
 :root {
-  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --bg: #f8f9ff; --panel: #ffffff; --soft: #f8fafc; --muted-surface: #f1f5f9;
-  --border: #e2e8f0; --control-border: #8391a7;
-  --ink: #111827; --muted: #475569; --placeholder: #64748b;
-  --primary: #c2410c; --primary-hover: #9d4300; --on-primary: #ffffff;
-  --orange: #f97316; --on-orange: #582200; --orange-border: #fdba74;
-  --accent-text: #c2410c; --focus-ring: #c2410c; --focus-glow: rgba(249, 115, 22, .22);
-  --badge-soft: #fff7ed;
-  --info: #0369a1; --info-soft: #e0f2fe;
-  --good: #047857; --good-soft: #d1fae5; --good-fill: #10b981;
-  --warn: #92400e; --warn-soft: #fef3c7; --warn-fill: #f59e0b;
-  --bad: #ba1a1a; --bad-soft: #ffdad6;
-  --slate: #0f172a; --on-slate: #ffffff;
-  --shadow: 0 1px 2px rgba(15, 23, 42, .04);
-  --shadow-hover: 0 8px 24px rgba(249, 115, 22, .12);
-  --halo: 0 8px 22px rgba(249, 115, 22, .28);
-  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --radius: 16px; --side: 248px;
+  color-scheme: light;
+  --font: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Bricolage Grotesque", "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* surfaces and text: navy-tinted neutrals */
+  --bg: #f2f5f9; --panel: #ffffff; --soft: #f7f9fc; --muted-surface: #e9eef4;
+  --border: #dbe2eb; --control-border: #6f7f95; --btn-border: #c3ccd8;
+  --surface-neutral: #e9eef4; --ink-neutral: #2d3f56;
+  --ink: #0f1b2d; --muted: #4a5a70; --placeholder: #5d6c82;
+  --slate: #0f1b2d; --on-slate: #f4f7fb;
+
+  /* the one accent, amber from the beak: fills carry --on-primary / --on-orange (navy), never white;
+     --accent-text is the accent as text on light surfaces */
+  --primary: #f5a524; --primary-hover: #e29210; --on-primary: #0f1b2d;
+  --orange: #f5a524; --on-orange: #0f1b2d; --orange-border: #f0c274;
+  --accent-text: #8f5400; --focus-ring: #0e7c86; --focus-glow: rgba(14, 124, 134, .25);
+  --badge-soft: #fff3d9;
+
+  /* status: teal informs, so the accent never doubles as information */
+  --info: #0b6b75; --info-soft: #d6eff1;
+  --good: #0a7347; --good-soft: #d6f2e3; --good-fill: #16a56a;
+  --warn: #8a5200; --warn-soft: #fcefcb; --warn-fill: #d99100;
+  --bad: #b3261e; --bad-soft: #fddcd8;
+
+  /* elevation, glows and overlays */
+  --shadow: 0 1px 2px rgba(15, 27, 45, .05);
+  --transition: background-color .14s ease, border-color .14s ease, box-shadow .14s ease, color .14s ease, opacity .14s ease, transform .14s ease;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --dur-slow: .6s;
+  --shadow-hover: 0 8px 24px rgba(15, 27, 45, .1);
+  --halo: 0 6px 18px rgba(245, 165, 36, .38);
+  --shadow-tab: 0 1px 3px rgba(15, 27, 45, .14);
+  --shadow-float: 0 18px 50px rgba(15, 27, 45, .28);
+  --shadow-notice: 0 18px 50px rgba(15, 27, 45, .3);
+  --shadow-modal: 0 30px 80px rgba(15, 27, 45, .35);
+  --shadow-toast: 0 10px 30px rgba(0, 0, 0, .25);
+  --scrim: rgba(15, 27, 45, .55);
+  --brush: #ef7b1d;
+  --glow-wash: rgba(245, 165, 36, .1);
+  --overlay-hover: rgba(0, 0, 0, .12);
+
+  /* shape: tighter and more engineered than before */
+  --r-xs: 4px; --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 18px; --r-full: 999px; --radius: 14px;
+
+  /* type scale: tight body, large display steps for numerals and the page title */
+  --text-xs: .75rem; --text-sm: .8125rem; --text-base: .9375rem; --text-md: 1.125rem;
+  --text-lg: 1.4rem; --text-xl: 1.9rem; --text-2xl: 2.6rem; --text-3xl: 3.4rem; --text-4xl: 4.6rem;
+  --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700; --weight-extrabold: 800;
+
+  /* spacing scale */
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
+  --space-5: 1.5rem; --space-6: 2rem; --space-7: 3rem; --space-8: 4rem;
+
+  /* layers */
+  --z-behind: -1; --z-raise: 1; --z-sticky: 2; --z-menu: 5; --z-dock: 50; --z-toast: 60; --z-notice: 70;
+
+  /* layout */
+  --bar: 3.5rem; --page: 78rem;
 }
+
 /* dark (opt-in) */
 :root[data-theme="dark"] {
-    --bg: #0b1220; --panel: #111a2e; --soft: #0f172a; --muted-surface: #1a2438;
-    --border: #243049; --control-border: #5f6f88;
-    --ink: #e6ebf5; --muted: #a3b1c6; --placeholder: #8795ab;
-    --primary: #f97316; --primary-hover: #fb923c; --on-primary: #2b1200;
-    --orange: #f97316; --on-orange: #2b1200; --orange-border: #7c3a12;
-    --accent-text: #fb923c; --focus-ring: #fb923c; --focus-glow: rgba(251, 146, 60, .25);
-    --badge-soft: #31262b;
-    --info: #7dd3fc; --info-soft: #0e3150;
-    --good: #34d399; --good-soft: #11333b; --good-fill: #34d399;
-    --warn: #fcd34d; --warn-soft: #352f28; --warn-fill: #fcd34d;
-    --bad: #ffb4ab; --bad-soft: #4c1a27;
-    --slate: #111a2e; --on-slate: #e6ebf5;
-    --shadow: none; --shadow-hover: 0 8px 24px rgba(0, 0, 0, .35); --halo: 0 8px 22px rgba(249, 115, 22, .25);
+  color-scheme: dark;
+  --bg: #0a121f; --panel: #101b2d; --soft: #0d1626; --muted-surface: #16233a;
+  --border: #20304a; --control-border: #5c6f8c; --btn-border: #4f6280;
+  --surface-neutral: #1a2940; --ink-neutral: #c5d1e3;
+  --ink: #e8eef7; --muted: #9fb0c8; --placeholder: #8496b0;
+  --slate: #16233a; --on-slate: #e8eef7;
+
+  --primary: #f5b13a; --primary-hover: #ffc35c; --on-primary: #0f1b2d;
+  --orange: #f5b13a; --on-orange: #0f1b2d; --orange-border: #7a5a1c;
+  --accent-text: #f5b13a; --focus-ring: #4fd1c5; --focus-glow: rgba(79, 209, 197, .28);
+  --badge-soft: #2d2a1f;
+
+  --info: #5cd6d3; --info-soft: #0d3a42;
+  --good: #4ade9a; --good-soft: #0f3a2b; --good-fill: #4ade9a;
+  --warn: #f2c14e; --warn-soft: #3a2f12; --warn-fill: #f2c14e;
+  --bad: #ff9d92; --bad-soft: #4a1b22;
+
+  --brush: #f08a2c;
+  --shadow: none; --shadow-hover: 0 8px 24px rgba(0, 0, 0, .4); --halo: 0 6px 18px rgba(245, 177, 58, .22);
 }

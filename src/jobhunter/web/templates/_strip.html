@@ -1,0 +1,15 @@
+{% if strip %}
+<nav class="strip" aria-label="Your pipeline">
+  <ol>
+    {% for s in strip %}
+    <li class="stage{{ ' now' if s.current }}">
+      <a href="{{ s.href }}"{% if s.current %} aria-label="{{ s.title }}, {{ s.count }} {{ s.unit }}, next step"{% endif %}>
+        <span class="stage-n">{{ s.n }}</span>
+        <span class="stage-title">{{ s.title }}</span>
+        <span class="stage-count">{{ "{:,}".format(s.count) }} <small>{{ s.unit }}</small></span>
+      </a>
+    </li>
+    {% endfor %}
+  </ol>
+</nav>
+{% endif %}

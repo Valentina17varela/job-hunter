@@ -1,5 +1,8 @@
 import json
+import re
 import threading
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,6 +15,7 @@ from jobhunter.web.app import create_app
 from jobhunter.web.runner import RunManager
 
 HOST = {"host": "testserver"}
+STATIC_DIR = Path(__file__).resolve().parents[1] / "src" / "jobhunter" / "web" / "static"
 
 
 class FakeProc:
@@ -120,7 +124,9 @@ def test_dashboard_shows_funnel_and_filter_reasons(env):
     html = env[0].get("/", headers=HOST).text
     assert "From postings to offers" in html and "Match your criteria" in html
     assert "Title is not one of your target roles" in html  # friendly rule names, not ids
-    assert "Search for new jobs" in html and "Score with AI" in html and "Build packages" in html
+    assert "Search for new jobs" in html and "Your pipeline" in html
+    assert len(re.findall(r'btn primary" data-run', html)) == 1  # one primary action on Home
+    assert re.search(r"(Score|Build) \d+ (posting|package)", html)  # buttons say how much
 
 
 def test_jobs_filters(env):
@@ -325,9 +331,9 @@ def test_health_endpoint_reports_checks(env):
 
 def test_settings_shows_search_criteria_and_cv_tree(env):
     html = env[0].get("/settings", headers=HOST).text
-    assert "What I&#39;m looking for" in html or "What I'm looking for" in html
+    assert "What you&#39;re looking for" in html or "What you're looking for" in html
     assert 'data-cfg="search.titles_include"' in html and "engineer" in html and "s-1" in html
-    assert "titles_include" in html and "Roles I want" in html  # editable, with plain labels
+    assert "titles_include" in html and "Roles you want" in html  # editable, with plain labels
 
 
 # --- regressions found in review ---------------------------------------------------------------
@@ -413,7 +419,7 @@ def test_empty_or_invalid_numeric_filters_do_not_break_the_page(env):
 def test_any_posting_can_be_packaged_by_hand_from_its_page(env):
     client = env[0]
     below = client.get("/jobs/2", headers=HOST).text  # filtered-out posting
-    assert "Build package for this posting" in below
+    assert "Build package</button>" in below and "No package yet" in below
     assert "&#34;jobs&#34;: [2]" in below or '"jobs": [2]' in below  # runs only this posting
     assert "/run?tailor" not in below  # runs in place, no navigation to the Actions page
     assert 'id="dock"' in below  # the live log panel exists on every page
@@ -449,15 +455,59 @@ def test_tabs_show_counts(env):
         assert label in html
 
 
-def test_dashboard_suggests_next_steps_in_plain_language(env):
+def test_dashboard_pipeline_steps_carry_their_own_state(env):
     client, conn = env[0], env[1]
     html = client.get("/", headers=HOST).text
-    assert "What to do next" in html
+    assert "What to do next" not in html  # the steps replace the separate list
     assert "top match has no tailored CV" in html  # job 3 is selected without a package
-    assert "package is ready" in html  # job 1 is packaged and not applied yet
+    assert "package is ready to review" in html  # job 1 is packaged and not applied yet
+    assert "as applied here" not in html  # job 3 still needs a package
     conn.execute("UPDATE jobs SET status = 'passed' WHERE id = 3")
     conn.commit()
-    assert "waiting for AI scoring" in client.get("/", headers=HOST).text
+    html = client.get("/", headers=HOST).text
+    assert "mark it as applied here" in html  # nothing left to build: the next move is yours
+    assert "waiting for AI scoring" in html
+    assert len(re.findall(r'class="pipe-n on"', html)) == 1  # exactly one current step
+    # the current step's own row carries the page's single primary; the header has none
+    assert len(re.findall(r'class="btn primary" data-run', html)) == 1
+    head = re.search(r'<header class="home-head">.*?</header>', html, re.S).group(0)
+    assert "btn" not in head  # the headline band carries no button
+
+
+def test_pipeline_strip_is_on_every_page_but_home_owns_a_big_one(env):
+    client = env[0]
+    for url in ("/jobs", "/jobs/1", "/pipeline", "/packages", "/run", "/settings"):
+        html = client.get(url, headers=HOST).text
+        assert 'aria-label="Your pipeline"' in html, url
+        for title in ("Search", "Score", "Package", "Apply"):
+            assert f'<span class="stage-title">{title}</span>' in html, (url, title)
+        assert html.count('class="stage now"') == 1, url
+    home = client.get("/", headers=HOST).text
+    assert 'class="strip"' not in home and home.count('class="pipe-row now"') == 1
+    assert home.count("<h1") == 1
+
+
+def test_pipeline_steps_are_four_with_one_current():
+    from jobhunter.web.app import pipeline_steps
+
+    funnel = {"fetched": 12, "scored": 5, "packaged": 2, "applied": 1}
+    data = {"by_status": {"passed": 3, "selected": 1}, "funnel": funnel, "last_fetch": []}
+    steps = pipeline_steps(data, {"ready": 2, "matches": 4}, "score")
+    assert [s["title"] for s in steps] == ["Search", "Score", "Package", "Apply"]
+    assert [s["current"] for s in steps] == [False, True, False, False]
+    assert steps[0]["count"] == 12 and steps[3]["href"] == "/pipeline"
+
+
+def test_no_page_requests_an_external_asset_and_every_font_file_exists(env):
+    client = env[0]
+    for url in ("/", "/jobs", "/jobs/1", "/pipeline", "/packages", "/run", "/settings"):
+        html = client.get(url, headers=HOST).text
+        external = re.findall(r'<(?:link|script|img|source)\b[^>]*(?:src|href)="https?://', html)
+        assert not external, url
+    tokens = client.get("/static/tokens.css", headers=HOST).text
+    assert "https://" not in tokens and "http://" not in tokens
+    for path in re.findall(r'url\("(/static/fonts/[^"]+)"\)', tokens):
+        assert client.get(path, headers=HOST).status_code == 200, path
 
 
 def test_dashboard_on_empty_db_invites_the_first_search(tmp_path, monkeypatch):
@@ -477,7 +527,7 @@ def test_upcoming_interviews_appear_on_the_dashboard(env):
         json={"kind": "system_design", "scheduled_at": "2026-10-22T09:30"},
     )
     html = client.get("/", headers=HOST).text
-    assert "System design" in html and "2026-10-22 09:30" in html
+    assert "System design" in html and "Oct 22, 2026 09:30" in html
 
 
 def test_search_is_a_whitelisted_run_that_needs_no_ai(env):
@@ -494,9 +544,15 @@ def test_search_is_a_whitelisted_run_that_needs_no_ai(env):
 
 def test_actions_page_groups_every_command(env):
     html = env[0].get("/run", headers=HOST).text
-    for heading in ("Find jobs", "Evaluate with AI", "Apply", "Maintenance"):
-        assert heading in html
+    headings = ("Search", "Score", "Package", "Everything in order", "Single steps", "Maintenance")
+    for heading in headings:
+        assert f"{heading}</h2>" in html
     assert html.count("data-runcard=") >= 10
+    main, tools = html.split('class="more-tools"')
+    assert 'data-runcard="search"' in main and 'data-runcard="tailor"' in main
+    assert 'data-runcard="fetch"' in tools and 'data-runcard="doctor"' in tools
+    tailor = html.split('data-spec="tailor"')[1].split("</section>")[0]
+    assert 'class="opt-adv"' in tailor and 'data-opt="jobs"' in tailor.split("opt-adv")[1]
 
 
 def test_suggestion_grammar_and_funnel_scale():
@@ -519,11 +575,9 @@ def test_favorites_api_tab_chip_sort_and_badges(env):
     tab = client.get("/jobs?status=favorites", headers=HOST).text
     assert "Platform Engineer" in tab and "Sales Manager" in tab and "Senior Engineer" not in tab
     assert "visa?" in tab
-    chip = client.get("/jobs?status=all&fav=1&sort=favorites", headers=HOST).text
-    assert "Platform Engineer" in chip and "Senior Engineer" not in chip
     first = client.get("/jobs?status=all&sort=favorites", headers=HOST).text
     assert first.index("Platform Engineer") < first.index("Senior Engineer")
-    assert "★ Favorites" in client.get("/jobs", headers=HOST).text
+    assert 'href="/jobs?status=favorites"' in client.get("/jobs", headers=HOST).text
     assert "favorites without an application" in client.get("/", headers=HOST).text
     page = client.get("/jobs/3", headers=HOST).text
     assert 'aria-pressed="true"' in page and "Block this company" in page
@@ -580,7 +634,7 @@ def test_add_posting_api_and_pages(env):
     assert res.status_code == 200 and res.json()["created"]
     url = res.json()["url"]
     page = client.get(url, headers=HOST).text
-    assert "Manual" in page and "Score this posting with AI" in page
+    assert "Manual" in page and "Score this posting</button>" in page
     assert "Manual" in client.get("/jobs?status=all", headers=HOST).text
     again = client.post("/api/postings", json=body, headers=HOST).json()
     assert not again["created"]
@@ -620,10 +674,6 @@ def _unlabelled_controls(html: str) -> list[str]:
         before = html[: match.start()]
         # wrapped by a <label> that is still open
         if before.rfind("<label") > before.rfind("</label>"):
-            continue
-        # tag inputs and similar widgets carry their label in the surrounding field
-        in_field = before.rfind('class="field') > before.rfind("</div>")
-        if in_field and 'class="flabel"' in before[-600:]:
             continue
         bad.append(f"<{tag}{attrs[:60]}")
     return bad
@@ -718,6 +768,7 @@ def test_home_points_to_sources_that_exist_but_are_not_enabled(env, tmp_path):
     html = client.get("/", headers=HOST).text
     assert "available but not enabled" in html and "Get on Board" in html and "Himalayas" in html
     assert "/settings#sources" in html
+    assert 'class="todo-ic info"' in html  # information is sky, not amber
 
 
 # --- freshness filter and live filtering (spec 23) -------------------------------------------
@@ -773,8 +824,12 @@ def test_filters_form_one_connected_bar_that_applies_live(env):
     client = env[0]
     html = client.get("/jobs", headers=HOST).text
     form = html.split('<form class="filterbar"')[1].split("</form>")[0]
-    for label in ("Source", "Posted", "Score", "Mode", "Sort", "Favorites"):
+    for label in ("Source", "Posted", "Score", "Mode", "Sort", "More filters"):
         assert label in form, label
+    assert 'name="fav"' not in form  # the Favorites tab is the one way to see them
+    assert "fb-more on" not in form  # nothing narrowed: the extra filters stay folded away
+    narrowed = client.get("/jobs?mode=remote", headers=HOST).text.split("</form>")[0]
+    assert 'class="fb-more on" open>' in narrowed  # a set extra filter opens the fold
     assert "<noscript>" in form and "Filter</button>" not in form  # no Filter button any more
     assert 'id="jobs-results"' in html
     js = client.get("/static/app.js", headers=HOST).text
@@ -808,3 +863,221 @@ def test_active_filters_are_shown_as_removable_chips_and_score_is_a_choice(env):
 def test_settings_points_to_the_posted_filter(env):
     html = env[0].get("/settings", headers=HOST).text
     assert "Posted</b> filter" in html
+
+
+# --- accessibility and theming floor (spec 24, slice 2) -----------------------------------------
+
+
+def test_settings_labels_are_associated_with_their_controls(env):
+    import re
+
+    html = env[0].get("/settings", headers=HOST).text
+    labels = re.findall(r'<label class="flabel" for="(f-\d+)"', html)
+    assert len(labels) >= 20
+    for fid in labels:
+        assert f'id="{fid}"' in html or f'data-input-id="{fid}"' in html, fid  # a target exists
+    assert html.count("<legend") >= 3  # checkbox groups are fieldsets with a legend
+    assert 'aria-label="Freshness for company boards, in days"' in html
+    hinted = re.findall(r'aria-describedby="(f-\d+-hint)"', html) + re.findall(
+        r'data-desc="(f-\d+-hint)"', html
+    )
+    assert hinted and all(f'id="{h}"' in html for h in hinted)  # hints are real elements
+    js = env[0].get("/static/app.js", headers=HOST).text
+    assert "box.dataset.inputId" in js and "box.dataset.label" in js  # the tag input is named
+
+
+def test_interview_controls_have_names(env):
+    client, conn, *_ = env
+    apps.set_stage(conn, 3, "applied", None)
+    apps.add_interview(conn, 3, "technical", "2026-10-20T10:00", "bring examples")
+    html = client.get("/jobs/3", headers=HOST).text
+    for text in ("Interview 1: kind", "Interview 1: date and time", "Interview 1: outcome",
+                 "Interview 1: notes", "New interview: kind", "New interview: notes"):  # fmt: skip
+        assert f'aria-label="{text}"' in html, text
+
+
+def test_page_chrome_has_skip_link_landmarks_and_current_page(env):
+    client = env[0]
+    html = client.get("/jobs", headers=HOST).text
+    assert 'class="skip-link" href="#main"' in html and '<main id="main"' in html
+    assert '<nav aria-label="Main">' in html and 'aria-label="Job Hunter"' in html
+    assert html.count('aria-current="page"') == 1
+    assert ">Matches" in html.split('aria-current="page"')[1][:300]
+    assert 'id="theme-toggle"' in html and 'aria-pressed="false"' in html
+
+
+def test_announcements_and_status_regions(env):
+    client = env[0]
+    html = client.get("/jobs", headers=HOST).text
+    assert 'id="toast" class="toast" role="status" aria-live="polite"' in html
+    assert 'id="jobs-live"' in html and 'aria-live="polite"' in html
+    settings = client.get("/settings", headers=HOST).text
+    assert 'class="save-state' in settings and 'role="status" aria-live="polite"' in settings
+    js = client.get("/static/app.js", headers=HOST).text
+    assert "jobs-live" in js  # the filter count is announced after each live refresh
+
+
+def test_score_ring_star_and_icons_have_accessible_names(env):
+    client = env[0]
+    html = client.get("/jobs?status=all", headers=HOST).text
+    assert 'role="img" aria-label="AI match score 91 of 100"' in html
+    assert 'class="star' in html and 'aria-label="Favorite"' in html
+    assert '<svg class="ic" aria-hidden="true" focusable="false">' in html
+    assert 'rel="noopener"' in client.get("/packages", headers=HOST).text
+
+
+def test_theme_is_applied_before_first_paint_and_the_toggle_keeps_the_key(env):
+    client = env[0]
+    html = client.get("/", headers=HOST).text
+    head = html.split("</head>")[0]
+    assert "/static/theme.js" in head  # blocking, in <head>, before the body paints
+    theme = client.get("/static/theme.js", headers=HOST).text
+    assert "jh_theme" in theme and "data-theme" in theme
+    assert "jh_theme" in client.get("/static/app.js", headers=HOST).text
+
+
+def test_css_honours_reduced_motion_and_minimum_target_sizes():
+    css = (STATIC_DIR / "style.css").read_text()
+    assert "prefers-reduced-motion: reduce" in css and "animation: none" in css
+    for selector in (".star", ".icon-btn", ".afchip button", ".tag button"):
+        block = css.split(f"{selector} {{")[1].split("}")[0]
+        assert "1.5rem" in block, f"{selector} must be at least 24px (1.5rem)"
+    assert ".skip-link:focus" in css and ".sr-only" in css
+
+
+def test_unknown_pages_get_a_real_404_and_the_api_keeps_json(env):
+    client = env[0]
+    page = client.get("/nope", headers=HOST)
+    assert page.status_code == 404 and "Page not found" in page.text
+    assert page.text.count("<h1") == 1 and 'href="/"' in page.text
+    api = client.get("/api/nope", headers=HOST)
+    assert api.status_code == 404 and api.json()["error"]
+    missing = client.get("/jobs/99999", headers=HOST)
+    assert missing.status_code == 404 and "Posting not found" in missing.text
+
+
+def test_static_cache_headers(env):
+    client = env[0]
+    html = client.get("/").text
+    font = "/static/fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2"
+    assert f'rel="preload" href="{font}"' in html
+    versioned = re.search(r'href="(/static/style\.css\?v=\d+)"', html).group(1)
+    assert "immutable" in client.get(versioned).headers["cache-control"]
+    assert client.get("/static/style.css").headers["cache-control"] == "no-cache"
+    assert "max-age" in client.get(font).headers["cache-control"]
+
+
+def test_reload_keeps_place():
+    js = (Path(__file__).parents[1] / "src/jobhunter/web/static/app.js").read_text()
+    assert js.count("location.reload()") == 1  # only inside reloadHere
+    assert "jh_place" in js
+
+
+def test_job_cards_are_quiet_and_dismissal_is_one_action(env):
+    html = env[0].get("/jobs?status=best", headers=HOST).text
+    assert ">Hide<" not in html and "data-not-for-me" in html  # Hide merged into Not for me
+    assert 'class="more"' in html  # secondary actions live in an overflow menu
+    assert len(re.findall(r'btn small primary" (?:data-run|href)', html)) == 0  # none per card
+
+
+def test_posting_page_has_one_primary_and_a_workspace(env):
+    page = env[0].get("/jobs/3", headers=HOST).text
+    assert len(re.findall(r'class="btn primary" (?:data-run|href)', page)) == 1
+    assert 'class="more"' in page and "workspace" in page
+    h1 = re.search(r"<h1>(.*?)</h1>", page, re.S).group(1)
+    assert "star" not in h1  # the star left the title
+    assert 'class="posting-text"' in page and '<pre class="desc"' not in page  # prose, not code
+    assert "— →" not in page and "Job matches" not in page  # no empty-state arrows, one name
+
+
+def test_settings_has_one_save_bar_and_real_tabs(env):
+    page = env[0].get("/settings", headers=HOST).text
+    assert page.count("data-save-cfg") == 2  # Save and Save & re-filter, once for the whole page
+    assert 'id="savebar"' in page and 'aria-label="Settings sections"' in page
+    for panel in ("looking", "ai", "sources", "files", "system"):
+        assert f'id="{panel}"' in page
+
+
+def test_applications_board_has_four_stage_columns_and_a_ready_strip(env):
+    apps.set_stage(env[1], 3, "applied", None)
+    page = env[0].get("/pipeline", headers=HOST).text
+    assert "ready-strip" in page or "Nothing waiting" in page and 'class="column ready"' not in page
+    assert page.count('class="column stage-') >= 4
+    assert re.search(r"applied (today|yesterday|\d+ days ago)", page)  # not a raw timestamp
+
+
+def test_applications_board_starts_with_the_ready_column(env):
+    page = env[0].get("/pipeline", headers=HOST).text
+    first = page.index('class="column ready-strip stage-ready"')
+    assert first < page.index('class="column stage-applied"')  # ready to apply leads the flow
+    assert "ready to apply" in page and "in play" in page
+
+
+def test_matches_and_settings_are_composed_pages(env):
+    client = env[0]
+    jobs = client.get("/jobs", headers=HOST).text
+    assert "ranked by how well" in jobs and 'class="page-head"' in jobs
+    settings = client.get("/settings", headers=HOST).text
+    assert 'class="settings-ws"' in settings and 'class="settings-panels"' in settings
+    assert settings.index('id="settings-tabs"') < settings.index('class="settings-panels"')
+
+
+def test_loading_and_error_states_show_the_mascot(env):
+    client = env[0]
+    assert 'class="dock-mascot"' in client.get("/", headers=HOST).text  # working state
+    missing = client.get("/no-such-page", headers=HOST)
+    assert missing.status_code == 404 and 'class="empty-ic lost"' in missing.text
+
+
+def test_ring_animates_once_and_respects_reduced_motion():
+    from pathlib import Path
+
+    css = (Path(__file__).resolve().parents[1] / "src/jobhunter/web/static/style.css").read_text()
+    assert "@property --pct" in css and "@keyframes sweep" in css
+    assert "animation: sweep" in css
+    assert "animation: none !important" in css  # the reduced-motion rule covers it
+
+
+def test_home_brush_is_a_static_mask_not_inline_markup(env):
+    client = env[0]
+    html = client.get("/", headers=HOST).text
+    assert '<span class="brush" aria-hidden="true"></span>' in html
+    assert '<svg class="brush"' not in html and len(html) < 40_000
+    art = client.get("/static/img/brush.svg", headers=HOST)
+    assert art.status_code == 200 and art.headers["content-type"].startswith("image/svg+xml")
+    assert "http://" not in art.text.replace("http://www.w3.org/2000/svg", "")  # no external refs
+
+
+def test_ago_filter():
+    from jobhunter.web.app import ago
+
+    now = datetime.now(UTC)
+    assert ago(now.isoformat()) == "today"
+    assert ago((now - timedelta(days=1)).isoformat()) == "yesterday"
+    assert ago((now - timedelta(days=5)).isoformat()) == "5 days ago"
+    assert ago(None) == "—"
+
+
+def test_voice_you_and_no_raw_tokens(env):
+    client = env[0]
+    for url in ("/", "/jobs?status=all", "/jobs/1", "/pipeline", "/run", "/settings"):
+        html = client.get(url, headers=HOST).text
+        text = re.sub(r"<(script|style)\b.*?</\1>", "", html, flags=re.S)
+        visible = re.sub(r"<[^>]+>", " ", text)
+        for phrase in ("What I", "Roles I want", "My application", "My CV", "I applied"):
+            assert phrase not in visible, (url, phrase)
+        assert not re.search(r">\s*(onsite|spec_id)\s*<", html), url
+        assert not re.search(r"\b20\d\d-\d\d-\d\dT\d\d", visible), url  # no ISO timestamps
+    run = client.get("/run", headers=HOST).text
+    assert run.count(">Run<") == 0 and "Search</button>" in run  # buttons carry their verb
+
+
+def test_actions_page_has_no_config_keys_or_backticks(env):
+    html = env[0].get("/run", headers=HOST).text
+    for raw in ("budget.max_llm", "config.yaml", "`", "claude_cli backend", "LLM"):
+        assert raw not in html, raw
+
+
+def test_settings_first_paint_does_not_rewrite_the_url():
+    js = (Path(__file__).parents[1] / "src/jobhunter/web/static/app.js").read_text()
+    assert "showPanel(location.hash.slice(1), false, true)" in js  # no fragment added on load

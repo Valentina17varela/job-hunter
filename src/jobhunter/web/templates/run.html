@@ -1,42 +1,53 @@
 {% extends "base.html" %}
 {% import "_macros.html" as m %}
 {% block title %}Actions{% endblock %}
+{% macro runcard(s) %}
+  <section class="runcard" data-spec="{{ s.id }}">
+    <h3 class="plain">{{ s.label }} {% if s.llm %}<span class="badge warn">uses AI</span>{% endif %}</h3>
+    <p class="muted">{{ s.description }}</p>
+    {% if s.supports_dry_run or s.supports_jobs or s.supports_job_ids %}
+    <div class="opts">
+      {% if s.supports_dry_run %}<label class="opt-check"><input type="checkbox" data-opt="dry_run"> Preview only (dry run)</label>{% endif %}
+      {% if s.supports_jobs or s.supports_job_ids %}
+      <details class="opt-adv">
+        <summary>Only some postings</summary>
+        <label class="opt-field"><span>Posting ids</span><input type="text" data-opt="jobs" placeholder="e.g. 1163, 9478"></label>
+        {% if s.supports_jobs %}<label class="opt-field"><span>Limit</span><input type="number" data-opt="limit" min="1" placeholder="no limit"></label>
+        <label class="opt-check"><input type="checkbox" data-opt="force"> Rebuild ones already done</label>{% endif %}
+      </details>
+      {% endif %}
+    </div>
+    {% endif %}
+    <button class="btn" data-runcard="{{ s.id }}" data-label="{{ s.label }}">{{ m.icon('play') }} {{ run_verb(s.id) }}</button>
+    {% if s.llm %}<p class="muted small">{{ 'Your Claude subscription' if backend == 'claude_cli' else 'Your Anthropic API key' }} · up to {{ max_calls }} AI calls per run</p>{% endif %}
+  </section>
+{% endmacro %}
 {% block content %}
 <header class="page-head"><div><h1>Actions</h1>
   <p class="muted">Everything the tool can do, one button each. Nothing runs by itself: you decide when. Output appears in the panel at the bottom right, and only one action runs at a time.</p></div></header>
 
-{% set groups = [
-  ('Find jobs', ['search', 'fetch', 'filter', 'refilter']),
-  ('Evaluate with AI', ['score']),
-  ('Apply', ['tailor', 'all']),
-  ('Maintenance', ['companies-discover', 'companies-check', 'cv-check', 'doctor', 'stats'])] %}
-{% for title, ids in groups %}
-<h2 class="group">{{ title }}</h2>
-<div class="grid-3">
-  {% for s in specs if s.id in ids %}
-  <section class="card runcard" data-spec="{{ s.id }}">
-    <h3 class="plain">{{ s.label }} {% if s.llm %}<span class="badge warn">uses AI</span>{% endif %}</h3>
-    <p class="muted">{{ s.description }}</p>
-    <div class="opts">
-      {% if s.supports_dry_run %}<label class="opt-check"><input type="checkbox" data-opt="dry_run"> Preview only (dry run)</label>{% endif %}
-      {% if s.supports_jobs or s.supports_job_ids %}
-        <label class="opt-field"><span>Only these posting ids</span><input type="text" data-opt="jobs" placeholder="e.g. 1163, 9478"></label>
-        {% if s.supports_jobs %}<label class="opt-field"><span>Limit</span><input type="number" data-opt="limit" min="1" placeholder="no limit"></label>
-        <label class="opt-check"><input type="checkbox" data-opt="force"> Rebuild ones already done</label>{% endif %}
-      {% endif %}
-    </div>
-    <button class="btn primary" data-runcard="{{ s.id }}" data-label="{{ s.label }}">{{ m.icon('play') }} Run</button>
-    {% if s.llm %}<p class="muted small">{{ backend }} backend · up to {{ max_calls }} AI calls per run</p>{% endif %}
-  </section>
-  {% endfor %}
+{% for title, ids in [('Search', ['search', 'refilter']), ('Score', ['score']), ('Package', ['tailor']), ('Everything in order', ['all'])] %}
+<h2 class="group">{% if loop.index < 4 %}<span class="stage-n" aria-hidden="true">{{ loop.index }}</span>{% endif %}{{ title }}</h2>
+<div class="run-list">
+  {% for s in specs if s.id in ids %}{{ runcard(s) }}{% endfor %}
 </div>
 {% endfor %}
 
+<details class="more-tools">
+  <summary>More tools</summary>
+  {% for title, ids in [('Single steps', ['fetch', 'filter']), ('Maintenance', ['companies-discover', 'companies-check', 'cv-check', 'doctor', 'stats'])] %}
+  <h2 class="group">{{ title }}</h2>
+  <div class="run-list">
+    {% for s in specs if s.id in ids %}{{ runcard(s) }}{% endfor %}
+  </div>
+  {% endfor %}
+</details>
+
 <section class="card">
   <div class="card-head"><h2>Recent actions</h2></div>
-  <table class="compact"><thead><tr><th>Action</th><th>Result</th><th>Started</th></tr></thead><tbody>
+  <table class="compact"><thead><tr><th scope="col">Action</th><th scope="col">Result</th><th scope="col">Started</th></tr></thead><tbody>
   {% for r in history %}
-    <tr><td>{{ r.spec_id }}</td><td><span class="badge {{ 'good' if r.status == 'ok' else ('bad' if r.status == 'failed' else '') }}">{{ r.status }}</span></td>
+    <tr><td>{{ r.spec_id|run_label }}</td><td><span class="badge {{ 'good' if r.status == 'ok' else ('bad' if r.status == 'failed' else '') }}">{{ {'ok': 'Done', 'failed': 'Failed', 'running': 'Running'}.get(r.status, r.status) }}</span></td>
         <td class="muted">{{ r.started_at|dt }}</td></tr>
   {% else %}<tr><td colspan="3" class="muted">Nothing run since the UI started.</td></tr>{% endfor %}
   </tbody></table>

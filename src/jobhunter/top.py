@@ -29,8 +29,8 @@ REASONS: dict[str, str] = {
 }
 # What a reason suggests changing in Settings (shown as a suggestion only, never applied).
 REASON_HINTS: dict[str, str] = {
-    "role": "add words to *Words I do not want in the title*, or narrow *Roles I want*",
-    "location": "tighten *Where I can work*",
+    "role": "add words to *Words you do not want in the title*, or narrow *Roles you want*",
+    "location": "tighten *Where you can work*",
     "pay": "raise the minimum salary",
     "company": "use *Block this company* on the posting page",
     "seniority": "adjust *Seniority*",
